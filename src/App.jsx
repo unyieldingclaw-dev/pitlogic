@@ -257,37 +257,74 @@ export default function App() {
       {/* Background flame */}
       <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-        <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"
-          style={{ width: '60vw', maxWidth: 520, minWidth: 260, opacity: 0.055 }}>
+        <svg viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg"
+          style={{ width: '82vw', maxWidth: 680, minWidth: 280, opacity: 0.14 }}>
           <defs>
-            <linearGradient id="flameGrad" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="#FF6B35" />
-              <stop offset="50%" stopColor="#F59E0B" />
-              <stop offset="100%" stopColor="#FF6B35" stopOpacity="0" />
+            <linearGradient id="flameOuter" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stopColor="#8B1A00" />
+              <stop offset="22%"  stopColor="#CC3300" />
+              <stop offset="52%"  stopColor="#FF6B35" />
+              <stop offset="80%"  stopColor="#F59E0B" />
+              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
             </linearGradient>
+            <linearGradient id="flameMid" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stopColor="#FF6B35" />
+              <stop offset="40%"  stopColor="#F59E0B" />
+              <stop offset="75%"  stopColor="#FDE68A" />
+              <stop offset="100%" stopColor="#FDE68A" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="flameCore" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stopColor="#FBBF24" />
+              <stop offset="45%"  stopColor="#FEF3C7" />
+              <stop offset="100%" stopColor="#FFFFFF"  stopOpacity="0" />
+            </linearGradient>
+            <radialGradient id="baseGlow" cx="50%" cy="100%" r="50%">
+              <stop offset="0%"   stopColor="#FF6B35" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#FF6B35" stopOpacity="0" />
+            </radialGradient>
           </defs>
-          <path fill="url(#flameGrad)" d="
-            M100 295
-            C 38 295  8 248  8 198
-            C  8 150 32 128 52  98
-            C 44 118 47 140 58 150
-            C 52 108 68  72 100  12
-            C132  72 148 108 142 150
-            C153 140 156 118 148  98
-            C168 128 192 150 192 198
-            C192 248 162 295 100 295Z
+
+          {/* Base heat glow */}
+          <ellipse cx="100" cy="330" rx="88" ry="22" fill="url(#baseGlow)" />
+
+          {/* Outer flame body — widest, darkest, most red */}
+          <path fill="url(#flameOuter)" d="
+            M100 328
+            C 40 328  5 278  5 224
+            C  5 170 28 148 52 112
+            C 44 133 48 156 60 167
+            C 52 122 70  80 100  14
+            C130  80 148 122 140 167
+            C152 156 156 133 148 112
+            C172 148 195 170 195 224
+            C195 278 160 328 100 328Z
           " />
-          <path fill="url(#flameGrad)" d="
-            M100 250
-            C 62 250 42 222 42 195
-            C 42 168 56 154 68 138
-            C 64 152 66 168 75 176
-            C 72 152 83 130 100  90
-            C117 130 128 152 125 176
-            C134 168 136 152 132 138
-            C144 154 158 168 158 195
-            C158 222 138 250 100 250Z
-          " fillOpacity="0.6" />
+
+          {/* Mid flame — narrower, amber */}
+          <path fill="url(#flameMid)" d="
+            M100 294
+            C 63 294 40 264 40 234
+            C 40 204 55 190 68 168
+            C 63 184 65 202 75 211
+            C 70 180 83 150 100  82
+            C117 150 130 180 125 211
+            C135 202 137 184 132 168
+            C145 190 160 204 160 234
+            C160 264 137 294 100 294Z
+          " />
+
+          {/* Inner core — narrowest, pale yellow-white */}
+          <path fill="url(#flameCore)" d="
+            M100 258
+            C 74 258 56 234 56 210
+            C 56 186 67 176 77 158
+            C 73 172 75 188 83 196
+            C 79 168 89 144 100 104
+            C111 144 121 168 117 196
+            C125 188 127 172 123 158
+            C133 176 144 186 144 210
+            C144 234 126 258 100 258Z
+          " />
         </svg>
       </div>
 
