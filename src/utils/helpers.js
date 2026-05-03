@@ -3,6 +3,8 @@ export const COLORS = [
   "#BA7517","#9340C4","#1BA39C"
 ];
 
+export const PROBE_COLORS = ["#FF6B35","#60A5FA","#4ADE80","#FBBF24","#C084FC","#34D399"];
+
 export const dur = (s, e) => {
   const ms = (e || Date.now()) - s;
   const h = Math.floor(ms / 3600000);
