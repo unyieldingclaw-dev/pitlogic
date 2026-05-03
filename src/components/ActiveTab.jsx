@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Flame, AlertTriangle, CheckCircle, Droplets } from 'lucide-react';
+import { Flame, AlertTriangle, CheckCircle, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
 import { MEATS } from '../data/meats';
 import { G } from '../data/cuts';
+import { PELLETS } from '../data/pellets';
 import { PROBE_COLORS, shortDate, elapsed } from '../utils/helpers';
 import TempChart from './TempChart';
 import { useMopTimer } from '../hooks/useMopTimer';
@@ -18,6 +19,8 @@ export default function ActiveTab({
   /* ── New cook form ── */
   if (view === 'new') {
     const guide = G[form.cut];
+    const [showMore, setShowMore] = useState(false);
+    const allPellets = Object.values(PELLETS).flat();
     return (
       <div className="fadein">
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, marginBottom: '1.25rem', letterSpacing: '0.03em' }}>New Cook Setup</div>
@@ -118,6 +121,42 @@ export default function ActiveTab({
               onClick={() => setForm(f => ({ ...f, probes: [...f.probes, { name: `Probe ${f.probes.length + 1}`, target: G[f.cut]?.pull || 165 }] }))}>
               + Add meat probe
             </button>
+          </div>
+
+          <hr className="divider" />
+
+          {/* More Details (collapsible) */}
+          <div style={{ marginBottom: '1rem' }}>
+            <button type="button" className="btn-ghost" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, padding: '8px 0' }}
+              onClick={() => setShowMore(v => !v)}>
+              <span style={{ color: 'var(--text2)' }}>More Details</span>
+              {showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {showMore && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="g2">
+                  <div>
+                    <label>Meat weight (lbs)</label>
+                    <input type="number" min="0" step="0.1" placeholder="e.g. 12.5"
+                      value={form.weight}
+                      onChange={e => setForm(f => ({ ...f, weight: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label>Wood / Pellets</label>
+                    <select value={form.pellet} onChange={e => setForm(f => ({ ...f, pellet: e.target.value }))}>
+                      <option value="">— Select —</option>
+                      {allPellets.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label>Smoker / Equipment</label>
+                  <input placeholder="e.g. Traeger Pro 575"
+                    value={form.equipment}
+                    onChange={e => setForm(f => ({ ...f, equipment: e.target.value }))} />
+                </div>
+              </div>
+            )}
           </div>
 
           <hr className="divider" />

@@ -89,6 +89,25 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
                 );
               })}
             </div>
+            {(cook.weight || cook.pellet || cook.equipment) && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                {cook.weight && (
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: 'var(--surface-raised)', color: 'var(--text3)' }}>
+                    {cook.weight} lbs
+                  </span>
+                )}
+                {cook.pellet && (
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: 'var(--surface-raised)', color: 'var(--text3)' }}>
+                    {cook.pellet}
+                  </span>
+                )}
+                {cook.equipment && (
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: 'var(--surface-raised)', color: 'var(--text3)' }}>
+                    {cook.equipment}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         );
       })}

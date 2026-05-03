@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ChevronLeft, Trash2, Share2, Star, BarChart2, FileText } from 'lucide-react';
-import ShareButton from './ShareButton';
+import ShareButton from './ShareCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import TempChart, { buildChartData, analyzeProbe } from './TempChart';
 import { PROBE_COLORS, dur, shortDate } from '../utils/helpers';
@@ -100,6 +100,28 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
               <div style={{ fontFamily: 'var(--mono)', fontSize: 20, fontWeight: 500 }}>{total}</div>
             </div>
           </div>
+          {(detailCook.weight || detailCook.pellet || detailCook.equipment) && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: '1rem' }}>
+              {detailCook.weight && (
+                <div style={{ padding: '6px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border2)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Weight</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 500 }}>{detailCook.weight} lbs</div>
+                </div>
+              )}
+              {detailCook.pellet && (
+                <div style={{ padding: '6px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border2)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Wood / Pellets</div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{detailCook.pellet}</div>
+                </div>
+              )}
+              {detailCook.equipment && (
+                <div style={{ padding: '6px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border2)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Equipment</div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{detailCook.equipment}</div>
+                </div>
+              )}
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(detailCook.probes.length, 3)}, minmax(0,1fr))`, gap: 8, marginBottom: '1rem' }}>
             {detailCook.probes.map((p, i) => {
               const temps = p.readings.map(r => r.temp);

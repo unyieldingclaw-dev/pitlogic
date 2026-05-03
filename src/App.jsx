@@ -47,7 +47,7 @@ export default function App() {
   const [msg, setMsg]               = useState('');
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' } });
+  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
   const activeId = activeCooks[activeCookIdx] ?? null;
@@ -128,7 +128,10 @@ export default function App() {
       startTime: now, endTime: null, status: 'active',
       probes: form.probes.map((p, i) => ({ id: i, name: p.name, target: Number(p.target), readings: [] })),
       smokerReadings: [], notes: '', rating: 0,
-      weight: null, equipment: '', linkedRecipes: [],
+      weight: form.weight ? Number(form.weight) : null,
+      equipment: form.equipment || '',
+      pellet: form.pellet || '',
+      linkedRecipes: [],
       mopTimer: form.mop?.enabled
         ? { enabled: true, intervalMin: form.mop.intervalMin, label: form.mop.label || '', events: [] }
         : null,
@@ -137,7 +140,7 @@ export default function App() {
     const newActive = [...activeCooks, cook.id];
     setCooks(nc); setActiveCooks(newActive); setActiveCookIdx(newActive.length - 1);
     persist(nc, newActive, dismissed);
-    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' } });
+    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
     setView('active'); setTab('active');
   };
 
