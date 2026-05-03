@@ -1,3 +1,4 @@
+import { BookOpen, ChevronRight, Flame } from 'lucide-react';
 import { MEATS } from '../data/meats';
 import { G } from '../data/cuts';
 
@@ -11,14 +12,8 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
         {Object.keys(MEATS).map(cat => (
           <button
             key={cat}
-            className="btn"
-            style={{
-              flexShrink: 0,
-              background: cat === guideCat ? 'var(--amber-bg)' : 'transparent',
-              borderColor: cat === guideCat ? 'var(--amber)' : 'var(--border2)',
-              color: cat === guideCat ? 'var(--amber)' : 'var(--text2)',
-              fontWeight: cat === guideCat ? 500 : 400,
-            }}
+            className={`nav-tab${cat === guideCat ? ' active' : ''}`}
+            style={{ flexShrink: 0 }}
             onClick={() => { setGuideCat(cat); setGuideKey(MEATS[cat][0]); }}
           >
             {cat}
@@ -45,22 +40,25 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
           <div>
             {/* Title + badges */}
             <div style={{ marginBottom: '1rem' }}>
-              <div style={{ fontWeight: 500, fontSize: 17, marginBottom: 8 }}>{guideKey}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, marginBottom: 8 }}>{guideKey}</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <span className="badge badge-amber">Pull: {guide.pull}°F</span>
                 {guide.wrap && <span className="badge badge-green">Wrap: {guide.wrap}°F</span>}
                 {guide.stall && (
-                  <span className="badge" style={{ background: 'rgba(186,117,23,.1)', color: 'var(--amber-dark)' }}>
+                  <span className="badge" style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--amber)' }}>
                     Stall: {guide.sr}
                   </span>
                 )}
-                {guide.co && <span className="badge badge-gray">Carryover: ~{guide.co}°F</span>}
+                {guide.co && <span className="badge" style={{ background: 'var(--surface-raised)', color: 'var(--text2)' }}>Carryover: ~{guide.co}°F</span>}
               </div>
             </div>
 
             {/* Pellets */}
-            <div style={{ background: 'var(--amber-bg)', border: '0.5px solid rgba(186,117,23,.2)', borderRadius: 10, padding: '.875rem', marginBottom: '.875rem' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--amber)', marginBottom: 5 }}>🪵 Pellet recommendation</div>
+            <div style={{ background: 'rgba(245,158,11,0.06)', border: '0.5px solid rgba(245,158,11,0.2)',
+              borderRadius: 10, padding: '.875rem', marginBottom: '.875rem' }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--amber)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Flame size={13} /> Pellet recommendation
+              </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                 {guide.p.map(p => <span key={p} className="badge badge-amber">{p}</span>)}
               </div>
@@ -69,7 +67,8 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
 
             {/* Traeger stages */}
             <div style={{ marginBottom: '.875rem' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: '.625rem' }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text3)', textTransform: 'uppercase',
+                letterSpacing: '.04em', marginBottom: '.625rem' }}>
                 Traeger stages
               </div>
               {guide.stages.map((st, i) => (
@@ -79,7 +78,7 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                         <span className="mono-pill">{st.t}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text2)' }}>· {st.d}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text3)' }}>· {st.d}</span>
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--amber)', marginBottom: 3 }}>When: {st.w}</div>
                       <div style={{ fontSize: 13, lineHeight: 1.6 }}>{st.a}</div>
@@ -91,28 +90,32 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
 
             {/* Stall warning */}
             {guide.stall && (
-              <div className="alert-wrap" style={{ background: 'var(--amber-bg)', border: '1px solid rgba(186,117,23,.2)', marginBottom: '.875rem' }}>
-                <div style={{ fontWeight: 500, marginBottom: 3 }}>⚠️ Stall expected</div>
-                <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 13 }}>
-                  Expect a stall at {guide.sr} lasting {guide.sd}. Your RFX graph will show a flat line — the app auto-detects it and will alert you. Options: wrap, run hotter (275–300°F), or wait it out.
+              <div className="alert alert-amber" style={{ marginBottom: '.875rem' }}>
+                <div>
+                  <div style={{ fontWeight: 500, marginBottom: 3 }}>Stall expected</div>
+                  <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 13 }}>
+                    Expect a stall at {guide.sr} lasting {guide.sd}. Your RFX graph will show a flat line — the app auto-detects it and will alert you. Options: wrap, run hotter (275–300°F), or wait it out.
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Pro tip */}
             {guide.tip && (
-              <div className="card" style={{ marginBottom: '.875rem', background: 'var(--bg2)' }}>
-                <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.04em' }}>Pro tip</div>
+              <div className="card" style={{ marginBottom: '.875rem' }}>
+                <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text3)', marginBottom: 4,
+                  textTransform: 'uppercase', letterSpacing: '.04em' }}>Pro tip</div>
                 <div style={{ fontSize: 13, lineHeight: 1.6 }}>{guide.tip}</div>
               </div>
             )}
 
             {/* Probe placement */}
             <div style={{ marginBottom: '.875rem' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text3)', textTransform: 'uppercase',
+                letterSpacing: '.04em', marginBottom: 8 }}>
                 RFX probe placement
               </div>
-              <div className="card" style={{ background: 'var(--bg2)', fontSize: 13, lineHeight: 1.7 }}>
+              <div className="card" style={{ fontSize: 13, lineHeight: 1.7 }}>
                 {guide.pull <= 145
                   ? 'Insert probe horizontally into the thickest part of the meat, parallel to any bone structure. For fish and poultry, aim for geometric center and avoid touching bone.'
                   : guide.stall
@@ -124,11 +127,11 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
 
             {/* Start cook button */}
             <button
-              className="btn-orange"
-              style={{ width: '100%', padding: '10px', fontSize: 15 }}
+              className="btn-primary"
+              style={{ width: '100%', padding: '10px', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
               onClick={() => onStartCook(guideKey)}
             >
-              Start this cook →
+              Start this cook <ChevronRight size={16} />
             </button>
           </div>
         )}
