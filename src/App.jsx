@@ -208,7 +208,14 @@ export default function App() {
     if (id !== 'history' && id !== 'dashboard') setDetailId(null);
   };
 
-  if (!loaded) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text2)' }}>Loading...</div>;
+  if (!loaded) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100vh', background: 'var(--bg)', flexDirection: 'column', gap: 16 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--ember)',
+        textShadow: '0 0 30px rgba(255,107,53,0.6)', letterSpacing: '0.1em' }}>RFX</div>
+      <div style={{ fontSize: 12, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Loading your cooks…</div>
+    </div>
+  );
 
   const isDetail = view === 'detail';
 
