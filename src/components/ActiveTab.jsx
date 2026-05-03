@@ -4,6 +4,8 @@ import { MEATS } from '../data/meats';
 import { G } from '../data/cuts';
 import { PROBE_COLORS, shortDate, elapsed } from '../utils/helpers';
 import TempChart from './TempChart';
+import { useMopTimer } from '../hooks/useMopTimer';
+import MopTimerBadge from './MopTimerBadge';
 
 export default function ActiveTab({
   view, form, setForm,
@@ -118,6 +120,35 @@ export default function ActiveTab({
             </button>
           </div>
 
+          <hr className="divider" />
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <label style={{ margin: 0, fontSize: 13, color: 'var(--text)' }}>Mop / Spray Timer</label>
+              <button type="button" className={form.mop?.enabled ? 'btn-primary' : 'btn-ghost'}
+                style={{ padding: '4px 12px', fontSize: 12 }}
+                onClick={() => setForm(f => ({ ...f, mop: { ...(f.mop || { intervalMin: 45, label: '' }), enabled: !f.mop?.enabled } }))}>
+                {form.mop?.enabled ? 'On' : 'Off'}
+              </button>
+            </div>
+            {form.mop?.enabled && (
+              <div className="g2">
+                <div>
+                  <label>Interval (min)</label>
+                  <select value={form.mop.intervalMin}
+                    onChange={e => setForm(f => ({ ...f, mop: { ...f.mop, intervalMin: Number(e.target.value) } }))}>
+                    {[15, 30, 45, 60].map(v => <option key={v} value={v}>{v} min</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label>What (e.g. apple juice)</label>
+                  <input value={form.mop.label || ''}
+                    onChange={e => setForm(f => ({ ...f, mop: { ...f.mop, label: e.target.value } }))}
+                    placeholder="Apple juice + butter" />
+                </div>
+              </div>
+            )}
+          </div>
+
           <button className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: 15, marginTop: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} onClick={onStart}>
             <Flame size={18} /> Start Cook
@@ -142,6 +173,7 @@ export default function ActiveTab({
   const guide   = G[activeCook.cut];
   const lastSmok = activeCook.smokerReadings[activeCook.smokerReadings.length - 1];
   const smokerPct = lastSmok ? Math.min(100, Math.round((lastSmok.temp / activeCook.smokerTarget) * 100)) : 0;
+  const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
 
   return (
     <div className="fadein">
@@ -231,6 +263,14 @@ export default function ActiveTab({
             </div>
           </div>
           <button className="btn" style={{ flexShrink: 0, fontSize: 12 }} onClick={() => onEnd('dismiss_co')}>Got it</button>
+        </div>
+      )}
+
+      {/* Mop/spray timer badge */}
+      {activeCook.mopTimer?.enabled && (
+        <div style={{ marginBottom: '1rem' }}>
+          <MopTimerBadge countdown={countdown} alert={mopAlert}
+            label={activeCook.mopTimer?.label} onDismiss={dismissSpray} />
         </div>
       )}
 
