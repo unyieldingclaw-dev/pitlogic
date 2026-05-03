@@ -254,6 +254,43 @@ export default function App() {
 
   return (
     <div id="root">
+      {/* Background flame */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
+        <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"
+          style={{ width: '60vw', maxWidth: 520, minWidth: 260, opacity: 0.055 }}>
+          <defs>
+            <linearGradient id="flameGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="#FF6B35" />
+              <stop offset="50%" stopColor="#F59E0B" />
+              <stop offset="100%" stopColor="#FF6B35" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#flameGrad)" d="
+            M100 295
+            C 38 295  8 248  8 198
+            C  8 150 32 128 52  98
+            C 44 118 47 140 58 150
+            C 52 108 68  72 100  12
+            C132  72 148 108 142 150
+            C153 140 156 118 148  98
+            C168 128 192 150 192 198
+            C192 248 162 295 100 295Z
+          " />
+          <path fill="url(#flameGrad)" d="
+            M100 250
+            C 62 250 42 222 42 195
+            C 42 168 56 154 68 138
+            C 64 152 66 168 75 176
+            C 72 152 83 130 100  90
+            C117 130 128 152 125 176
+            C134 168 136 152 132 138
+            C144 154 158 168 158 195
+            C158 222 138 250 100 250Z
+          " fillOpacity="0.6" />
+        </svg>
+      </div>
+
       <MultiCookBar activeCooks={allActiveCooks} />
 
       {/* Toast */}
