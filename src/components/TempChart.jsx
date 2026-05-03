@@ -2,7 +2,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer
 } from 'recharts';
-import { COLORS } from '../utils/helpers';
+import { PROBE_COLORS } from '../utils/helpers';
 
 export function buildChartData(cook) {
   const ts = new Set();
@@ -68,27 +68,27 @@ export default function TempChart({ cook, height = 260, showStall = false, analy
     <div style={{ position: 'relative', height }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,.1)" />
-          <XAxis dataKey="time" tickFormatter={v => `${Math.round(v)}m`} tick={{ fontSize: 10 }} stroke="rgba(128,128,128,.2)" />
-          <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10 }} stroke="rgba(128,128,128,.2)" tickFormatter={v => `${v}°`} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis dataKey="time" tickFormatter={v => `${Math.round(v)}m`} tick={{ fill: 'var(--text3)', fontSize: 11, fontFamily: 'JetBrains Mono' }} stroke="var(--ash)" />
+          <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text3)', fontSize: 11, fontFamily: 'JetBrains Mono' }} stroke="var(--ash)" tickFormatter={v => `${v}°`} />
           <Tooltip
             formatter={(v, n) => [`${v}°F`, n]}
             labelFormatter={l => `${Math.round(l)} min`}
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: '0.5px solid var(--border)', background: 'var(--bg)' }}
+            contentStyle={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: 'var(--text2)' }} itemStyle={{ color: 'var(--text)' }}
           />
           {showStall && analyses[0]?.stallSegs.map((s, i) => (
-            <ReferenceArea key={i} x1={s.start} x2={s.end} fill="rgba(186,117,23,.12)"
+            <ReferenceArea key={i} x1={s.start} x2={s.end} fill="rgba(245,158,11,0.08)"
               label={{ value: 'STALL', fontSize: 9, fill: '#BA7517', position: 'insideTop' }} />
           ))}
           {cook.probes.map((p, i) => (
-            <ReferenceLine key={`r${i}`} y={p.target} stroke={COLORS[i]} strokeDasharray="5 3" strokeOpacity={.45} />
+            <ReferenceLine key={`r${i}`} y={p.target} stroke={PROBE_COLORS[i % PROBE_COLORS.length]} strokeDasharray="5 3" strokeOpacity={.45} />
           ))}
           {cook.smokerTarget && (
             <ReferenceLine y={cook.smokerTarget} stroke="#999" strokeDasharray="5 3" strokeOpacity={.3} />
           )}
           {cook.probes.map((p, i) => (
             <Line key={i} type="monotone" dataKey={`p${i}`} name={p.name}
-              stroke={COLORS[i]} dot={{ r: 3, fill: COLORS[i] }} strokeWidth={2} connectNulls />
+              stroke={PROBE_COLORS[i % PROBE_COLORS.length]} dot={{ r: 3, fill: PROBE_COLORS[i % PROBE_COLORS.length] }} strokeWidth={2} connectNulls />
           ))}
           <Line type="monotone" dataKey="smoker" name="Smoker"
             stroke="#aaa" strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} connectNulls />
