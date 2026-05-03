@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ChevronLeft, Trash2, Share2, Star, BarChart2, FileText } from 'lucide-react';
+import ShareButton from './ShareButton';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import TempChart, { buildChartData, analyzeProbe } from './TempChart';
 import { PROBE_COLORS, dur, shortDate } from '../utils/helpers';
@@ -10,6 +11,7 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
   const [compareId, setCompareId] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editRating, setEditRating] = useState(0);
+  const chartContainerRef = useRef(null);
 
   const detailCook = cooks.find(c => c.id === detailId);
 
@@ -60,9 +62,12 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
           <div style={{ fontWeight: 500, fontSize: 15 }}>{detailCook.name}</div>
           <div style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{shortDate(detailCook.startTime)} · {dur(detailCook.startTime, detailCook.endTime)}</div>
         </div>
-        <button className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => onDelete(detailCook.id)}>
-          <Trash2 size={13} /> Delete
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <ShareButton cook={detailCook} chartContainerRef={chartContainerRef} flash={flash} />
+          <button className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => onDelete(detailCook.id)}>
+            <Trash2 size={13} /> Delete
+          </button>
+        </div>
       </div>
 
       {/* Sub-tab nav */}
@@ -119,7 +124,9 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
               <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Temperature graph</div>
               {analyses[0]?.stallSegs.length > 0 && <div style={{ fontSize: 11, color: 'var(--amber)' }}>Stall regions highlighted</div>}
             </div>
-            <TempChart cook={detailCook} height={280} showStall analyses={analyses} />
+            <div ref={chartContainerRef}>
+              <TempChart cook={detailCook} height={280} showStall analyses={analyses} />
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: '.5rem' }}>
               {detailCook.probes.map((p, i) => (
                 <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text2)' }}>
