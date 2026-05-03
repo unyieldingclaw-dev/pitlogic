@@ -44,16 +44,6 @@ export default function ActiveTab({
             </div>
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label>Smoker target (°F)</label>
-            <input
-              type="number"
-              style={{ width: 150 }}
-              value={form.smokerTarget}
-              onChange={e => setForm(f => ({ ...f, smokerTarget: e.target.value }))}
-            />
-          </div>
-
           {guide && (
             <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
               borderRadius: 10, padding: '.875rem', marginBottom: '1rem' }}>
@@ -85,28 +75,48 @@ export default function ActiveTab({
 
           <hr className="divider" />
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.75rem' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 14 }}>Probes ({form.probes.length})</span>
-            <button className="btn" onClick={() => setForm(f => ({ ...f, probes: [...f.probes, { name: `Probe ${f.probes.length + 1}`, target: G[f.cut]?.pull || 165 }] }))}>
-              + Add probe
-            </button>
-          </div>
+          {/* Ambient probe — always present, non-removable */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: 12, color: 'var(--text3)', textTransform: 'uppercase',
+              letterSpacing: '0.08em', marginBottom: 8 }}>Probes</div>
 
-          {form.probes.map((p, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-end' }}>
+            {/* Ambient row */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-end',
+              padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)',
+              border: '1px solid rgba(90,90,85,0.4)' }}>
               <div style={{ flex: 2 }}>
-                {i === 0 && <label>Probe label</label>}
-                <input value={p.name} onChange={e => setForm(f => ({ ...f, probes: f.probes.map((pp, j) => j === i ? { ...pp, name: e.target.value } : pp) }))} />
+                <label style={{ borderBottom: '1.5px solid var(--ash)', paddingBottom: 2, display: 'block', marginBottom: 4 }}>Ambient / Smoker</label>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text3)' }}>Wired ambient probe</div>
               </div>
               <div style={{ flex: 1 }}>
-                {i === 0 && <label>Target °F</label>}
-                <input type="number" value={p.target} onChange={e => setForm(f => ({ ...f, probes: f.probes.map((pp, j) => j === i ? { ...pp, target: e.target.value } : pp) }))} />
+                <label>Target °F</label>
+                <input type="number" value={form.smokerTarget}
+                  onChange={e => setForm(f => ({ ...f, smokerTarget: e.target.value }))} />
               </div>
-              {i > 0 && (
-                <button className="btn-danger" style={{ flexShrink: 0 }} onClick={() => setForm(f => ({ ...f, probes: f.probes.filter((_, j) => j !== i) }))}>×</button>
-              )}
             </div>
-          ))}
+
+            {/* Meat probes */}
+            {form.probes.map((p, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-end' }}>
+                <div style={{ flex: 2 }}>
+                  {i === 0 && <label>Probe label</label>}
+                  <input value={p.name} onChange={e => setForm(f => ({ ...f, probes: f.probes.map((pp, j) => j === i ? { ...pp, name: e.target.value } : pp) }))} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  {i === 0 && <label>Target °F</label>}
+                  <input type="number" value={p.target} onChange={e => setForm(f => ({ ...f, probes: f.probes.map((pp, j) => j === i ? { ...pp, target: e.target.value } : pp) }))} />
+                </div>
+                {i > 0 && (
+                  <button className="btn-danger" style={{ flexShrink: 0 }} onClick={() => setForm(f => ({ ...f, probes: f.probes.filter((_, j) => j !== i) }))}>×</button>
+                )}
+              </div>
+            ))}
+
+            <button className="btn" style={{ fontSize: 12, marginTop: 4 }}
+              onClick={() => setForm(f => ({ ...f, probes: [...f.probes, { name: `Probe ${f.probes.length + 1}`, target: G[f.cut]?.pull || 165 }] }))}>
+              + Add meat probe
+            </button>
+          </div>
 
           <button className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: 15, marginTop: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} onClick={onStart}>
