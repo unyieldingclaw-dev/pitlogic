@@ -3,11 +3,15 @@ import { MEATS } from './data/meats';
 import { G } from './data/cuts';
 import { save, load } from './hooks/useStorage.js';
 import { dur, shortDate } from './utils/helpers';
+import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
 import GuideTab from './components/GuideTab';
 import DetailView from './components/DetailView';
 import StallCard from './components/StallCard';
+import DashboardTab from './components/DashboardTab';
+import AnalyticsTab from './components/AnalyticsTab';
+import RecipesTab from './components/RecipesTab';
 
 function parseCSV(text, cook) {
   const lines = text.trim().split('\n'); if (lines.length < 2) return null;
@@ -29,7 +33,7 @@ function parseCSV(text, cook) {
 }
 
 export default function App() {
-  const [tab, setTab]               = useState('history');
+  const [tab, setTab]               = useState('dashboard');
   const [view, setView]             = useState('history');
   const [cooks, setCooks]           = useState([]);
   const [activeId, setActiveId]     = useState(null);
@@ -46,26 +50,21 @@ export default function App() {
 
   const activeCook = cooks.find(c => c.id === activeId);
 
-  /* ── Timer ── */
   useEffect(() => {
     if (activeId) { const t = setInterval(() => setTick(n => n + 1), 6000); return () => clearInterval(t); }
   }, [activeId]);
 
-  /* ── Load from storage ── */
   useEffect(() => {
     const d = load();
     if (d) { setCooks(d.cooks || []); setActiveId(d.aid || null); setDismissed(d.dis || {}); }
     setLoaded(true);
   }, []);
 
-  /* ── Persist ── */
   const persist = (nc, aid, dis) => save({ cooks: nc, aid, dis });
   const update  = (nc, aid = activeId, dis = dismissed) => { setCooks(nc); persist(nc, aid, dis); };
 
-  /* ── Flash toast ── */
   const flash = m => { setMsg(m); setTimeout(() => setMsg(''), 2500); };
 
-  /* ── Auto-fill form when meat/cut changes ── */
   useEffect(() => {
     const cuts = MEATS[form.meat] || [];
     if (!cuts.includes(form.cut)) {
@@ -83,7 +82,6 @@ export default function App() {
     if (activeCook) setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' });
   }, [activeId]);
 
-  /* ── Alert detection ── */
   const getStalls = cook => {
     if (!cook) return {};
     const stalls = {};
@@ -118,7 +116,6 @@ export default function App() {
   const wrapAlert = getWrapAlert(activeCook);
   const coAlert   = getCarryover(activeCook);
 
-  /* ── Cook actions ── */
   const startCook = () => {
     const now = Date.now();
     const cook = {
@@ -203,101 +200,165 @@ export default function App() {
     else endCook();
   };
 
-  if (!loaded) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text2)' }}>Loading your cooks...</div>;
+  const handleNavClick = id => {
+    setTab(id);
+    if (id === 'active') {
+      if (!activeId) setView('new'); else setView('active');
+    }
+    if (id !== 'history' && id !== 'dashboard') setDetailId(null);
+  };
 
-  const isDetail  = view === 'detail';
-  const isNewOrActive = tab === 'active';
+  if (!loaded) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text2)' }}>Loading...</div>;
+
+  const isDetail = view === 'detail';
+
+  const NAV_ITEMS = [
+    { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', mobileLabel: 'Home' },
+    { id: 'active',    Icon: Flame,           label: activeId ? 'Active Cook' : 'New Cook', mobileLabel: activeId ? 'Active' : 'Cook' },
+    { id: 'history',   Icon: Clock,            label: 'History',   mobileLabel: 'History' },
+    { id: 'analytics', Icon: BarChart2,         label: 'Analytics', mobileLabel: 'Stats' },
+    { id: 'recipes',   Icon: FlaskConical,      label: 'Recipes',   mobileLabel: 'Recipes' },
+  ];
 
   return (
-    <div>
+    <div id="root">
       {/* Toast */}
       {msg && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: 'var(--amber)', color: '#fff', padding: '9px 20px', borderRadius: 20, fontSize: 13, fontWeight: 500, zIndex: 999 }}>
+        <div style={{
+          position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--ember)', color: '#fff', padding: '9px 20px',
+          borderRadius: 20, fontSize: 13, fontWeight: 500, zIndex: 999,
+          boxShadow: '0 4px 20px rgba(255,107,53,0.4)'
+        }}>
           {msg}
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0 .5rem', borderBottom: '0.5px solid var(--border)', marginBottom: '.5rem' }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 500 }}>RFX Cook Tracker</div>
-          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 1 }}>ThermoWorks RFX · Traeger guide + pitmaster tools</div>
+      {/* Sidebar (desktop) */}
+      <aside className="app-sidebar" style={{
+        display: 'none', flexDirection: 'column',
+        background: 'var(--surface)', borderRight: '1px solid var(--border2)',
+        padding: '1.5rem 0', minHeight: '100vh', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+      }} id="app-sidebar">
+        <div style={{ padding: '0 1.25rem 1.5rem', borderBottom: '1px solid var(--border2)', marginBottom: '1rem' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--ember)',
+            textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>RFX</div>
+          <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text3)', marginTop: 2, textTransform: 'uppercase' }}>Cook Tracker</div>
         </div>
-        {activeId && activeCook && tab !== 'active' && (
-          <button className="btn" style={{ borderColor: 'var(--amber)', color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
-            onClick={() => { setView('active'); setTab('active'); }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
-            Active
-          </button>
+
+        {activeId && activeCook && (
+          <div style={{ margin: '0 .75rem 1rem', padding: '8px 12px', background: 'rgba(255,107,53,0.1)',
+            borderRadius: 8, border: '1px solid rgba(255,107,53,0.3)', cursor: 'pointer' }}
+            onClick={() => handleNavClick('active')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ember)', fontWeight: 500 }}>
+              <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+              ACTIVE COOK
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, fontFamily: 'var(--mono)' }}>{activeCook.name}</div>
+          </div>
         )}
+
+        {NAV_ITEMS.map(({ id, Icon, label }) => (
+          <button key={id} onClick={() => handleNavClick(id)} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '11px 1.25rem', border: 'none',
+            background: tab === id ? 'rgba(255,107,53,0.1)' : 'transparent',
+            color: tab === id ? 'var(--ember)' : 'var(--text2)',
+            fontSize: 14, fontFamily: 'var(--font)',
+            borderLeft: `3px solid ${tab === id ? 'var(--ember)' : 'transparent'}`,
+            cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
+          }}>
+            <Icon size={18} />{label}
+          </button>
+        ))}
+      </aside>
+
+      {/* Main area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Header */}
+        <header style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '1rem',
+          background: 'linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%)',
+          borderBottom: '1px solid var(--border)',
+          position: 'sticky', top: 0, zIndex: 10,
+        }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700,
+              color: 'var(--ember)', textShadow: '0 0 16px rgba(255,107,53,0.4)', letterSpacing: '0.05em', lineHeight: 1 }}>RFX</div>
+            <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text3)', textTransform: 'uppercase' }}>Cook Tracker</div>
+          </div>
+          {activeId && activeCook && tab !== 'active' && (
+            <button className="btn" style={{ borderColor: 'rgba(255,107,53,0.4)', color: 'var(--ember)',
+              display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}
+              onClick={() => handleNavClick('active')}>
+              <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+              Active Cook
+            </button>
+          )}
+        </header>
+
+        {/* Page content */}
+        <main className="app-content">
+          {isDetail && (
+            <DetailView cooks={cooks} detailId={detailId}
+              onBack={() => { setView('history'); setTab('history'); }}
+              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} />
+          )}
+          {!isDetail && tab === 'dashboard' && (
+            <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook} tick={tick}
+              onGoActive={() => handleNavClick('active')}
+              onNewCook={() => { setTab('active'); setView('new'); }}
+              onSelectCook={id => { setDetailId(id); setView('detail'); }} />
+          )}
+          {!isDetail && tab === 'history' && (
+            <HistoryTab cooks={cooks} activeId={activeId} activeCook={activeCook} tick={tick}
+              onSelectCook={id => { setDetailId(id); setView('detail'); }}
+              onNewCook={() => { setView('new'); setTab('active'); }}
+              onGoActive={() => { setView('active'); setTab('active'); }} />
+          )}
+          {!isDetail && tab === 'active' && (
+            <ActiveTab view={view} form={form} setForm={setForm}
+              activeCook={activeCook} entry={entry} setEntry={setEntry}
+              stalls={stalls} wrapAlert={wrapAlert} coAlert={coAlert}
+              confirmEnd={confirmEnd} setConfirmEnd={setConfirmEnd}
+              tick={tick} onStart={startCook} onEnd={handleDismiss}
+              onLog={logReading} onCSV={handleCSV} onGoGuide={goGuide} />
+          )}
+          {!isDetail && tab === 'analytics' && (
+            <AnalyticsTab cooks={cooks} />
+          )}
+          {!isDetail && tab === 'guide' && (
+            <GuideTab guideKey={guideKey} setGuideKey={setGuideKey}
+              guideCat={guideCat} setGuideCat={setGuideCat} onStartCook={startFromGuide} />
+          )}
+          {!isDetail && tab === 'recipes' && (
+            <RecipesTab flash={flash} />
+          )}
+          {!isDetail && tab === 'stall' && <StallCard />}
+        </main>
       </div>
 
-      {/* Nav */}
-      <div style={{ display: 'flex', borderBottom: '0.5px solid var(--border)', marginBottom: '1.5rem', overflowX: 'auto' }}>
-        <button className={`nav-tab${tab === 'history' && !isDetail ? ' active' : ''}`} onClick={() => { setTab('history'); setView('history'); }}>📋 History</button>
-        <button className={`nav-tab${tab === 'active' ? ' active' : ''}`} onClick={() => { setTab('active'); if (!activeId) setView('new'); else setView('active'); }}>
-          {activeId
-            ? <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>🔥 Active <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block', animation: 'pulse 1.5s infinite' }} /></span>
-            : '🔥 New cook'
-          }
-        </button>
-        <button className={`nav-tab${tab === 'guide' ? ' active' : ''}`} onClick={() => setTab('guide')}>📖 Guide</button>
-        <button className={`nav-tab${tab === 'stall' ? ' active' : ''}`} onClick={() => setTab('stall')}>🌡️ The Stall</button>
-      </div>
-
-      {/* Views */}
-      {isDetail && (
-        <DetailView
-          cooks={cooks}
-          detailId={detailId}
-          onBack={() => { setView('history'); setTab('history'); }}
-          onDelete={deleteCook}
-          onSave={saveCookNotes}
-          flash={flash}
-        />
-      )}
-      {!isDetail && tab === 'history' && (
-        <HistoryTab
-          cooks={cooks}
-          activeId={activeId}
-          activeCook={activeCook}
-          tick={tick}
-          onSelectCook={id => { setDetailId(id); setView('detail'); }}
-          onNewCook={() => { setView('new'); setTab('active'); }}
-          onGoActive={() => { setView('active'); setTab('active'); }}
-        />
-      )}
-      {!isDetail && tab === 'active' && (
-        <ActiveTab
-          view={view}
-          form={form}
-          setForm={setForm}
-          activeCook={activeCook}
-          entry={entry}
-          setEntry={setEntry}
-          stalls={stalls}
-          wrapAlert={wrapAlert}
-          coAlert={coAlert}
-          confirmEnd={confirmEnd}
-          setConfirmEnd={setConfirmEnd}
-          tick={tick}
-          onStart={startCook}
-          onEnd={handleDismiss}
-          onLog={logReading}
-          onCSV={handleCSV}
-          onGoGuide={goGuide}
-        />
-      )}
-      {!isDetail && tab === 'guide' && (
-        <GuideTab
-          guideKey={guideKey}
-          setGuideKey={setGuideKey}
-          guideCat={guideCat}
-          setGuideCat={setGuideCat}
-          onStartCook={startFromGuide}
-        />
-      )}
-      {!isDetail && tab === 'stall' && <StallCard />}
+      {/* Bottom nav (mobile) */}
+      <nav id="bottom-nav" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, height: 64,
+        background: 'var(--surface)', borderTop: '1px solid var(--border)',
+        display: 'flex', alignItems: 'stretch', zIndex: 20,
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {NAV_ITEMS.map(({ id, Icon, mobileLabel }) => (
+          <button key={id} onClick={() => handleNavClick(id)} style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: 3, border: 'none',
+            background: 'transparent',
+            color: tab === id ? 'var(--ember)' : 'var(--text3)',
+            fontSize: 10, fontFamily: 'var(--font)', cursor: 'pointer',
+            transition: 'color .15s',
+          }}>
+            <Icon size={20} />{mobileLabel}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
