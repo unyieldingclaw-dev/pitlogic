@@ -9,8 +9,8 @@ export default function ActiveTab({
   view, form, setForm,
   activeCook, entry, setEntry,
   stalls, wrapAlert, coAlert, confirmEnd, setConfirmEnd,
-  onStart, onEnd, onLog, onCSV, onGoGuide,
-  tick
+  onStart, onEnd, onLog, onCSV, onGoGuide, tick,
+  allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent
 }) {
 
   /* ── New cook form ── */
@@ -159,6 +159,23 @@ export default function ActiveTab({
           : <button className="btn-danger" onClick={() => setConfirmEnd(true)}>End Cook</button>
         }
       </div>
+
+      {/* Multi-cook tab strip */}
+      {allActiveCooks && allActiveCooks.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: '1rem', overflowX: 'auto' }}>
+          {allActiveCooks.map((c, i) => (
+            <button key={c.id} onClick={() => setActiveCookIdx(i)}
+              className={i === activeCookIdx ? 'btn-primary' : 'btn-ghost'}
+              style={{ whiteSpace: 'nowrap', fontSize: 12, padding: '6px 14px' }}>
+              {c.name || `Cook ${i + 1}`}
+            </button>
+          ))}
+          {allActiveCooks.length < 4 && (
+            <button className="btn-ghost" style={{ fontSize: 12, padding: '6px 14px' }}
+              onClick={onAddCook}>+ Add Cook</button>
+          )}
+        </div>
+      )}
 
       {/* Carryover reminder */}
       {confirmEnd && guide?.co && (

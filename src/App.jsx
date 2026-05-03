@@ -12,6 +12,7 @@ import StallCard from './components/StallCard';
 import DashboardTab from './components/DashboardTab';
 import AnalyticsTab from './components/AnalyticsTab';
 import RecipesTab from './components/RecipesTab';
+import MultiCookBar from './components/MultiCookBar';
 
 function parseCSV(text, cook) {
   const lines = text.trim().split('\n'); if (lines.length < 2) return null;
@@ -36,7 +37,8 @@ export default function App() {
   const [tab, setTab]               = useState('dashboard');
   const [view, setView]             = useState('history');
   const [cooks, setCooks]           = useState([]);
-  const [activeId, setActiveId]     = useState(null);
+  const [activeCooks, setActiveCooks] = useState([]);
+  const [activeCookIdx, setActiveCookIdx] = useState(0);
   const [detailId, setDetailId]     = useState(null);
   const [guideKey, setGuideKey]     = useState('Brisket');
   const [guideCat, setGuideCat]     = useState('Beef');
@@ -45,23 +47,25 @@ export default function App() {
   const [msg, setMsg]               = useState('');
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }] });
+  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' } });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
-  const activeCook = cooks.find(c => c.id === activeId);
+  const activeId = activeCooks[activeCookIdx] ?? null;
+  const activeCook = cooks.find(c => c.id === activeId) ?? null;
+  const allActiveCooks = activeCooks.map(id => cooks.find(c => c.id === id)).filter(Boolean);
 
   useEffect(() => {
-    if (activeId) { const t = setInterval(() => setTick(n => n + 1), 6000); return () => clearInterval(t); }
-  }, [activeId]);
+    if (activeCooks.length > 0) { const t = setInterval(() => setTick(n => n + 1), 6000); return () => clearInterval(t); }
+  }, [activeCooks.length]);
 
   useEffect(() => {
     const d = load();
-    if (d) { setCooks(d.cooks || []); setActiveId(d.aid || null); setDismissed(d.dis || {}); }
+    if (d) { setCooks(d.cooks || []); setActiveCooks(d.activeCooks || (d.aid ? [d.aid] : [])); setDismissed(d.dis || {}); }
     setLoaded(true);
   }, []);
 
-  const persist = (nc, aid, dis) => save({ cooks: nc, aid, dis });
-  const update  = (nc, aid = activeId, dis = dismissed) => { setCooks(nc); persist(nc, aid, dis); };
+  const persist = (nc, ac, dis) => save({ cooks: nc, activeCooks: ac, dis });
+  const update  = (nc, ac = activeCooks, dis = dismissed) => { setCooks(nc); persist(nc, ac, dis); };
 
   const flash = m => { setMsg(m); setTimeout(() => setMsg(''), 2500); };
 
@@ -110,7 +114,7 @@ export default function App() {
     return cook.probes.some(p => { const last = p.readings[p.readings.length - 1]; return last && last.temp >= (g.pull - g.co - 5); });
   };
 
-  const dis = key => { const d = { ...dismissed, [key]: true }; setDismissed(d); persist(cooks, activeId, d); };
+  const dis = key => { const d = { ...dismissed, [key]: true }; setDismissed(d); persist(cooks, activeCooks, d); };
 
   const stalls    = getStalls(activeCook);
   const wrapAlert = getWrapAlert(activeCook);
@@ -123,18 +127,26 @@ export default function App() {
       meat: form.meat, cut: form.cut, smokerTarget: Number(form.smokerTarget),
       startTime: now, endTime: null, status: 'active',
       probes: form.probes.map((p, i) => ({ id: i, name: p.name, target: Number(p.target), readings: [] })),
-      smokerReadings: [], notes: '', rating: 0
+      smokerReadings: [], notes: '', rating: 0,
+      weight: null, equipment: '', linkedRecipes: [],
+      mopTimer: form.mop?.enabled
+        ? { enabled: true, intervalMin: form.mop.intervalMin, label: form.mop.label || '', events: [] }
+        : null,
     };
-    const nc = [cook, ...cooks]; setCooks(nc); setActiveId(cook.id);
-    persist(nc, cook.id, dismissed);
-    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }] });
+    const nc = [cook, ...cooks];
+    const newActive = [...activeCooks, cook.id];
+    setCooks(nc); setActiveCooks(newActive); setActiveCookIdx(newActive.length - 1);
+    persist(nc, newActive, dismissed);
+    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' } });
     setView('active'); setTab('active');
   };
 
   const endCook = () => {
     const id = activeId;
     const nc = cooks.map(c => c.id === id ? { ...c, status: 'complete', endTime: Date.now() } : c);
-    setCooks(nc); setActiveId(null); persist(nc, null, dismissed);
+    const newActive = activeCooks.filter(aid => aid !== id);
+    setCooks(nc); setActiveCooks(newActive); setActiveCookIdx(Math.max(0, activeCookIdx - 1));
+    persist(nc, newActive, dismissed);
     setDetailId(id); setConfirmEnd(false); setView('detail'); setTab('history');
   };
 
@@ -169,9 +181,9 @@ export default function App() {
   const deleteCook = id => {
     if (!confirm('Delete this cook?')) return;
     const nc = cooks.filter(c => c.id !== id);
-    const na = activeId === id ? null : activeId;
-    setCooks(nc); persist(nc, na, dismissed);
-    if (activeId === id) setActiveId(null);
+    const newActive = activeCooks.filter(aid => aid !== id);
+    setCooks(nc); setActiveCooks(newActive); persist(nc, newActive, dismissed);
+    if (activeCooks.includes(id)) setActiveCookIdx(Math.max(0, activeCookIdx - 1));
     setView('history'); setTab('history');
   };
 
@@ -198,6 +210,16 @@ export default function App() {
     else if (key.startsWith('dismiss_stall_')) dis(`stall_${activeId}_${key.split('_').pop()}`);
     else if (key === 'dismiss_co') dis(`co_${activeId}`);
     else endCook();
+  };
+
+  const logSprayEvent = cookId => {
+    const now = Date.now();
+    const mins = +((now - (cooks.find(c => c.id === cookId)?.startTime || now)) / 60000).toFixed(2);
+    const nc = cooks.map(c => {
+      if (c.id !== cookId || !c.mopTimer) return c;
+      return { ...c, mopTimer: { ...c.mopTimer, events: [...(c.mopTimer.events || []), { ts: now, time: mins }] } };
+    });
+    update(nc);
   };
 
   const handleNavClick = id => {
@@ -229,6 +251,8 @@ export default function App() {
 
   return (
     <div id="root">
+      <MultiCookBar activeCooks={allActiveCooks} />
+
       {/* Toast */}
       {msg && (
         <div style={{
@@ -330,7 +354,11 @@ export default function App() {
               stalls={stalls} wrapAlert={wrapAlert} coAlert={coAlert}
               confirmEnd={confirmEnd} setConfirmEnd={setConfirmEnd}
               tick={tick} onStart={startCook} onEnd={handleDismiss}
-              onLog={logReading} onCSV={handleCSV} onGoGuide={goGuide} />
+              onLog={logReading} onCSV={handleCSV} onGoGuide={goGuide}
+              allActiveCooks={allActiveCooks} activeCookIdx={activeCookIdx}
+              setActiveCookIdx={setActiveCookIdx}
+              onAddCook={() => setView('new')}
+              onSprayEvent={logSprayEvent} />
           )}
           {!isDetail && tab === 'analytics' && (
             <AnalyticsTab cooks={cooks} />
