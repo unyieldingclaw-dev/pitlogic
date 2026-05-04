@@ -248,6 +248,7 @@ export default function App() {
     { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard',  mobileLabel: 'Home'    },
     { id: 'active',    Icon: Flame,           label: activeId ? 'Active Cook' : 'New Cook', mobileLabel: activeId ? 'Active' : 'Cook' },
     { id: 'history',   Icon: Clock,           label: 'History',    mobileLabel: 'History' },
+    { id: 'analytics', Icon: BarChart2,        label: 'Analytics',  mobileLabel: 'Stats'   },
     { id: 'guide',     Icon: BookOpen,        label: 'Guides',     mobileLabel: 'Guides'  },
     { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
   ];

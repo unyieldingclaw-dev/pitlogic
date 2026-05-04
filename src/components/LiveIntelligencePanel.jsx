@@ -13,7 +13,7 @@ export default function LiveIntelligencePanel({ probes }) {
       </div>
       {activeProbes.map((probe, i) => {
         const rate = computeClimbRate(probe.readings);
-        const eta = computeETA(probe.readings, 203);
+        const eta = computeETA(probe.readings, probe.target ?? 203);
         const stall = computeStallProbability(probe.readings);
         const dotsLit = stall.pct === 0 ? 1 : stall.pct === 50 ? 3 : 5;
         const dotColor = stall.level === 'low' ? 'var(--green)' : 'var(--amber)';
