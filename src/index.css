@@ -68,6 +68,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing:
   font-size: clamp(1.8rem, 5vw, 3rem);
   font-weight: 500;
   line-height: 1;
+  transition: color 0.5s ease;
 }
 
 /* ── Forms ── */
@@ -298,6 +299,18 @@ label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px
 .fadein { animation: fadein .2s ease; }
 .pulse  { animation: pulse 1.5s infinite; }
 .ember-pulse { animation: ember-pulse 2s infinite; }
+
+@keyframes stall-border-pulse {
+  0%,100% { border-color: rgba(245,158,11,.4); box-shadow: 0 0 10px rgba(245,158,11,.15); }
+  50%      { border-color: rgba(245,158,11,.9); box-shadow: 0 0 28px rgba(245,158,11,.35); }
+}
+.stall-coach-active { animation: stall-border-pulse 2.5s ease-in-out infinite; }
+
+@keyframes approaching-pulse {
+  0%,100% { border-left-color: rgba(245,158,11,.5); }
+  50%      { border-left-color: rgba(245,158,11,1); }
+}
+.stall-approaching { animation: approaching-pulse 3s ease-in-out infinite; }
 
 /* ── Star rating ── */
 .star { font-size: 20px; cursor: pointer; transition: transform .1s; }
