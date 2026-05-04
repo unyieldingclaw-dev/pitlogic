@@ -199,6 +199,24 @@ describe('computeStallProbability', () => {
     expect(result.level).toBe('approaching');
     expect(result.pct).toBe(50);
   });
+
+  it('returns approaching when climb rate is slow and positive in stall zone', () => {
+    const readings = [
+      { time: 0, temp: 160 },
+      { time: 60, temp: 161 },
+    ];
+    const result = computeStallProbability(readings);
+    expect(result.level).toBe('approaching');
+  });
+
+  it('returns low when rate is negative in stall zone', () => {
+    const readings = [
+      { time: 0, temp: 165 },
+      { time: 30, temp: 163 },
+    ];
+    const result = computeStallProbability(readings);
+    expect(result.level).toBe('low');
+  });
 });
 
 describe('buildAverageCurve', () => {

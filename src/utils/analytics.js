@@ -72,7 +72,7 @@ export function computeETA(readings, target) {
   const last = readings[readings.length - 1].temp;
   if (last >= target) return 0;
   const rate = computeClimbRate(readings); // °F/hr
-  if (!rate || rate <= 0) return null;
+  if (rate === null || rate <= 0) return null;
   return Math.round((target - last) / rate * 60); // minutes
 }
 
@@ -105,7 +105,7 @@ export function computeStallProbability(readings) {
 
   // Check approaching via slow climb rate
   const rate = computeClimbRate(readings);
-  if (rate !== null && rate < 4) {
+  if (rate !== null && rate > 0 && rate < 4) {
     return { level: 'approaching', label: 'Approaching Stall', pct: 50 };
   }
 
