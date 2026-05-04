@@ -29,8 +29,9 @@ export default function ActiveTab({
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, marginBottom: '1.25rem', letterSpacing: '0.03em' }}>New Cook Setup</div>
         <div className="card">
           <div style={{ marginBottom: '1rem' }}>
-            <label>Cook name (optional)</label>
+            <label htmlFor="cook-name">Cook name (optional)</label>
             <input
+              id="cook-name"
               placeholder={`e.g. ${form.meat} — ${form.cut}`}
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -39,14 +40,14 @@ export default function ActiveTab({
 
           <div className="g2" style={{ marginBottom: '1rem' }}>
             <div>
-              <label>Meat type</label>
-              <select value={form.meat} onChange={e => setForm(f => ({ ...f, meat: e.target.value }))}>
+              <label htmlFor="cook-meat">Meat type</label>
+              <select id="cook-meat" value={form.meat} onChange={e => setForm(f => ({ ...f, meat: e.target.value }))}>
                 {Object.keys(MEATS).map(m => <option key={m}>{m}</option>)}
               </select>
             </div>
             <div>
-              <label>Cut</label>
-              <select value={form.cut} onChange={e => setForm(f => ({ ...f, cut: e.target.value }))}>
+              <label htmlFor="cook-cut">Cut</label>
+              <select id="cook-cut" value={form.cut} onChange={e => setForm(f => ({ ...f, cut: e.target.value }))}>
                 {(MEATS[form.meat] || []).map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
@@ -130,7 +131,8 @@ export default function ActiveTab({
 
           {/* More Details (collapsible) */}
           <div style={{ marginBottom: '1rem' }}>
-            <button type="button" className="btn-ghost" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, padding: '8px 0' }}
+            <button type="button" className="btn-ghost" aria-expanded={showMore}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, padding: '8px 0' }}
               onClick={() => setShowMore(v => !v)}>
               <span style={{ color: 'var(--text2)' }}>More Details</span>
               {showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -271,7 +273,7 @@ export default function ActiveTab({
 
       {/* Carryover reminder */}
       {confirmEnd && guide?.co && (
-        <div className="alert alert-amber" style={{ marginBottom: '1rem' }}>
+        <div role="alert" className="alert alert-amber" style={{ marginBottom: '1rem' }}>
           <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--amber)', marginTop: 1 }} />
           <div>
             <div style={{ fontWeight: 500, marginBottom: 3 }}>Carryover reminder</div>
@@ -284,7 +286,7 @@ export default function ActiveTab({
 
       {/* Wrap alert */}
       {wrapAlert && (
-        <div className="alert alert-green" style={{ marginBottom: '1rem', justifyContent: 'space-between' }}>
+        <div role="alert" className="alert alert-green" style={{ marginBottom: '1rem', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <CheckCircle size={16} style={{ flexShrink: 0, color: 'var(--green)', marginTop: 1 }} />
             <div>
@@ -307,7 +309,7 @@ export default function ActiveTab({
 
       {/* Carryover approaching */}
       {coAlert && (
-        <div className="alert alert-ember" style={{ marginBottom: '1rem', justifyContent: 'space-between' }}>
+        <div role="alert" className="alert alert-ember" style={{ marginBottom: '1rem', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--ember)', marginTop: 1 }} />
             <div>

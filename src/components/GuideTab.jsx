@@ -25,13 +25,15 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
         {/* Cut list */}
         <div>
           {(MEATS[guideCat] || []).map(cut => (
-            <div
+            <button
               key={cut}
               className={`guide-cut${cut === guideKey ? ' active' : ''}`}
+              aria-current={cut === guideKey ? 'true' : undefined}
+              style={{ background: 'none', width: '100%', textAlign: 'left', fontFamily: 'inherit' }}
               onClick={() => setGuideKey(cut)}
             >
               {cut}
-            </div>
+            </button>
           ))}
         </div>
 

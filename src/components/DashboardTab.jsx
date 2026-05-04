@@ -13,9 +13,9 @@ function StatPill({ label, value }) {
 
 function RecentCard({ cook, onClick }) {
   return (
-    <div onClick={onClick} style={{ background: 'var(--surface)', border: '1px solid var(--border)',
+    <button onClick={onClick} style={{ background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 12, padding: '1rem', cursor: 'pointer', minWidth: 160,
-      transition: 'border-color .15s' }}
+      transition: 'border-color .15s', textAlign: 'left', fontFamily: 'inherit' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--ember)'}
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
       <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>{shortDate(cook.startTime)}</div>
@@ -26,7 +26,7 @@ function RecentCard({ cook, onClick }) {
         ))}
       </div>
       {cook.endTime && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, fontFamily: 'var(--mono)' }}>{dur(cook.startTime, cook.endTime)}</div>}
-    </div>
+    </button>
   );
 }
 
@@ -48,10 +48,11 @@ export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoAc
 
       {/* Active cook card */}
       {activeCook && (
-        <div onClick={onGoActive} style={{
+        <button onClick={onGoActive} style={{
           background: 'var(--surface)', border: '1px solid rgba(255,107,53,0.4)',
           borderRadius: 14, padding: '1.25rem', marginBottom: '1.5rem', cursor: 'pointer',
           boxShadow: '0 0 24px rgba(255,107,53,0.12)',
+          width: '100%', textAlign: 'left', fontFamily: 'inherit',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -78,7 +79,7 @@ export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoAc
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12, color: 'var(--ember)', fontSize: 13 }}>
             <span>View active cook</span><ChevronRight size={14} />
           </div>
-        </div>
+        </button>
       )}
 
       {/* Quick start */}

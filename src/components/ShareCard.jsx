@@ -113,7 +113,7 @@ export default function ShareButton({ cook, chartContainerRef, flash }) {
           <div className="card" style={{ maxWidth: 400, width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 18 }}>Share This Cook</div>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer' }}
+              <button aria-label="Close share panel" style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer' }}
                 onClick={() => setShowPanel(false)}><X size={18} /></button>
             </div>
             <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: '1.25rem' }}>

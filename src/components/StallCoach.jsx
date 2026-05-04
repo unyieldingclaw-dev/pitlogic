@@ -13,7 +13,7 @@ export default function StallCoach({ activeCook, stalls, cooks, stallProbs, onDi
 
   if (isApproaching) {
     return (
-      <div className="stall-approaching" style={{
+      <div role="status" className="stall-approaching" style={{
         borderLeft: '4px solid rgba(245,158,11,0.7)',
         borderRadius: 10, padding: '1rem', marginBottom: '1rem',
         background: 'rgba(245,158,11,0.06)',
@@ -42,7 +42,7 @@ export default function StallCoach({ activeCook, stalls, cooks, stallProbs, onDi
     : null;
 
   return (
-    <div className="stall-coach-active" style={{
+    <div role="alert" className="stall-coach-active" style={{
       border: '1px solid rgba(245,158,11,0.5)',
       borderRadius: 12, padding: '1rem', marginBottom: '1rem',
       background: 'rgba(245,158,11,0.05)',

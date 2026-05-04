@@ -16,7 +16,7 @@ export default function MopTimerBadge({ countdown, alert, label, onDismiss }) {
         {alert ? `Spray time! ${label || ''}` : `Spray in ${countdown}`}
       </div>
       {alert && (
-        <div className="alert alert-amber fadein" style={{ marginTop: '0.75rem' }}>
+        <div role="alert" className="alert alert-amber fadein" style={{ marginTop: '0.75rem' }}>
           <Droplets size={18} style={{ flexShrink: 0, color: 'var(--amber)', marginTop: 1 }} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 500, marginBottom: 4 }}>Time to spray!</div>

@@ -72,7 +72,7 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
       {/* Sub-tab nav */}
       <div style={{ display: 'flex', borderBottom: '0.5px solid var(--border)', marginBottom: '1rem', overflowX: 'auto' }}>
         {SUB_TABS.map(({ key, label }) => (
-          <button key={key} className={`nav-tab${subTab === key ? ' active' : ''}`} onClick={() => setSubTab(key)}>{label}</button>
+          <button key={key} className={`nav-tab${subTab === key ? ' active' : ''}`} aria-current={subTab === key ? 'page' : undefined} onClick={() => setSubTab(key)}>{label}</button>
         ))}
       </div>
 
@@ -296,17 +296,18 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
       {subTab === 'notes' && (
         <div className="card">
           <div style={{ fontSize: 14, fontWeight: 500, marginBottom: '.75rem' }}>Notes & Rating</div>
-          <div style={{ marginBottom: '.75rem' }}>
+          <div role="group" aria-label="Rating" style={{ marginBottom: '.75rem' }}>
             {[1, 2, 3, 4, 5].map(n => (
-              <span key={n} style={{ fontSize: 24, cursor: 'pointer',
-                color: n <= editRating ? 'var(--amber)' : 'var(--border2)', marginRight: 3 }}
-                onClick={() => setEditRating(n)}>
+              <button key={n} aria-label={`${n} star${n !== 1 ? 's' : ''}`} aria-pressed={n <= editRating}
+                onClick={() => setEditRating(n)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px' }}>
                 <Star size={20} fill={n <= editRating ? 'var(--amber)' : 'none'} color={n <= editRating ? 'var(--amber)' : 'var(--border2)'} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </span>
+              </button>
             ))}
           </div>
-          <label style={{ fontSize: 12, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Your notes</label>
+          <label htmlFor="cook-notes" style={{ fontSize: 12, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Your notes</label>
           <textarea
+            id="cook-notes"
             style={{ width: '100%', minHeight: 120 }}
             placeholder="How did it turn out? What would you change next time?"
             value={editNotes}

@@ -6,9 +6,10 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
   return (
     <div className="fadein">
       {activeId && activeCook && (
-        <div
+        <button
           className="card"
-          style={{ borderColor: 'rgba(255,107,53,0.35)', cursor: 'pointer', marginBottom: '1.25rem' }}
+          style={{ borderColor: 'rgba(255,107,53,0.35)', cursor: 'pointer', marginBottom: '1.25rem',
+            width: '100%', textAlign: 'left', fontFamily: 'inherit' }}
           onClick={onGoActive}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -27,7 +28,7 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
               Monitor <ChevronRight size={12} />
             </span>
           </div>
-        </div>
+        </button>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -47,10 +48,10 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
         const allT = cook.probes.flatMap(p => p.readings.map(r => r.temp));
         const peak = allT.length ? Math.max(...allT) : null;
         return (
-          <div
+          <button
             key={cook.id}
             className="card"
-            style={{ cursor: 'pointer', marginBottom: '.75rem' }}
+            style={{ cursor: 'pointer', marginBottom: '.75rem', width: '100%', textAlign: 'left', fontFamily: 'inherit' }}
             onClick={() => onSelectCook(cook.id)}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -108,7 +109,7 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
                 )}
               </div>
             )}
-          </div>
+          </button>
         );
       })}
     </div>

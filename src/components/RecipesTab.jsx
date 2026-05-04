@@ -10,7 +10,8 @@ function RecipeCard({ recipe, onDelete }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="card" style={{ marginBottom: '.625rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+      <button aria-expanded={open} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        cursor: 'pointer', width: '100%', textAlign: 'left', background: 'none', border: 'none', fontFamily: 'inherit', padding: 0 }}
         onClick={() => setOpen(o => !o)}>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600 }}>{recipe.name}</div>
@@ -20,13 +21,13 @@ function RecipeCard({ recipe, onDelete }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button className="btn-danger" style={{ padding: '4px 10px', fontSize: 12 }}
+          <button className="btn-danger" aria-label="Delete recipe" style={{ padding: '4px 10px', fontSize: 12 }}
             onClick={e => { e.stopPropagation(); onDelete(recipe.id); }}>
             <Trash2 size={13} />
           </button>
           {open ? <ChevronUp size={16} color="var(--text3)" /> : <ChevronDown size={16} color="var(--text3)" />}
         </div>
-      </div>
+      </button>
       {open && (
         <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border2)', paddingTop: '1rem' }}>
           {recipe.ingredients.length > 0 && (
@@ -78,9 +79,9 @@ function NewRecipeForm({ onSave, onCancel }) {
     <div className="card fadein" style={{ marginBottom: '1rem' }}>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: '1rem' }}>New Recipe</div>
       <div className="g2" style={{ marginBottom: '.75rem' }}>
-        <div><label>Name *</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Memphis Dry Rub" /></div>
-        <div><label>Category</label>
-          <select value={category} onChange={e=>setCategory(e.target.value)}>
+        <div><label htmlFor="recipe-name">Name *</label><input id="recipe-name" value={name} onChange={e=>setName(e.target.value)} placeholder="Memphis Dry Rub" /></div>
+        <div><label htmlFor="recipe-category">Category</label>
+          <select id="recipe-category" value={category} onChange={e=>setCategory(e.target.value)}>
             {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
           </select>
         </div>
@@ -99,8 +100,8 @@ function NewRecipeForm({ onSave, onCancel }) {
           </div>
         ))}
       </div>
-      <div style={{ marginBottom: '.75rem' }}><label>Instructions</label><textarea rows={3} value={instructions} onChange={e=>setInstructions(e.target.value)} placeholder="Mix all dry ingredients..." /></div>
-      <div style={{ marginBottom: '1rem' }}><label>Notes</label><input value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Great on brisket and pork butt" /></div>
+      <div style={{ marginBottom: '.75rem' }}><label htmlFor="recipe-instructions">Instructions</label><textarea id="recipe-instructions" rows={3} value={instructions} onChange={e=>setInstructions(e.target.value)} placeholder="Mix all dry ingredients..." /></div>
+      <div style={{ marginBottom: '1rem' }}><label htmlFor="recipe-notes">Notes</label><input id="recipe-notes" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Great on brisket and pork butt" /></div>
       <div style={{ display: 'flex', gap: 8 }}>
         <button className="btn-primary" onClick={submit}>Save Recipe</button>
         <button className="btn-ghost" onClick={onCancel}>Cancel</button>
@@ -179,7 +180,7 @@ export default function RecipesTab({ flash }) {
 
       <div className="nav-tabs">
         {CATEGORIES.map(c => (
-          <button key={c} className={`nav-tab${activeCat === c ? ' active' : ''}`} onClick={() => setActiveCat(c)}>
+          <button key={c} className={`nav-tab${activeCat === c ? ' active' : ''}`} aria-current={activeCat === c ? 'page' : undefined} onClick={() => setActiveCat(c)}>
             {CAT_LABELS[c]} {recipes.filter(r=>r.category===c).length > 0 && `(${recipes.filter(r=>r.category===c).length})`}
           </button>
         ))}
