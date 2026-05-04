@@ -7,10 +7,11 @@ import { PROBE_COLORS, dur, shortDate } from '../utils/helpers';
 import { G } from '../data/cuts';
 
 export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, flash }) {
-  const [subTab, setSubTab]     = useState('overview');
+  const [subTab, setSubTab]       = useState('overview');
   const [compareId, setCompareId] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editRating, setEditRating] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const chartContainerRef = useRef(null);
 
   const detailCook = cooks.find(c => c.id === detailId);
@@ -63,9 +64,16 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <ShareButton cook={detailCook} chartContainerRef={chartContainerRef} flash={flash} />
-          <button className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => onDelete(detailCook.id)}>
-            <Trash2 size={13} /> Delete
-          </button>
+          {confirmDelete
+            ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>Delete?</span>
+                <button className="btn-danger" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => onDelete(detailCook.id)}>Yes</button>
+                <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => setConfirmDelete(false)}>No</button>
+              </div>
+            : <button className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => setConfirmDelete(true)}>
+                <Trash2 size={13} /> Delete
+              </button>
+          }
         </div>
       </div>
 

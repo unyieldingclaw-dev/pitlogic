@@ -30,7 +30,8 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeId, activeCook, allActiveCooks, tick, onGoActive, onNewCook, onSelectCook }) {
+  const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
   const cutCounts = completed.reduce((a, c) => { a[c.cut] = (a[c.cut] || 0) + 1; return a; }, {});
@@ -46,11 +47,11 @@ export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoAc
         <StatPill label="Fav Cut" value={favCut.length > 8 ? favCut.slice(0,7)+'…' : favCut} />
       </div>
 
-      {/* Active cook card */}
-      {activeCook && (
-        <button onClick={onGoActive} style={{
+      {/* Active cook cards (one per active cook) */}
+      {activeCooks.map(cook => (
+        <button key={cook.id} onClick={() => onGoActive(cook.id)} style={{
           background: 'var(--surface)', border: '1px solid rgba(255,107,53,0.4)',
-          borderRadius: 14, padding: '1.25rem', marginBottom: '1.5rem', cursor: 'pointer',
+          borderRadius: 14, padding: '1.25rem', marginBottom: '1rem', cursor: 'pointer',
           boxShadow: '0 0 24px rgba(255,107,53,0.12)',
           width: '100%', textAlign: 'left', fontFamily: 'inherit',
         }}>
@@ -59,11 +60,11 @@ export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoAc
               <span className="pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: 'var(--ember)' }}>ACTIVE COOK</span>
             </div>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text2)' }}>{dur(activeCook.startTime)}</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text2)' }}>{dur(cook.startTime)}</span>
           </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, marginBottom: 10 }}>{activeCook.name}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, marginBottom: 10 }}>{cook.name}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {activeCook.probes.map((p, i) => {
+            {cook.probes.map((p, i) => {
               const last = p.readings.slice(-1)[0];
               return (
                 <div key={i} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
@@ -77,13 +78,14 @@ export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoAc
             })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12, color: 'var(--ember)', fontSize: 13 }}>
-            <span>View active cook</span><ChevronRight size={14} />
+            <span>Monitor cook</span><ChevronRight size={14} />
           </div>
         </button>
-      )}
+      ))}
+      {activeCooks.length > 0 && <div style={{ marginBottom: '0.5rem' }} />}
 
       {/* Quick start */}
-      {!activeCook && (
+      {activeCooks.length === 0 && (
         <button className="btn-primary" onClick={onNewCook}
           style={{ width: '100%', marginBottom: '1.5rem', padding: '14px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15 }}>

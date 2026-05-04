@@ -417,8 +417,15 @@ export default function App() {
               onDelete={deleteCook} onSave={saveCookNotes} flash={flash} />
           )}
           {!isDetail && tab === 'dashboard' && (
-            <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook} tick={tick}
-              onGoActive={() => handleNavClick('active')}
+            <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
+              allActiveCooks={allActiveCooks} tick={tick}
+              onGoActive={(cookId) => {
+                if (cookId) {
+                  const idx = activeCooks.indexOf(cookId);
+                  if (idx !== -1) setActiveCookIdx(idx);
+                }
+                handleNavClick('active');
+              }}
               onNewCook={() => { setTab('active'); setView('new'); }}
               onSelectCook={id => { setDetailId(id); setView('detail'); }} />
           )}

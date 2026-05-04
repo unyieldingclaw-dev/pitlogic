@@ -9,6 +9,12 @@ export function useMopTimer(activeCook, onSprayEvent) {
   const enabled = mop?.enabled && mop?.intervalMin > 0;
 
   useEffect(() => {
+    if (enabled && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, [enabled]);
+
+  useEffect(() => {
     if (!enabled) { setSecondsLeft(null); setAlert(false); return; }
     const totalSecs = mop.intervalMin * 60;
     const lastEvent = mop.events?.slice(-1)[0];
@@ -19,7 +25,16 @@ export function useMopTimer(activeCook, onSprayEvent) {
     if (remaining === 0) setAlert(true);
     intervalRef.current = setInterval(() => {
       setSecondsLeft(s => {
-        if (s <= 1) { setAlert(true); return 0; }
+        if (s <= 1) {
+          setAlert(true);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('RFX — Time to spray!', {
+              body: mop.label ? `Apply: ${mop.label}` : 'Apply your mop or spray now.',
+              icon: '/favicon.svg',
+            });
+          }
+          return 0;
+        }
         return s - 1;
       });
     }, 1000);
