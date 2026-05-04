@@ -427,7 +427,7 @@ export default function App() {
           )}
           {!isDetail && tab === 'active' && (
             <ActiveTab view={view} form={form} setForm={setForm}
-              activeCook={activeCook} entry={entry} setEntry={setEntry}
+              cooks={cooks} activeCook={activeCook} entry={entry} setEntry={setEntry}
               stalls={stalls} wrapAlert={wrapAlert} coAlert={coAlert}
               confirmEnd={confirmEnd} setConfirmEnd={setConfirmEnd}
               tick={tick} onStart={startCook} onEnd={handleDismiss}

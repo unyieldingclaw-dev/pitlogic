@@ -7,10 +7,13 @@ import { PROBE_COLORS, shortDate, elapsed } from '../utils/helpers';
 import TempChart from './TempChart';
 import { useMopTimer } from '../hooks/useMopTimer';
 import MopTimerBadge from './MopTimerBadge';
+import { computeETA, computeStallProbability } from '../utils/analytics';
+import LiveIntelligencePanel from './LiveIntelligencePanel';
+import StallCoach from './StallCoach';
 
 export default function ActiveTab({
   view, form, setForm,
-  activeCook, entry, setEntry,
+  cooks, activeCook, entry, setEntry,
   stalls, wrapAlert, coAlert, confirmEnd, setConfirmEnd,
   onStart, onEnd, onLog, onCSV, onGoGuide, tick,
   allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent
@@ -214,6 +217,19 @@ export default function ActiveTab({
   const smokerPct = lastSmok ? Math.min(100, Math.round((lastSmok.temp / activeCook.smokerTarget) * 100)) : 0;
   const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
 
+  const stallProbs = activeCook.probes.reduce((acc, probe, i) => {
+    acc[i] = computeStallProbability(probe.readings);
+    return acc;
+  }, {});
+
+  const etaMinutes = activeCook.probes.reduce((min, probe) => {
+    const last = probe.readings.slice(-1)[0];
+    if (!last) return min;
+    const eta = computeETA(probe.readings, probe.target || 203);
+    if (eta === null) return min;
+    return min === null ? eta : Math.min(min, eta);
+  }, null);
+
   return (
     <div className="fadein">
       {/* Cook header */}
@@ -221,6 +237,11 @@ export default function ActiveTab({
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18 }}>{activeCook.name}</div>
           <div style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{shortDate(activeCook.startTime)} · {elapsed(activeCook.startTime)}</div>
+          {etaMinutes !== null && (
+            <div style={{ fontSize: 11, color: 'var(--ember)', fontFamily: 'var(--mono)', marginTop: 2 }}>
+              ETA ~{etaMinutes >= 60 ? `${Math.floor(etaMinutes/60)}h ${etaMinutes%60}m` : `${etaMinutes}m`}
+            </div>
+          )}
         </div>
         {confirmEnd
           ? <div style={{ display: 'flex', gap: 6 }}>
@@ -275,19 +296,14 @@ export default function ActiveTab({
         </div>
       )}
 
-      {/* Stall alerts */}
-      {Object.entries(stalls).map(([i, temp]) => (
-        <div key={i} className="alert alert-amber" style={{ marginBottom: '1rem', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--amber)', marginTop: 1 }} />
-            <div>
-              <div style={{ fontWeight: 500, marginBottom: 3 }}>Stall detected — {activeCook.probes[i]?.name}</div>
-              <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 12 }}>Temp plateaued around {temp}°F. Options: wrap now, raise to 275°F, or wait it out.</div>
-            </div>
-          </div>
-          <button className="btn" style={{ flexShrink: 0, fontSize: 12 }} onClick={() => onEnd(`dismiss_stall_${i}`)}>Got it</button>
-        </div>
-      ))}
+      {/* Stall coach */}
+      <StallCoach
+        activeCook={activeCook}
+        stalls={stalls}
+        cooks={cooks}
+        stallProbs={stallProbs}
+        onDismiss={onEnd}
+      />
 
       {/* Carryover approaching */}
       {coAlert && (
@@ -359,6 +375,8 @@ export default function ActiveTab({
           );
         })}
       </div>
+
+      <LiveIntelligencePanel probes={activeCook.probes} />
 
       {/* Chart */}
       <div className="card" style={{ marginBottom: '.75rem' }}>
