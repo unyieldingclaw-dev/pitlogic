@@ -1,6 +1,6 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ComposedChart, Area, Line } from 'recharts';
 import { BarChart2, Flame, Clock, Star, TrendingUp } from 'lucide-react';
-import { totalStats, cooksByMonth, stallPrediction } from '../utils/analytics';
+import { totalStats, cooksByMonth, stallPrediction, buildAverageCurve } from '../utils/analytics';
 import { MEATS } from '../data/meats';
 import { useState } from 'react';
 
@@ -20,6 +20,7 @@ export default function AnalyticsTab({ cooks }) {
   const stats = totalStats(cooks);
   const monthly = cooksByMonth(cooks);
   const stall = stallPrediction(cooks, selectedCut);
+  const avgCurve = buildAverageCurve(cooks, selectedCut);
   const allCuts = Object.values(MEATS).flat();
 
   if (cooks.filter(c=>c.status==='complete').length === 0) {
@@ -49,11 +50,17 @@ export default function AnalyticsTab({ cooks }) {
           textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Cooks Per Month</div>
         <ResponsiveContainer width="100%" height={140}>
           <BarChart data={monthly} barSize={18}>
+            <defs>
+              <linearGradient id="barGrad-monthly" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#FF6B35" stopOpacity={1} />
+                <stop offset="100%" stopColor="#E8510A" stopOpacity={0.7} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
             <XAxis dataKey="label" stroke="var(--ash)" tick={{ fill: 'var(--text3)', fontSize: 10 }} />
             <YAxis allowDecimals={false} stroke="var(--ash)" tick={{ fill: 'var(--text3)', fontSize: 10 }} />
             <Tooltip contentStyle={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
-            <Bar dataKey="count" fill="var(--ember)" radius={[4,4,0,0]} />
+            <Bar dataKey="count" fill="url(#barGrad-monthly)" radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -89,6 +96,45 @@ export default function AnalyticsTab({ cooks }) {
           </div>
         )}
       </div>
+
+      {avgCurve && (
+        <div className="card" style={{ marginTop: '1.5rem' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text2)',
+            textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+            {selectedCut} Avg Temp Curve
+            <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8, textTransform: 'none',
+              letterSpacing: 0, fontFamily: 'var(--font)' }}>
+              ±1σ band · {avgCurve.sampleSize} cook{avgCurve.sampleSize > 1 ? 's' : ''}
+            </span>
+          </div>
+          <ResponsiveContainer width="100%" height={160}>
+            <ComposedChart data={avgCurve.curve} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
+              <defs>
+                <linearGradient id="sigmaFill-curve" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF6B35" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#FF6B35" stopOpacity={0.03} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="time" tickFormatter={v => `${v}m`} stroke="var(--ash)"
+                tick={{ fill: 'var(--text3)', fontSize: 10 }} />
+              <YAxis stroke="var(--ash)" tick={{ fill: 'var(--text3)', fontSize: 10 }}
+                tickFormatter={v => `${v}°`} domain={['auto', 'auto']} />
+              <Tooltip
+                formatter={(v, name) => [`${v}°F`, name]}
+                labelFormatter={l => `${l} min`}
+                contentStyle={{ background: 'var(--surface-raised)', border: '1px solid rgba(255,107,53,0.3)',
+                  borderRadius: 10, fontSize: 12 }}
+              />
+              <Area dataKey="lower" stroke="none" fill="none" legendType="none" isAnimationActive={false} />
+              <Area dataKey="upper" stroke="none" fill="url(#sigmaFill-curve)"
+                baseDataKey="lower" legendType="none" isAnimationActive={false} />
+              <Line dataKey="avg" name="Avg Temp" stroke="#FF6B35" strokeWidth={2.5}
+                dot={false} isAnimationActive={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
