@@ -88,6 +88,21 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--ember);
   box-shadow: 0 0 0 3px rgba(255,107,53,0.15);
 }
+
+/* ── Focus visible (keyboard navigation) ── */
+:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+button:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none; /* already handled by border + box-shadow above */
+}
+
 select option { background: var(--surface-raised); }
 textarea { resize: vertical; }
 button { font-family: var(--font); cursor: pointer; }
