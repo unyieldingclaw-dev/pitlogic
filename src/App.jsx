@@ -356,30 +356,32 @@ export default function App() {
         </div>
 
         {activeId && activeCook && (
-          <div style={{ margin: '0 .75rem 1rem', padding: '8px 12px', background: 'rgba(255,107,53,0.1)',
-            borderRadius: 8, border: '1px solid rgba(255,107,53,0.3)', cursor: 'pointer' }}
-            onClick={() => handleNavClick('active')}>
+          <button onClick={() => handleNavClick('active')} style={{ margin: '0 .75rem 1rem', padding: '8px 12px', background: 'none',
+            borderRadius: 8, border: '1px solid rgba(255,107,53,0.3)', cursor: 'pointer',
+            width: 'calc(100% - 1.5rem)', textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ember)', fontWeight: 500 }}>
               <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
               ACTIVE COOK
             </div>
             <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, fontFamily: 'var(--mono)' }}>{activeCook.name}</div>
-          </div>
+          </button>
         )}
 
-        {NAV_ITEMS.map(({ id, Icon, label }) => (
-          <button key={id} onClick={() => handleNavClick(id)} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '11px 1.25rem', border: 'none',
-            background: tab === id ? 'rgba(255,107,53,0.1)' : 'transparent',
-            color: tab === id ? 'var(--ember)' : 'var(--text2)',
-            fontSize: 14, fontFamily: 'var(--font)',
-            borderLeft: `3px solid ${tab === id ? 'var(--ember)' : 'transparent'}`,
-            cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
-          }}>
-            <Icon size={18} />{label}
-          </button>
-        ))}
+        <nav aria-label="Main navigation">
+          {NAV_ITEMS.map(({ id, Icon, label }) => (
+            <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '11px 1.25rem', border: 'none',
+              background: tab === id ? 'rgba(255,107,53,0.1)' : 'transparent',
+              color: tab === id ? 'var(--ember)' : 'var(--text2)',
+              fontSize: 14, fontFamily: 'var(--font)',
+              borderLeft: `3px solid ${tab === id ? 'var(--ember)' : 'transparent'}`,
+              cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
+            }}>
+              <Icon size={18} />{label}
+            </button>
+          ))}
+        </nav>
       </aside>
 
       {/* Main area */}
@@ -453,14 +455,14 @@ export default function App() {
       </div>
 
       {/* Bottom nav (mobile) */}
-      <nav id="bottom-nav" style={{
+      <nav id="bottom-nav" aria-label="Main navigation" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, height: 64,
         background: 'var(--surface)', borderTop: '1px solid var(--border)',
         display: 'flex', alignItems: 'stretch', zIndex: 20,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {NAV_ITEMS.map(({ id, Icon, mobileLabel }) => (
-          <button key={id} onClick={() => handleNavClick(id)} style={{
+          <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: 3, border: 'none',
             background: 'transparent',
