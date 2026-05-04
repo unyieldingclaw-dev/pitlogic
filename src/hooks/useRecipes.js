@@ -30,7 +30,7 @@ export function useRecipes() {
   const importMany = (incoming) => {
     const existing = new Set(recipes.map(r => r.name.toLowerCase()));
     const newOnes = incoming.filter(r => !existing.has(r.name.toLowerCase()))
-      .map(r => ({ ...r, id: String(Date.now() + Math.random()), createdAt: Date.now(), source: 'plantoeat-import' }));
+      .map((r, idx) => ({ ...r, id: `${Date.now()}-${idx}`, createdAt: Date.now(), source: 'plantoeat-import' }));
     const dupes = incoming.filter(r => existing.has(r.name.toLowerCase()));
     save([...newOnes, ...recipes]);
     return { added: newOnes.length, skipped: dupes.length };

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Trash2, Share2, Star, BarChart2, FileText } from 'lucide-react';
 import ShareButton from './ShareCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -15,8 +15,7 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
 
   const detailCook = cooks.find(c => c.id === detailId);
 
-  // sync notes/rating when cook changes
-  useState(() => {
+  useEffect(() => {
     if (detailCook) { setEditNotes(detailCook.notes || ''); setEditRating(detailCook.rating || 0); }
   }, [detailId]);
 

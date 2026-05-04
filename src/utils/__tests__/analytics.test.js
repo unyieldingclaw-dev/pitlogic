@@ -67,34 +67,21 @@ describe('stallPrediction', () => {
   });
 
   it('detects a stall and returns prediction when conditions are met', () => {
-    // Build readings that trigger stall detection:
-    // window of 4 readings, range < 8, tdiff >= 18, temps in 140-185 range
-    // readings[i-3..i]: times spread >= 18 apart, temps all ~160 (range < 8)
-    const readings = [
-      { time: 0, temp: 120 },
-      { time: 5, temp: 140 },
-      { time: 10, temp: 155 },
-      // stall window starts here (index 3): readings[0..3]
-      { time: 30, temp: 160 },  // i=3: window=[0,5,10,30], tdiff=30, range=40 — no stall
-    ];
-    // Build a proper stall: 4 consecutive readings at ~160, spanning >= 18 time units
+    // Stall algorithm: window of 4 readings where range < 8, tdiff >= 18, temps[0] in [140,185]
+    // readings[5] and [6]: window=[10,85,110,135], range=2, tdiff=125>=18, temps[0]=158 in range ✓
     const stallReadings = [
-      { time: 0, temp: 100 },
-      { time: 5, temp: 130 },
-      { time: 10, temp: 158 },
-      { time: 35, temp: 160 },  // i=3: window=[0,5,10,35] — range=60, no stall
-      { time: 60, temp: 161 },  // i=4: window=[5,10,35,60] — range=31, no stall
-      { time: 85, temp: 159 },  // i=5: window=[10,35,60,85] — range=3, tdiff=75 >=18, temps[0]=158 in 140-185 ✓
-      { time: 110, temp: 160 }, // i=6: window=[35,60,85,110] — range=2, tdiff=75 >=18, temps[0]=160 in 140-185 ✓
+      { time: 0,   temp: 100 },
+      { time: 5,   temp: 130 },
+      { time: 10,  temp: 158 },
+      { time: 85,  temp: 160 },
+      { time: 110, temp: 159 },
+      { time: 135, temp: 160 },
     ];
     const cook = makeCook({ probes: [{ readings: stallReadings }] });
     const result = stallPrediction([cook, cook], 'Brisket');
-    if (result !== null) {
-      expect(result.avgTemp).toBeGreaterThanOrEqual(140);
-      expect(result.avgTemp).toBeLessThanOrEqual(185);
-      expect(result.sampleSize).toBeGreaterThanOrEqual(2);
-    }
-    // Result may be null if the stall logic doesn't detect these readings;
-    // the test is valid either way — no assertion error is the pass condition
+    expect(result).not.toBeNull();
+    expect(result.avgTemp).toBeGreaterThanOrEqual(140);
+    expect(result.avgTemp).toBeLessThanOrEqual(185);
+    expect(result.sampleSize).toBe(2);
   });
 });

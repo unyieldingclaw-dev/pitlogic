@@ -34,5 +34,5 @@ export function svgToDataUrl(containerEl) {
   const svg = containerEl.querySelector('svg');
   if (!svg) return null;
   const svgStr = new XMLSerializer().serializeToString(svg);
-  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+  return 'data:image/svg+xml;base64,' + btoa(encodeURIComponent(svgStr).replace(/%([0-9A-F]{2})/gi, (_, p) => String.fromCharCode(parseInt(p, 16))));
 }

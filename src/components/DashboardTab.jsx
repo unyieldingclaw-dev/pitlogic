@@ -35,7 +35,7 @@ export default function DashboardTab({ cooks, activeId, activeCook, tick, onGoAc
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
   const cutCounts = completed.reduce((a, c) => { a[c.cut] = (a[c.cut] || 0) + 1; return a; }, {});
   const favCut = Object.entries(cutCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
-  const recent = completed.slice(0, 4);
+  const recent = [...completed].sort((a, b) => b.startTime - a.startTime).slice(0, 4);
 
   return (
     <div className="fadein">

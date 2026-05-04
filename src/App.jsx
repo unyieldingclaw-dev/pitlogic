@@ -3,7 +3,7 @@ import { MEATS } from './data/meats';
 import { G } from './data/cuts';
 import { save, load } from './hooks/useStorage.js';
 import { dur, shortDate } from './utils/helpers';
-import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, BookMarked } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
 import GuideTab from './components/GuideTab';
@@ -204,7 +204,7 @@ export default function App() {
     const me = Object.entries(MEATS).find(([, cs]) => cs.includes(cut));
     if (!me) return;
     const [meat] = me; const g = G[cut];
-    setForm({ name: '', meat, cut, smokerTarget: g?.pit || 225, probes: [{ name: 'Probe 1', target: g?.pull || 165 }] });
+    setForm({ name: '', meat, cut, smokerTarget: g?.pit || 225, probes: [{ name: 'Probe 1', target: g?.pull || 165 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
     setView('new'); setTab('active');
   };
 
@@ -245,11 +245,11 @@ export default function App() {
   const isDetail = view === 'detail';
 
   const NAV_ITEMS = [
-    { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', mobileLabel: 'Home' },
+    { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard',  mobileLabel: 'Home'    },
     { id: 'active',    Icon: Flame,           label: activeId ? 'Active Cook' : 'New Cook', mobileLabel: activeId ? 'Active' : 'Cook' },
-    { id: 'history',   Icon: Clock,            label: 'History',   mobileLabel: 'History' },
-    { id: 'analytics', Icon: BarChart2,         label: 'Analytics', mobileLabel: 'Stats' },
-    { id: 'recipes',   Icon: FlaskConical,      label: 'Recipes',   mobileLabel: 'Recipes' },
+    { id: 'history',   Icon: Clock,           label: 'History',    mobileLabel: 'History' },
+    { id: 'guide',     Icon: BookOpen,        label: 'Guides',     mobileLabel: 'Guides'  },
+    { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
   ];
 
   return (
