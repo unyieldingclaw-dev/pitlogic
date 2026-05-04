@@ -57,6 +57,25 @@ export function analyzeProbe(probe) {
   };
 }
 
+function EmberTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'var(--surface-raised)', border: '1px solid rgba(255,107,53,0.3)',
+      borderRadius: 10, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+      <div style={{ color: 'var(--text3)', marginBottom: 5, fontFamily: 'var(--mono)' }}>
+        {Math.round(label)} min
+      </div>
+      {payload.map((e, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: e.color, display: 'inline-block' }} />
+          <span style={{ color: 'var(--text2)' }}>{e.name}:</span>
+          <span style={{ color: 'var(--text)', fontFamily: 'var(--mono)' }}>{e.value}°F</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function TempChart({ cook, height = 260, showStall = false, analyses = [] }) {
   const data = buildChartData(cook);
   if (data.length < 2) return (
@@ -68,14 +87,18 @@ export default function TempChart({ cook, height = 260, showStall = false, analy
     <div style={{ position: 'relative', height }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
+          <defs>
+            {cook.probes.map((_, i) => (
+              <linearGradient key={i} id={`probeGrad-${i}`} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={PROBE_COLORS[i % PROBE_COLORS.length]} stopOpacity={0.6} />
+                <stop offset="100%" stopColor={PROBE_COLORS[i % PROBE_COLORS.length]} stopOpacity={1} />
+              </linearGradient>
+            ))}
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis dataKey="time" tickFormatter={v => `${Math.round(v)}m`} tick={{ fill: 'var(--text3)', fontSize: 11, fontFamily: 'JetBrains Mono' }} stroke="var(--ash)" />
           <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text3)', fontSize: 11, fontFamily: 'JetBrains Mono' }} stroke="var(--ash)" tickFormatter={v => `${v}°`} />
-          <Tooltip
-            formatter={(v, n) => [`${v}°F`, n]}
-            labelFormatter={l => `${Math.round(l)} min`}
-            contentStyle={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: 'var(--text2)' }} itemStyle={{ color: 'var(--text)' }}
-          />
+          <Tooltip content={<EmberTooltip />} />
           {showStall && analyses[0]?.stallSegs.map((s, i) => (
             <ReferenceArea key={i} x1={s.start} x2={s.end} fill="rgba(245,158,11,0.08)"
               label={{ value: 'STALL', fontSize: 9, fill: '#BA7517', position: 'insideTop' }} />
