@@ -1,7 +1,8 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ComposedChart, Area, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ComposedChart, Area, Line, ScatterChart, Scatter, ZAxis } from 'recharts';
 import { BarChart2, Flame, Clock, Star, TrendingUp } from 'lucide-react';
 import { totalStats, cooksByMonth, stallPrediction, buildAverageCurve } from '../utils/analytics';
 import { MEATS } from '../data/meats';
+import { PROBE_COLORS, shortDate } from '../utils/helpers';
 import { useState } from 'react';
 
 function StatCard({ icon: Icon, label, value, sub }) {
@@ -15,6 +16,22 @@ function StatCard({ icon: Icon, label, value, sub }) {
   );
 }
 
+function EmberScatterTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div style={{ background: 'var(--surface-raised)', border: '1px solid rgba(255,107,53,0.3)',
+      borderRadius: 10, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, marginBottom: 4 }}>{d.name}</div>
+      <div style={{ color: 'var(--text3)', marginBottom: 2 }}>{d.cut} · {shortDate(d.startTime)}</div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+        <span style={{ color: 'var(--text2)' }}>{d.durationH.toFixed(1)}h</span>
+        <span>{'★'.repeat(d.rating)}{'☆'.repeat(5 - d.rating)}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function AnalyticsTab({ cooks }) {
   const [selectedCut, setSelectedCut] = useState('Brisket');
   const stats = totalStats(cooks);
@@ -22,6 +39,22 @@ export default function AnalyticsTab({ cooks }) {
   const stall = stallPrediction(cooks, selectedCut);
   const avgCurve = buildAverageCurve(cooks, selectedCut);
   const allCuts = Object.values(MEATS).flat();
+
+  const ratedCooks = cooks.filter(c => c.status === 'complete' && c.rating > 0 && c.endTime);
+  const allCutsForScatter = [...new Set(ratedCooks.map(c => c.cut))];
+  const scatterByCut = allCutsForScatter.reduce((acc, cut, i) => {
+    acc[cut] = {
+      color: PROBE_COLORS[i % PROBE_COLORS.length],
+      data: ratedCooks.filter(c => c.cut === cut).map(c => ({
+        name: c.name || c.cut,
+        cut: c.cut,
+        startTime: c.startTime,
+        durationH: (c.endTime - c.startTime) / 3600000,
+        rating: c.rating,
+      })),
+    };
+    return acc;
+  }, {});
 
   if (cooks.filter(c=>c.status==='complete').length === 0) {
     return (
@@ -133,6 +166,41 @@ export default function AnalyticsTab({ cooks }) {
                 dot={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {ratedCooks.length >= 2 && (
+        <div className="card" style={{ marginTop: '1.5rem' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text2)',
+            textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+            Cook Quality
+            <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8, textTransform: 'none',
+              letterSpacing: 0, fontFamily: 'var(--font)' }}>duration vs rating</span>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <ScatterChart margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="durationH" name="Duration" type="number" stroke="var(--ash)"
+                tick={{ fill: 'var(--text3)', fontSize: 10 }}
+                tickFormatter={v => `${v.toFixed(1)}h`} domain={[0, 'auto']} />
+              <YAxis dataKey="rating" name="Rating" type="number" domain={[0, 5]}
+                stroke="var(--ash)" tick={{ fill: 'var(--text3)', fontSize: 10 }}
+                tickFormatter={v => '★'.repeat(v)} />
+              <ZAxis range={[40, 40]} />
+              <Tooltip content={<EmberScatterTooltip />} />
+              {Object.entries(scatterByCut).map(([cut, { color, data }]) => (
+                <Scatter key={cut} name={cut} data={data} fill={color} fillOpacity={0.8} />
+              ))}
+            </ScatterChart>
+          </ResponsiveContainer>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+            {Object.entries(scatterByCut).map(([cut, { color }]) => (
+              <div key={cut} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text3)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                {cut}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
