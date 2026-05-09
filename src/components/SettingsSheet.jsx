@@ -1,0 +1,155 @@
+import { useRef, useState } from 'react';
+import { X, Download, Upload } from 'lucide-react';
+import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes }) {
+  const fileRef = useRef();
+  const [preview, setPreview] = useState(null);
+  const [mode, setMode] = useState('merge');
+  const [error, setError] = useState(null);
+
+  if (!open) return null;
+
+  const totalCooks = cookState.cooks.length;
+  const totalRecipes = recipes.length;
+
+  const handleExport = () => {
+    const data = buildExport(cookState, recipes);
+    triggerDownload(`rfx-backup-${todayStr()}.json`, data);
+  };
+
+  const handleFile = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = parseImport(ev.target.result);
+      if (!result.ok) { setError(result.error); setPreview(null); return; }
+      setError(null);
+      const { merged: _m, added: newCooks, skipped: skipCooks } = mergeCooks(cookState.cooks, result.data.cooks);
+      const existingNames = new Set(recipes.map(r => r.name.toLowerCase()));
+      const newRecipes = result.data.recipes.filter(r => !existingNames.has(r.name.toLowerCase())).length;
+      const skipRecipes = result.data.recipes.length - newRecipes;
+      setPreview({ data: result.data, newCooks, skipCooks, newRecipes, skipRecipes });
+      setMode('merge');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleImport = () => {
+    if (!preview) return;
+    onImportCooks({ cooks: preview.data.cooks, activeCooks: preview.data.activeCooks ?? [], mode });
+    onImportRecipes({ recipes: preview.data.recipes, mode });
+    setPreview(null);
+    onClose();
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Settings"
+      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end',
+        justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="fadein" style={{ background: 'var(--surface)', borderRadius: '16px 16px 0 0',
+        width: '100%', maxWidth: 480, padding: '1.5rem', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+        maxHeight: '85vh', overflowY: 'auto' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>Settings</div>
+          <button aria-label="Close settings" className="btn-ghost"
+            style={{ padding: '6px', borderRadius: 8 }} onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Data summary */}
+        <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: '1.25rem' }}>
+          {totalCooks} cook{totalCooks !== 1 ? 's' : ''} · {totalRecipes} recipe{totalRecipes !== 1 ? 's' : ''}
+        </div>
+
+        {/* Export */}
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Backup</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Download all your cooks and recipes as a JSON file.
+          </div>
+          <button className="btn-primary" onClick={handleExport}
+            style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Download size={15} /> Download backup
+          </button>
+        </div>
+
+        {/* Import */}
+        <div className="card">
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Restore</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Import a backup file. Existing data is preserved by default.
+          </div>
+
+          {error && (
+            <div role="alert" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)',
+              borderRadius: 8, padding: '8px 12px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>
+              {error}
+            </div>
+          )}
+
+          {!preview ? (
+            <>
+              <button className="btn-ghost" onClick={() => fileRef.current?.click()}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                <Upload size={15} /> Choose backup file
+              </button>
+              <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFile} />
+            </>
+          ) : (
+            <div className="fadein">
+              <div style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '10px 14px',
+                fontSize: 13, marginBottom: 12 }}>
+                <div style={{ fontFamily: 'var(--mono)', marginBottom: 4 }}>
+                  {preview.data.cooks.length} cook{preview.data.cooks.length !== 1 ? 's' : ''}
+                  {' '}({preview.newCooks} new, {preview.skipCooks} existing)
+                </div>
+                <div style={{ fontFamily: 'var(--mono)' }}>
+                  {preview.data.recipes.length} recipe{preview.data.recipes.length !== 1 ? 's' : ''}
+                  {' '}({preview.newRecipes} new, {preview.skipRecipes} existing)
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                  fontSize: 13, marginBottom: 8 }}>
+                  <input type="radio" name="import-mode" value="merge"
+                    checked={mode === 'merge'} onChange={() => setMode('merge')} />
+                  Add new items only
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                  <input type="radio" name="import-mode" value="replace"
+                    checked={mode === 'replace'} onChange={() => setMode('replace')} />
+                  Replace everything
+                </label>
+                {mode === 'replace' && (
+                  <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 6, marginLeft: 22 }}>
+                    This will overwrite all current cooks and recipes.
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn-primary" onClick={handleImport}>Import</button>
+                <button className="btn-ghost" onClick={() => { setPreview(null); setError(null); }}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

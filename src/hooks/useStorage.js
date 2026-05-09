@@ -4,6 +4,10 @@ export const save = data => {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {}
 };
 
+export const replaceAll = ({ cooks, activeCooks }) => {
+  save({ cooks, activeCooks, dis: {} });
+};
+
 export const load = () => {
   try {
     const raw = localStorage.getItem(KEY);

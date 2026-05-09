@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { MEATS } from './data/meats';
 import { G } from './data/cuts';
-import { save, load } from './hooks/useStorage.js';
+import { save, load, replaceAll as storageReplaceAll } from './hooks/useStorage.js';
+import { useRecipes } from './hooks/useRecipes.js';
 import { dur, shortDate } from './utils/helpers';
-import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, BookMarked } from 'lucide-react';
+import { mergeCooks } from './utils/dataPortability.js';
+import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
 import GuideTab from './components/GuideTab';
@@ -13,6 +15,7 @@ import DashboardTab from './components/DashboardTab';
 import AnalyticsTab from './components/AnalyticsTab';
 import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
+import SettingsSheet from './components/SettingsSheet';
 
 function parseCSV(text, cook) {
   const lines = text.trim().split('\n'); if (lines.length < 2) return null;
@@ -47,6 +50,8 @@ export default function App() {
   const [msg, setMsg]               = useState('');
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
@@ -225,6 +230,23 @@ export default function App() {
     update(nc);
   };
 
+  const handleImportCooks = ({ cooks: incoming, activeCooks: incomingActive, mode }) => {
+    if (mode === 'merge') {
+      const { merged } = mergeCooks(cooks, incoming);
+      setCooks(merged);
+      persist(merged, activeCooks, dismissed);
+    } else {
+      const newActive = (incomingActive || []).filter(id => incoming.some(c => c.id === id && c.status === 'active'));
+      setCooks(incoming); setActiveCooks(newActive); setActiveCookIdx(0); setDismissed({});
+      persist(incoming, newActive, {});
+    }
+  };
+
+  const handleImportRecipes = ({ recipes: incoming, mode }) => {
+    if (mode === 'merge') importManyRecipes(incoming);
+    else replaceAllRecipes(incoming);
+  };
+
   const handleNavClick = id => {
     setTab(id);
     if (id === 'active') {
@@ -350,8 +372,15 @@ export default function App() {
         padding: '1.5rem 0', minHeight: '100vh', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
       }} id="app-sidebar">
         <div style={{ padding: '0 1.25rem 1.5rem', borderBottom: '1px solid var(--border2)', marginBottom: '1rem' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--ember)',
-            textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>RFX</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--ember)',
+              textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>RFX</div>
+            <button aria-label="Settings" onClick={() => setShowSettings(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)',
+                padding: 4, borderRadius: 6, marginTop: 4 }}>
+              <Settings size={16} />
+            </button>
+          </div>
           <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text3)', marginTop: 2, textTransform: 'uppercase' }}>Cook Tracker</div>
         </div>
 
@@ -399,14 +428,20 @@ export default function App() {
               color: 'var(--ember)', textShadow: '0 0 16px rgba(255,107,53,0.4)', letterSpacing: '0.05em', lineHeight: 1 }}>RFX</div>
             <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text3)', textTransform: 'uppercase' }}>Cook Tracker</div>
           </div>
-          {activeId && activeCook && tab !== 'active' && (
-            <button className="btn" style={{ borderColor: 'rgba(255,107,53,0.4)', color: 'var(--ember)',
-              display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}
-              onClick={() => handleNavClick('active')}>
-              <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
-              Active Cook
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button aria-label="Settings" onClick={() => setShowSettings(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 6, borderRadius: 8 }}>
+              <Settings size={18} />
             </button>
-          )}
+            {activeId && activeCook && tab !== 'active' && (
+              <button className="btn" style={{ borderColor: 'rgba(255,107,53,0.4)', color: 'var(--ember)',
+                display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}
+                onClick={() => handleNavClick('active')}>
+                <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+                Active Cook
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Page content */}
@@ -455,11 +490,20 @@ export default function App() {
               guideCat={guideCat} setGuideCat={setGuideCat} onStartCook={startFromGuide} />
           )}
           {!isDetail && tab === 'recipes' && (
-            <RecipesTab flash={flash} />
+            <RecipesTab flash={flash} recipes={recipes} onAdd={addRecipe} onRemove={removeRecipe} onImportMany={importManyRecipes} />
           )}
           {!isDetail && tab === 'stall' && <StallCard />}
         </main>
       </div>
+
+      <SettingsSheet
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        cookState={{ cooks, activeCooks }}
+        recipes={recipes}
+        onImportCooks={handleImportCooks}
+        onImportRecipes={handleImportRecipes}
+      />
 
       {/* Bottom nav (mobile) */}
       <nav id="bottom-nav" aria-label="Main navigation" style={{

@@ -36,5 +36,7 @@ export function useRecipes() {
     return { added: newOnes.length, skipped: dupes.length };
   };
 
-  return { recipes, add, update, remove, importMany };
+  const replaceAll = newRecipes => save(newRecipes);
+
+  return { recipes, add, update, remove, importMany, replaceAll };
 }

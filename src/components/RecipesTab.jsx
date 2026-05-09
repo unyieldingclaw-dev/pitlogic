@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { FlaskConical, Plus, Trash2, Upload, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { useRecipes } from '../hooks/useRecipes';
 import { parsePlanToEatCSV } from '../utils/planToEatParser';
 
 const CATEGORIES = ['rub', 'brine', 'injection', 'spray', 'sauce'];
@@ -110,8 +109,7 @@ function NewRecipeForm({ onSave, onCancel }) {
   );
 }
 
-export default function RecipesTab({ flash }) {
-  const { recipes, add, remove, importMany } = useRecipes();
+export default function RecipesTab({ flash, recipes, onAdd: add, onRemove: remove, onImportMany: importMany }) {
   const [activeCat, setActiveCat] = useState('rub');
   const [showNew, setShowNew] = useState(false);
   const [preview, setPreview] = useState(null);
