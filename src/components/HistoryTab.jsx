@@ -7,7 +7,7 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
     <div className="fadein">
       {activeId && activeCook && (
         <button
-          className="card"
+          className="card card-interactive"
           style={{ borderColor: 'rgba(255,107,53,0.35)', cursor: 'pointer', marginBottom: '1.25rem',
             width: '100%', textAlign: 'left', fontFamily: 'inherit' }}
           onClick={onGoActive}
@@ -15,7 +15,7 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                <span className="pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+                <span className="live-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ember)', display: 'inline-block' }} />
                 <span style={{ fontWeight: 500, fontSize: 15 }}>{activeCook.name}</span>
               </div>
               <span style={{ fontSize: 13, color: 'var(--text2)' }}>
@@ -50,7 +50,7 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
         return (
           <button
             key={cook.id}
-            className="card"
+            className="card card-interactive"
             style={{ cursor: 'pointer', marginBottom: '.75rem', width: '100%', textAlign: 'left', fontFamily: 'inherit' }}
             onClick={() => onSelectCook(cook.id)}
           >
@@ -69,7 +69,7 @@ export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, 
                   </div>
                 )}
                 {peak && (
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, fontFamily: 'var(--mono)' }}>
+                  <div className="gradient-text" style={{ fontSize: 11, marginTop: 2, fontFamily: 'var(--mono)' }}>
                     Peak {peak}°F
                   </div>
                 )}
