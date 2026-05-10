@@ -389,7 +389,7 @@ export default function App() {
             borderRadius: 8, border: '1px solid rgba(255,107,53,0.3)', cursor: 'pointer',
             width: 'calc(100% - 1.5rem)', textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ember)', fontWeight: 500 }}>
-              <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+              <span className="live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--ember)', display: 'inline-block' }} />
               ACTIVE COOK
             </div>
             <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, fontFamily: 'var(--mono)' }}>{activeCook.name}</div>
@@ -401,10 +401,13 @@ export default function App() {
             <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
               display: 'flex', alignItems: 'center', gap: 12,
               padding: '11px 1.25rem', border: 'none',
-              background: tab === id ? 'rgba(255,107,53,0.1)' : 'transparent',
+              background: tab === id
+                ? 'linear-gradient(90deg, rgba(255,107,53,0.14), rgba(245,158,11,0.04))'
+                : 'transparent',
               color: tab === id ? 'var(--ember)' : 'var(--text2)',
               fontSize: 14, fontFamily: 'var(--font)',
               borderLeft: `3px solid ${tab === id ? 'var(--ember)' : 'transparent'}`,
+              boxShadow: tab === id ? 'var(--glow-ember)' : 'none',
               cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
             }}>
               <Icon size={18} />{label}
@@ -437,7 +440,7 @@ export default function App() {
               <button className="btn" style={{ borderColor: 'rgba(255,107,53,0.4)', color: 'var(--ember)',
                 display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}
                 onClick={() => handleNavClick('active')}>
-                <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+                <span className="live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--ember)', display: 'inline-block' }} />
                 Active Cook
               </button>
             )}
