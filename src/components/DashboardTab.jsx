@@ -5,7 +5,7 @@ function StatPill({ label, value }) {
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 12, padding: '1rem', textAlign: 'center', flex: 1 }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 500, color: 'var(--ember)' }}>{value}</div>
+      <div className="gradient-text" style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 500 }}>{value}</div>
       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
     </div>
   );
@@ -13,11 +13,10 @@ function StatPill({ label, value }) {
 
 function RecentCard({ cook, onClick }) {
   return (
-    <button onClick={onClick} style={{ background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 12, padding: '1rem', cursor: 'pointer', minWidth: 160,
-      transition: 'border-color .15s', textAlign: 'left', fontFamily: 'inherit' }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--ember)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+    <button onClick={onClick} className="card-interactive"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 12, padding: '1rem', cursor: 'pointer', minWidth: 160,
+        textAlign: 'left', fontFamily: 'inherit' }}>
       <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>{shortDate(cook.startTime)}</div>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{cook.cut}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -49,7 +48,9 @@ export default function DashboardTab({ cooks, activeId, activeCook, allActiveCoo
 
       {/* Active cook cards (one per active cook) */}
       {activeCooks.map(cook => (
-        <button key={cook.id} onClick={() => onGoActive(cook.id)} style={{
+        <button key={cook.id} onClick={() => onGoActive(cook.id)}
+          className="breathe-glow"
+          style={{
           background: 'var(--surface)', border: '1px solid rgba(255,107,53,0.4)',
           borderRadius: 14, padding: '1.25rem', marginBottom: '1rem', cursor: 'pointer',
           boxShadow: '0 0 24px rgba(255,107,53,0.12)',
@@ -57,7 +58,7 @@ export default function DashboardTab({ cooks, activeId, activeCook, allActiveCoo
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--red)', display: 'inline-block' }} />
+              <span className="live-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ember)', display: 'inline-block' }} />
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: 'var(--ember)' }}>ACTIVE COOK</span>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text2)' }}>{dur(cook.startTime)}</span>
