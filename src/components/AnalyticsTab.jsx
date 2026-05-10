@@ -9,7 +9,7 @@ function StatCard({ icon: Icon, label, value, sub }) {
   return (
     <div className="card" style={{ textAlign: 'center' }}>
       <Icon size={20} style={{ color: 'var(--ember)', marginBottom: 8 }} />
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 24, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>{value}</div>
+      <div className="gradient-text" style={{ fontFamily: 'var(--mono)', fontSize: 24, fontWeight: 500, marginBottom: 4 }}>{value}</div>
       <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
       {sub && <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>{sub}</div>}
     </div>
@@ -115,11 +115,11 @@ export default function AnalyticsTab({ cooks }) {
             <div className="g2">
               <div className="metric">
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Typical Stall Temp</div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 22, color: 'var(--ember)' }}>{stall.avgTemp}°F</div>
+                <div className="gradient-text" style={{ fontFamily: 'var(--mono)', fontSize: 22 }}>{stall.avgTemp}°F</div>
               </div>
               <div className="metric">
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Avg Stall Duration</div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 22, color: 'var(--amber)' }}>{stall.avgDurMin} min</div>
+                <div className="gradient-text" style={{ fontFamily: 'var(--mono)', fontSize: 22 }}>{stall.avgDurMin} min</div>
               </div>
             </div>
           </div>
@@ -147,6 +147,9 @@ export default function AnalyticsTab({ cooks }) {
                   <stop offset="0%" stopColor="#FF6B35" stopOpacity={0.18} />
                   <stop offset="100%" stopColor="#FF6B35" stopOpacity={0.03} />
                 </linearGradient>
+                <filter id="avgLineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="2.5" floodColor="rgba(245,158,11,0.5)" />
+                </filter>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
               <XAxis dataKey="time" tickFormatter={v => `${v}m`} stroke="var(--ash)"
@@ -162,8 +165,9 @@ export default function AnalyticsTab({ cooks }) {
               <Area dataKey="lower" stroke="none" fill="none" legendType="none" isAnimationActive={false} />
               <Area dataKey="upper" stroke="none" fill="url(#sigmaFill-curve)"
                 baseDataKey="lower" legendType="none" isAnimationActive={false} />
-              <Line dataKey="avg" name="Avg Temp" stroke="#FF6B35" strokeWidth={2.5}
-                dot={false} isAnimationActive={false} />
+              <Line dataKey="avg" name="Avg Temp" stroke="#F59E0B" strokeWidth={2.5}
+                dot={false} isAnimationActive={false}
+                style={{ filter: 'url(#avgLineGlow)' }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -189,7 +193,8 @@ export default function AnalyticsTab({ cooks }) {
               <ZAxis range={[40, 40]} />
               <Tooltip content={<EmberScatterTooltip />} />
               {Object.entries(scatterByCut).map(([cut, { color, data }]) => (
-                <Scatter key={cut} name={cut} data={data} fill={color} fillOpacity={0.8} />
+                <Scatter key={cut} name={cut} data={data} fill={color} fillOpacity={0.85}
+                  style={{ filter: 'drop-shadow(0 0 3px rgba(255,107,53,0.3))' }} />
               ))}
             </ScatterChart>
           </ResponsiveContainer>
