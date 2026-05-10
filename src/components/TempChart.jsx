@@ -1,5 +1,5 @@
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer
 } from 'recharts';
 import { PROBE_COLORS } from '../utils/helpers';
@@ -86,7 +86,7 @@ export default function TempChart({ cook, height = 260, showStall = false, analy
   return (
     <div style={{ position: 'relative', height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
           <defs>
             {cook.probes.map((_, i) => (
               <linearGradient key={i} id={`probeGrad-${i}`} x1="0" y1="0" x2="1" y2="0">
@@ -94,8 +94,14 @@ export default function TempChart({ cook, height = 260, showStall = false, analy
                 <stop offset="100%" stopColor={PROBE_COLORS[i % PROBE_COLORS.length]} stopOpacity={1} />
               </linearGradient>
             ))}
+            {cook.probes.map((_, i) => (
+              <linearGradient key={`fill${i}`} id={`areaFill-${i}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={PROBE_COLORS[i % PROBE_COLORS.length]} stopOpacity={0.22} />
+                <stop offset="100%" stopColor={PROBE_COLORS[i % PROBE_COLORS.length]} stopOpacity={0} />
+              </linearGradient>
+            ))}
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,200,150,0.07)" />
           <XAxis dataKey="time" tickFormatter={v => `${Math.round(v)}m`} tick={{ fill: 'var(--text3)', fontSize: 11, fontFamily: 'JetBrains Mono' }} stroke="var(--ash)" />
           <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text3)', fontSize: 11, fontFamily: 'JetBrains Mono' }} stroke="var(--ash)" tickFormatter={v => `${v}°`} />
           <Tooltip content={<EmberTooltip />} />
@@ -110,12 +116,17 @@ export default function TempChart({ cook, height = 260, showStall = false, analy
             <ReferenceLine y={cook.smokerTarget} stroke="#999" strokeDasharray="5 3" strokeOpacity={.3} />
           )}
           {cook.probes.map((p, i) => (
+            <Area key={`a${i}`} type="monotone" dataKey={`p${i}`}
+              fill={`url(#areaFill-${i})`} stroke="none" fillOpacity={1}
+              isAnimationActive={false} connectNulls legendType="none" />
+          ))}
+          {cook.probes.map((p, i) => (
             <Line key={i} type="monotone" dataKey={`p${i}`} name={p.name}
               stroke={PROBE_COLORS[i % PROBE_COLORS.length]} dot={{ r: 3, fill: PROBE_COLORS[i % PROBE_COLORS.length] }} strokeWidth={2} connectNulls />
           ))}
           <Line type="monotone" dataKey="smoker" name="Smoker"
             stroke="#aaa" strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} connectNulls />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
