@@ -27,14 +27,17 @@ export default function LiveIntelligencePanel({ probes }) {
             </div>
             {/* Climb rate */}
             <div style={{ minWidth: 72, textAlign: 'right' }}>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 14,
-                color: rate === null ? 'var(--text3)' : rate > 0 ? 'var(--ember)' : 'var(--text2)' }}>
+              <span className={rate !== null && rate > 0 ? 'gradient-text' : ''}
+                style={{ fontFamily: 'var(--mono)', fontSize: 14,
+                  color: rate === null ? 'var(--text3)' : rate > 0 ? undefined : 'var(--text2)' }}>
                 {rate === null ? '—' : `${rate > 0 ? '+' : ''}${rate}°/hr`}
               </span>
             </div>
             {/* ETA */}
             <div style={{ minWidth: 72, textAlign: 'right' }}>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text3)' }}>
+              <span className={eta !== null && eta > 0 ? 'gradient-text' : ''}
+                style={{ fontFamily: 'var(--mono)', fontSize: 12,
+                  color: eta === null || eta === 0 ? 'var(--text3)' : undefined }}>
                 {eta === null ? '' : eta === 0 ? 'Done' : `~${eta}m`}
               </span>
             </div>
