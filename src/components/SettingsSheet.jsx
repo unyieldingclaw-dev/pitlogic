@@ -77,7 +77,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
 
         {/* Export */}
         <div className="card" style={{ marginBottom: '1rem' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Backup</div>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Backup</div>
           <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
             Download all your cooks and recipes as a JSON file.
           </div>
@@ -89,7 +89,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
 
         {/* Import */}
         <div className="card">
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Restore</div>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Restore</div>
           <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
             Import a backup file. Existing data is preserved by default.
           </div>
