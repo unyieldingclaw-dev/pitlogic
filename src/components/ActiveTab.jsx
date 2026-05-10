@@ -359,16 +359,18 @@ export default function ActiveTab({
           const pct = last ? Math.min(100, Math.round((last.temp / probe.target) * 100)) : 0;
           const color = PROBE_COLORS[i % PROBE_COLORS.length];
           return (
-            <div key={i} className={`probe-card${isHot ? ' hot' : ''}`}
-              style={{ borderColor: `${color}30` }}>
+            <div key={i} className={`probe-card${isHot ? ' hot' : ''}`}>
               <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
                 letterSpacing: '0.08em', marginBottom: 6 }}>{probe.name}</div>
-              <div className="temp-display" style={{ color, marginBottom: 4 }}>
-                {last ? `${last.temp}°` : '—'}
+              <div className="temp-card">
+                <div className="temp-display" style={{ color: '#FFF5EE', marginBottom: 2 }}>
+                  {last ? `${last.temp}°` : '—'}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>→ {probe.target}°F</div>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>→ {probe.target}°F</div>
               <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${pct}%`, background: color }} />
+                <div className="progress-fill shimmer-bar"
+                  style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}50, ${color})` }} />
               </div>
               <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, fontFamily: 'var(--mono)' }}>
                 {pct}%
