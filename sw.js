@@ -1,4 +1,4 @@
-const CACHE = 'rfx-v1';
+const CACHE = 'rfx-v2';
 const SHELL = ['/rfx-cook-tracker/'];
 
 self.addEventListener('install', e => {
@@ -20,10 +20,15 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Don't intercept Google Fonts or cross-origin requests
   if (url.origin !== self.location.origin) return;
+  // Dev server — never serve from cache
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return;
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fresh = fetch(e.request).then(res => {
-        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        if (res.ok) {
+          const toCache = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, toCache));
+        }
         return res;
       }).catch(() => cached);
       return cached || fresh;
