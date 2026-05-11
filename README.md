@@ -1,16 +1,58 @@
-# React + Vite
+# RFX Cook Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal BBQ cook logging and analytics tool. Track temperature probes, detect stalls, predict finish times, and review cook history — all client-side with no backend.
 
-Currently, two official plugins are available:
+**Live**: https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Active cook dashboard** — one card per active cook with ETA, stall probability, and per-probe climb rates
+- **Stall intelligence** — approaching/confirmed stall detection with action coaching
+- **Analytics** — gradient bar chart, sigma-band average curves, cook quality scatter
+- **Temperature charting** — per-probe gradients, hover tooltips
+- **Cook history** — detail view, delete with confirm, share card (screenshot export)
+- **Recipes** — CRUD + Plan to Eat CSV import
+- **Data portability** — JSON backup export + import (merge or replace)
+- **Mop timer** — countdown with browser notification at zero
+- **PWA** — installable on mobile, offline-capable after first load
+- **Accessible** — WCAG 2.1 AA: keyboard nav, aria-*, semantic HTML
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+- React 19 + Vite (JavaScript/JSX)
+- Recharts for charts, Lucide icons
+- localStorage only — no backend, no accounts
+- Vitest + Testing Library for tests
+- GitHub Actions → GitHub Pages for CI/CD
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Getting Started
+
+```powershell
+npm install
+npm run dev          # http://localhost:5173/rfx-cook-tracker/
+```
+
+## Testing
+
+```powershell
+npm test -- --run    # run all tests once
+npm run test:watch   # watch mode
+npm run test:coverage
+```
+
+## Deployment
+
+Push to `main` — GitHub Actions deploys automatically to GitHub Pages.
+
+```powershell
+npm run build        # verify build is clean locally
+git push origin main # triggers deploy
+```
+
+## Data Storage
+
+All data is in localStorage:
+- `rfx-v5` — cooks, active cook state
+- `rfx-recipes-v1` — recipes
+
+Use Settings (gear icon) to export a JSON backup or restore from a previous backup.
