@@ -86,9 +86,9 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               No custom defaults saved yet. Change pit or pull temps in the new cook form and tap &ldquo;Save as default&rdquo; to store your preferences here.
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {savedCuts.map(([cut, pref]) => (
-                <div key={cut} style={{
+                <li key={cut} style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
                   borderRadius: 10,
@@ -107,6 +107,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                     </div>
                   </div>
                   <button
+                    aria-label={`Reset ${cut} defaults`}
                     onClick={() => resetCutPref(cut)}
                     style={{
                       background: 'transparent',
@@ -121,9 +122,9 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                   >
                     Reset
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
