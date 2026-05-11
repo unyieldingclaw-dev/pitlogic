@@ -3,6 +3,7 @@ import { MEATS } from './data/meats';
 import { G } from './data/cuts';
 import { save, load, replaceAll as storageReplaceAll } from './hooks/useStorage.js';
 import { useRecipes } from './hooks/useRecipes.js';
+import { usePrefs } from './hooks/usePrefs';
 import { dur, shortDate } from './utils/helpers';
 import { mergeCooks } from './utils/dataPortability.js';
 import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
@@ -52,6 +53,7 @@ export default function App() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
+  const { prefs, setCutPref, resetCutPref } = usePrefs();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
@@ -77,15 +79,24 @@ export default function App() {
   useEffect(() => {
     const cuts = MEATS[form.meat] || [];
     if (!cuts.includes(form.cut)) {
-      const cut = cuts[0] || ''; const g = G[cut];
-      setForm(f => ({ ...f, cut, smokerTarget: g?.pit || 225, probes: f.probes.map(p => ({ ...p, target: g?.pull || 165 })) }));
+      const cut = cuts[0];
+      const g = G[cut];
+      const pref = prefs.cutPrefs?.[cut];
+      setForm(f => ({ ...f, cut,
+        smokerTarget: pref?.pit ?? g?.pit ?? 225,
+        probes: f.probes.map(p => ({ ...p, target: pref?.pull ?? g?.pull ?? 165 }))
+      }));
     }
-  }, [form.meat]);
+  }, [form.meat]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const g = G[form.cut];
-    if (g) setForm(f => ({ ...f, smokerTarget: g.pit || 225, probes: f.probes.map(p => ({ ...p, target: g.pull || 165 })) }));
-  }, [form.cut]);
+    const pref = prefs.cutPrefs?.[form.cut];
+    if (g) setForm(f => ({ ...f,
+      smokerTarget: pref?.pit ?? g.pit ?? 225,
+      probes: f.probes.map(p => ({ ...p, target: pref?.pull ?? g.pull ?? 165 }))
+    }));
+  }, [form.cut]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeCook) setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' });
@@ -483,7 +494,9 @@ export default function App() {
               allActiveCooks={allActiveCooks} activeCookIdx={activeCookIdx}
               setActiveCookIdx={setActiveCookIdx}
               onAddCook={() => setView('new')}
-              onSprayEvent={logSprayEvent} />
+              onSprayEvent={logSprayEvent}
+              prefs={prefs}
+              setCutPref={setCutPref} />
           )}
           {!isDetail && tab === 'analytics' && (
             <AnalyticsTab cooks={cooks} />
@@ -506,6 +519,8 @@ export default function App() {
         recipes={recipes}
         onImportCooks={handleImportCooks}
         onImportRecipes={handleImportRecipes}
+        prefs={prefs}
+        resetCutPref={resetCutPref}
       />
 
       {/* Bottom nav (mobile) */}
