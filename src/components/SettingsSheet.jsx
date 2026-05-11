@@ -9,7 +9,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -17,6 +17,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
 
   if (!open) return null;
 
+  const savedCuts = Object.entries(prefs?.cutPrefs || {});
   const totalCooks = cookState.cooks.length;
   const totalRecipes = recipes.length;
 
@@ -73,6 +74,57 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
         {/* Data summary */}
         <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: '1.25rem' }}>
           {totalCooks} cook{totalCooks !== 1 ? 's' : ''} · {totalRecipes} recipe{totalRecipes !== 1 ? 's' : ''}
+        </div>
+
+        {/* My Defaults */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+            My Defaults
+          </div>
+          {savedCuts.length === 0 ? (
+            <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0 }}>
+              No custom defaults saved yet. Change pit or pull temps in the new cook form and tap &ldquo;Save as default&rdquo; to store your preferences here.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {savedCuts.map(([cut, pref]) => (
+                <div key={cut} style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{cut}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                      {pref.pit != null && `Pit ${pref.pit}°F`}
+                      {pref.pit != null && pref.pull != null && '  ·  '}
+                      {pref.pull != null && `Pull ${pref.pull}°F`}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => resetCutPref(cut)}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: '4px 10px',
+                      color: 'var(--text3)',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Export */}
