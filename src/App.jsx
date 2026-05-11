@@ -319,10 +319,10 @@ export default function App() {
           </defs>
 
           {/* Base heat glow */}
-          <ellipse cx="100" cy="330" rx="88" ry="22" fill="url(#baseGlow)" />
+          <ellipse className="flame-glow" cx="100" cy="330" rx="88" ry="22" fill="url(#baseGlow)" />
 
           {/* Outer flame body — widest, darkest, most red */}
-          <path fill="url(#flameOuter)" d="
+          <path className="flame-outer" fill="url(#flameOuter)" d="
             M100 328
             C 40 328  5 278  5 224
             C  5 170 28 148 52 112
@@ -335,7 +335,7 @@ export default function App() {
           " />
 
           {/* Mid flame — narrower, amber */}
-          <path fill="url(#flameMid)" d="
+          <path className="flame-mid" fill="url(#flameMid)" d="
             M100 294
             C 63 294 40 264 40 234
             C 40 204 55 190 68 168
@@ -348,7 +348,7 @@ export default function App() {
           " />
 
           {/* Inner core — narrowest, pale yellow-white */}
-          <path fill="url(#flameCore)" d="
+          <path className="flame-core" fill="url(#flameCore)" d="
             M100 258
             C 74 258 56 234 56 210
             C 56 186 67 176 77 158
