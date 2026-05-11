@@ -16,13 +16,21 @@ export default function ActiveTab({
   cooks, activeCook, entry, setEntry,
   stalls, wrapAlert, coAlert, confirmEnd, setConfirmEnd,
   onStart, onEnd, onLog, onCSV, onGoGuide, tick,
-  allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent
+  allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent,
+  prefs, setCutPref,
 }) {
 
   /* ── New cook form ── */
   if (view === 'new') {
     const guide = G[form.cut];
     const [showMore, setShowMore] = useState(false);
+
+    const cutPref = prefs?.cutPrefs?.[form.cut];
+    const defaultPit = cutPref?.pit ?? G[form.cut]?.pit ?? 225;
+    const defaultPull = cutPref?.pull ?? G[form.cut]?.pull ?? 165;
+    const pitChanged = form.smokerTarget !== defaultPit;
+    const pullChanged = form.probes.some(p => p.target !== defaultPull);
+    const showSaveDefault = (pitChanged || pullChanged) && Boolean(G[form.cut]);
     const allPellets = Object.values(PELLETS).flat();
     return (
       <div className="fadein">
@@ -128,6 +136,46 @@ export default function ActiveTab({
           </div>
 
           <hr className="divider" />
+
+          {/* Save-as-default badge */}
+          {showSaveDefault && (
+            <div style={{
+              background: 'rgba(245,158,11,0.07)',
+              border: '1px solid rgba(245,158,11,0.25)',
+              borderRadius: 10,
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginTop: 8,
+            }}>
+              <span style={{ fontSize: 12, color: 'var(--amber)', lineHeight: 1.4 }}>
+                Different from your defaults for {form.cut}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCutPref(form.cut, {
+                  pit: form.smokerTarget,
+                  pull: form.probes[0]?.target,
+                })}
+                style={{
+                  background: 'rgba(245,158,11,0.15)',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                  borderRadius: 8,
+                  padding: '5px 12px',
+                  color: 'var(--amber)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Save as default
+              </button>
+            </div>
+          )}
 
           {/* More Details (collapsible) */}
           <div style={{ marginBottom: '1rem' }}>
