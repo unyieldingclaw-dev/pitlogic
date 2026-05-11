@@ -295,7 +295,7 @@ export default function ActiveTab({
         </div>
         {confirmEnd
           ? <div style={{ display: 'flex', gap: 6 }}>
-              <button className="btn-primary" style={{ padding: '6px 12px', fontSize: 13 }} onClick={onEnd}>Confirm end</button>
+              <button className="btn-primary" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => onEnd()}>Confirm end</button>
               <button className="btn" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => setConfirmEnd(false)}>Cancel</button>
             </div>
           : <button className="btn-danger" onClick={() => setConfirmEnd(true)}>End Cook</button>

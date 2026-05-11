@@ -226,7 +226,7 @@ export default function App() {
 
   const handleDismiss = key => {
     if (key === 'dismiss_wrap') dis(`wrap_${activeId}`);
-    else if (key.startsWith('dismiss_stall_')) dis(`stall_${activeId}_${key.split('_').pop()}`);
+    else if (typeof key === 'string' && key.startsWith('dismiss_stall_')) dis(`stall_${activeId}_${key.split('_').pop()}`);
     else if (key === 'dismiss_co') dis(`co_${activeId}`);
     else endCook();
   };
