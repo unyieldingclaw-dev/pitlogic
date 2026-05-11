@@ -19,11 +19,12 @@ export default function ActiveTab({
   allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent,
   prefs, setCutPref,
 }) {
+  const [showMore, setShowMore] = useState(false);
+  const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
 
   /* ── New cook form ── */
   if (view === 'new') {
     const guide = G[form.cut];
-    const [showMore, setShowMore] = useState(false);
 
     const cutPref = prefs?.cutPrefs?.[form.cut];
     const defaultPit = cutPref?.pit ?? G[form.cut]?.pit ?? 225;
@@ -265,7 +266,6 @@ export default function ActiveTab({
   const guide   = G[activeCook.cut];
   const lastSmok = activeCook.smokerReadings[activeCook.smokerReadings.length - 1];
   const smokerPct = lastSmok ? Math.min(100, Math.round((lastSmok.temp / activeCook.smokerTarget) * 100)) : 0;
-  const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
 
   const stallProbs = activeCook.probes.reduce((acc, probe, i) => {
     acc[i] = computeStallProbability(probe.readings);
