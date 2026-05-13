@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { totalStats, cooksByMonth, stallPrediction, computeClimbRate, computeETA, computeStallProbability, buildAverageCurve } from '../analytics';
+import { totalStats, cooksByMonth, stallPrediction, computeClimbRate, computeETA, computeStallProbability, buildAverageCurve, buildCompareCurves } from '../analytics';
 
 const makeCook = (overrides = {}) => ({
   id: '1', status: 'complete', cut: 'Brisket', meat: 'Beef',
@@ -268,5 +268,53 @@ describe('buildAverageCurve', () => {
       expect(pt.upper).toBeGreaterThanOrEqual(pt.avg);
       expect(pt.avg).toBeGreaterThanOrEqual(pt.lower);
     }
+  });
+});
+
+describe('buildCompareCurves', () => {
+  const makeReadings = pts => pts.map(([time, temp]) => ({ time, temp }));
+  const makeC = (id, overrides = {}) => ({
+    id,
+    probes: [{ name: 'Meat', readings: [] }],
+    ...overrides,
+  });
+
+  it('returns array of same length as input', () => {
+    const c1 = makeC('1', { probes: [{ name: 'Meat', readings: makeReadings([[0,150],[30,165],[60,180]]) }] });
+    const c2 = makeC('2', { probes: [{ name: 'Meat', readings: makeReadings([[0,145],[30,160],[60,175]]) }] });
+    expect(buildCompareCurves([c1, c2], 0).length).toBe(2);
+  });
+
+  it('returns points: null when probe slot is missing', () => {
+    const cook = makeC('1', { probes: [{ name: 'Meat', readings: makeReadings([[0,150],[30,180]]) }] });
+    const result = buildCompareCurves([cook], 1); // probeIndex 1 doesn't exist
+    expect(result[0].points).toBeNull();
+  });
+
+  it('returns points: null when fewer than 2 readings', () => {
+    const cook = makeC('1', { probes: [{ name: 'Meat', readings: [{ time: 0, temp: 150 }] }] });
+    const result = buildCompareCurves([cook], 0);
+    expect(result[0].points).toBeNull();
+  });
+
+  it('cookId matches cook.id', () => {
+    const cook = makeC('abc123', { probes: [{ name: 'Meat', readings: makeReadings([[0,150],[30,180]]) }] });
+    expect(buildCompareCurves([cook], 0)[0].cookId).toBe('abc123');
+  });
+
+  it('interpolates at 15-min buckets', () => {
+    // t=0: 150°, t=30: 180° — linear, so t=15 should be 165°
+    const cook = makeC('1', { probes: [{ name: 'Meat', readings: makeReadings([[0,150],[30,180]]) }] });
+    const result = buildCompareCurves([cook], 0);
+    const pt = result[0].points?.find(p => p.t === 15);
+    expect(pt).toBeDefined();
+    expect(pt.temp).toBeCloseTo(165, 1);
+  });
+
+  it('stops at last reading time', () => {
+    // readings end at t=45, so no bucket at t=60
+    const cook = makeC('1', { probes: [{ name: 'Meat', readings: makeReadings([[0,150],[30,165],[45,172]]) }] });
+    const result = buildCompareCurves([cook], 0);
+    expect(result[0].points?.every(p => p.t <= 45)).toBe(true);
   });
 });
