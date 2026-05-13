@@ -238,7 +238,12 @@ export default function CompareChart({ cooks, cut }) {
               aria-checked={isSelected}
               tabIndex={isDisabled ? -1 : 0}
               onClick={() => !isDisabled && toggleCook(cook.id)}
-              onKeyDown={e => e.key === 'Enter' && !isDisabled && toggleCook(cook.id)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (!isDisabled) toggleCook(cook.id);
+                }
+              }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 10px', borderRadius: 8, marginBottom: 4,
