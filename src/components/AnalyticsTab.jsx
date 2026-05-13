@@ -109,14 +109,19 @@ export default function AnalyticsTab({ cooks }) {
         >
           {allCuts.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <div style={{
-          display: 'flex', borderRadius: 8, overflow: 'hidden',
-          border: '1px solid var(--border)', marginLeft: 'auto',
-        }}>
+        <div
+          role="group"
+          aria-label="View mode"
+          style={{
+            display: 'flex', borderRadius: 8, overflow: 'hidden',
+            border: '1px solid var(--border)', marginLeft: 'auto',
+          }}
+        >
           {['average', 'compare'].map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
+              aria-pressed={mode === m}
               style={{
                 padding: '5px 14px', fontSize: 12, border: 'none', cursor: 'pointer',
                 background: mode === m ? 'var(--ember)' : 'var(--surface-raised)',
@@ -131,13 +136,13 @@ export default function AnalyticsTab({ cooks }) {
       </div>
 
       {mode === 'compare' && (
-        <div className="card">
+        <div className="card fadein">
           <CompareChart cooks={cooks} cut={selectedCut} />
         </div>
       )}
 
       {mode === 'average' && (
-        <>
+        <div className="fadein">
           <div className="card">
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text2)',
               textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Stall Prediction</div>
@@ -242,7 +247,7 @@ export default function AnalyticsTab({ cooks }) {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
