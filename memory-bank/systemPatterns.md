@@ -1,6 +1,6 @@
 # System Patterns & Architecture Decisions
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-18
 
 ## Architecture Pattern: Prop-Drilled State from App.jsx
 
@@ -83,6 +83,24 @@ Types: feat, fix, chore, docs, refactor, test, style, a11y
 ### Branch Strategy
 - `main` — production, auto-deploys to GitHub Pages on push
 
+## Pattern: Vendor-Agnostic Telemetry Provider Abstraction (src/lib/)
+
+`src/lib/` is a TypeScript-only layer (lib/ only — not a full project migration) providing the provider abstraction pipeline:
+
+```
+Provider Adapter → Normalizer (Zod) → EventBus → TelemetryStore → Analytics/UI
+```
+
+**Provider Firewall (ADR-001):** Analytics and UI MUST NOT import from `src/lib/providers/` or `src/lib/telemetry/eventBus/`. Only `TelemetryStore` crosses the boundary.
+
+**Semantic Authority (ADR-002):** Each layer owns a single domain — providers own ingress, normalizer owns validity, store owns derived state, analytics owns interpretation. No cross-layer authority claims.
+
+**Session lifecycle** is owned exclusively by `SessionStore`. Providers MUST NOT emit session events or infer session boundaries.
+
+**Staleness derivation** is owned exclusively by `TelemetryStore`. Providers MUST NOT emit `status: 'stale'`.
+
+Full contracts: `src/lib/compliance/ADR-001` through `ADR-004`, `providerGuardrails.md`.
+
 ## Never Do This
 
 - ❌ Access localStorage directly in components (use hooks)
@@ -92,3 +110,6 @@ Types: feat, fix, chore, docs, refactor, test, style, a11y
 - ❌ Use `<div>` with onClick instead of `<button>`
 - ❌ Force-push to main
 - ❌ Skip the Vitest run before committing
+- ❌ Import from `src/lib/providers/` or `src/lib/telemetry/eventBus/` outside `src/lib/` (provider firewall — ADR-001)
+- ❌ Add ThermoWorks-specific code outside `src/lib/providers/adapters/thermoworks/`
+- ❌ Emit session events or staleness from provider adapters (semantic authority — ADR-002)

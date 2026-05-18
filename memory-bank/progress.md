@@ -1,6 +1,6 @@
 # Progress Tracker
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-18
 
 ## ✅ Completed Features
 
@@ -59,24 +59,38 @@
 - [x] Analytics Tab: gradient stat values, amber avg curve with drop-shadow filter, scatter drop-shadow
 - [x] Settings: gradient Backup/Restore headers
 
+### Compare Mode — AnalyticsTab (2026-05-10)
+- [x] Cook comparison charts — overlay temp curves from multiple past cooks of same cut
+- [x] `CompareChart` component with Recharts overlay
+- [x] `buildCompareCurves` utility
+- [x] Comparison checklist with keyboard/WCAG 2.1 support (Space key on rows)
+- [x] aria-pressed on mode toggle, fadein on mode content
+
 ## 🚧 In Progress
 
-Nothing currently in flight.
+### PitLogic Rebrand + SDK Compliance + Telemetry Architecture (2026-05-18)
+- [x] Phase 0: Design spec doc (`docs/superpowers/specs/2026-05-18-pitlogic-sdk-compliance-rebrand-design.md`)
+- [x] Phase 1: `src/lib/compliance/` — ADR-001 through ADR-004, providerGuardrails.md
+- [x] Phase 1: CLAUDE.md ThermoWorks SDK compliance section
+- [x] Phase 1: memory-bank/ updates (all 5 files)
+- [ ] Phase 1: auto-memory updates
+- [ ] Phase 2: Zod + TypeScript (tsconfig.lib.json, vite.config.js)
+- [ ] Phase 3: Migration system + tests + wire into main.jsx
+- [ ] Phase 4: Full rebrand (16 files)
+- [ ] Phases 5–9: src/lib/ domain types, normalizer, EventBus, Store, providers
+- [ ] Phase 10: Wire + verify
+- [ ] Phase 11: Tests
+- [ ] Phase 12: Final cleanup
 
 ## 📋 Planned / Parking Lot
 
 ### ThermoWorks Real-Time Integration
-- [ ] Research ThermoWorks API / Smoke X connectivity
-- [ ] MCP server or CLI bridge to pipe live sensor data
-- [ ] Wire live data into `ActiveTab` temp readings
+- [ ] Implement `ThermoWorksAdapter` (currently a stub pending official SDK access)
+- [ ] Wire live data into `ActiveTab` temp readings via `TelemetryStore`
 
 ### Probe Target Alerts
 - [ ] Browser notification when a probe hits its target temp
 - [ ] Depends on real-time data feed
-
-### Cook Comparison Charts
-- [ ] Overlay temp curves from multiple cooks of same cut
-- [ ] UI in AnalyticsTab or HistoryTab detail view
 
 ## 📊 Test Coverage
 

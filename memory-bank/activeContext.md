@@ -1,10 +1,11 @@
 # Active Context - Current State
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-18
 
 ## Current Focus
 
-No active in-flight feature work. "Smoke & Fire" visual refresh is complete and committed to main.
+**PitLogic compliance + rebrand + telemetry architecture milestone** (active).
+Branch: `claude/frosty-hellman-9c2f1d`. Spec: `docs/superpowers/specs/2026-05-18-pitlogic-sdk-compliance-rebrand-design.md`.
 
 ## What's Working
 
@@ -18,20 +19,17 @@ No active in-flight feature work. "Smoke & Fire" visual refresh is complete and 
 
 ## Immediate Next Steps
 
-The parking lot items (in priority order, none started):
+Active milestone phases (in order):
 
-1. **ThermoWorks real-time integration**
-   - Goal: pipe live sensor data into the app so ETA and probe alerts are genuinely useful
-   - Approach TBD: MCP server, CLI bridge, or polling local endpoint
-   - Blocked on: research into ThermoWorks API / Smoke X connectivity
-
-2. **Probe target alerts**
-   - Browser notification when a probe hits its target temperature
-   - Depends on: real-time data feed (item 1)
-
-3. **Cook comparison charts**
-   - Overlay temperature curves from multiple past cooks of the same cut
-   - Independent of real-time integration
+1. ✅ Phase 0: Design spec doc committed
+2. ✅ Phase 1: Compliance ADRs + CLAUDE.md + memory-bank updates (in progress)
+3. Phase 2: Install Zod, create `tsconfig.lib.json`, update `vite.config.js` for .ts in lib/
+4. Phase 3: Migration system (`src/lib/migrations/`) + 6 regression tests + wire into `src/main.jsx`
+5. Phase 4: Full rebrand — 16 files (package.json, manifest, sw.js, App.jsx, etc.)
+6. Phases 5–9: `src/lib/` implementation — domain types, normalizer, EventBus, Store, providers
+7. Phase 10: Wire CSV end-to-end through new pipeline, verify all tests pass
+8. Phase 11: Tests for normalization, MockProvider, TelemetryStore
+9. Phase 12: Final memory/docs cleanup
 
 ## Environment Status
 
@@ -53,6 +51,7 @@ The parking lot items (in priority order, none started):
 
 ## Recent Session History
 
-- **2026-05-10**: "Smoke & Fire" visual refresh — warm amber gradients, breathing animations, ambient orbs, gradient text, TempChart area fills across all tabs
+- **2026-05-18**: PitLogic compliance + rebrand + telemetry architecture design (extended brainstorming → approved plan → Phase 0+1 implementation)
+- **2026-05-10**: "Smoke & Fire" visual refresh — warm amber gradients, breathing animations, ambient orbs, gradient text, TempChart area fills across all tabs; cook comparison charts shipped in AnalyticsTab
 - **2026-05-08**: Stall Intelligence v2, Accessibility Sprint, PWA/GitHub Pages Deploy, Data Export/Import
 - **Earlier**: Multi-probe temp tracking, cook history, recipe management, Plan to Eat CSV import, share card, mop timer
