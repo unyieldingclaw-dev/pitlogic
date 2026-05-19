@@ -1,4 +1,4 @@
-const KEY = 'rfx-v5';
+const KEY = 'pitlogic-v5';
 
 export const save = data => {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const KEY = 'rfx-recipes-v1';
+const KEY = 'pitlogic-recipes-v1';
 
 const loadRecipes = () => {
   try { const d = localStorage.getItem(KEY); return d ? JSON.parse(d) : []; }

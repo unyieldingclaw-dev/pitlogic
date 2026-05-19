@@ -28,7 +28,7 @@ export function useMopTimer(activeCook, onSprayEvent) {
         if (s <= 1) {
           setAlert(true);
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('RFX — Time to spray!', {
+            new Notification('PitLogic — Time to spray!', {
               body: mop.label ? `Apply: ${mop.label}` : 'Apply your mop or spray now.',
               icon: '/favicon.svg',
             });

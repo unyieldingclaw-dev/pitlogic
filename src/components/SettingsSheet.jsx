@@ -23,7 +23,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
 
   const handleExport = () => {
     const data = buildExport(cookState, recipes);
-    triggerDownload(`rfx-backup-${todayStr()}.json`, data);
+    triggerDownload(`pitlogic-backup-${todayStr()}.json`, data);
   };
 
   const handleFile = e => {

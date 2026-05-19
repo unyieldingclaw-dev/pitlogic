@@ -270,7 +270,7 @@ export default function App() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
       height: '100vh', background: 'var(--bg)', flexDirection: 'column', gap: 16 }}>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--ember)',
-        textShadow: '0 0 30px rgba(255,107,53,0.6)', letterSpacing: '0.1em' }}>RFX</div>
+        textShadow: '0 0 30px rgba(255,107,53,0.6)', letterSpacing: '0.1em' }}>PitLogic</div>
       <div style={{ fontSize: 12, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Loading your cooks…</div>
     </div>
   );
@@ -385,7 +385,7 @@ export default function App() {
         <div style={{ padding: '0 1.25rem 1.5rem', borderBottom: '1px solid var(--border2)', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--ember)',
-              textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>RFX</div>
+              textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>PitLogic</div>
             <button aria-label="Settings" onClick={() => setShowSettings(true)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)',
                 padding: 4, borderRadius: 6, marginTop: 4 }}>
@@ -439,7 +439,7 @@ export default function App() {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700,
-              color: 'var(--ember)', textShadow: '0 0 16px rgba(255,107,53,0.4)', letterSpacing: '0.05em', lineHeight: 1 }}>RFX</div>
+              color: 'var(--ember)', textShadow: '0 0 16px rgba(255,107,53,0.4)', letterSpacing: '0.05em', lineHeight: 1 }}>PitLogic</div>
             <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text3)', textTransform: 'uppercase' }}>Cook Tracker</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

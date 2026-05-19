@@ -73,7 +73,7 @@ export const G = {
     pull:205, wrap:165, pit:250, stall:true, sr:"160–170°F", sd:"2–5 hrs", co:8,
     stages:[
       {n:1, t:"180°F Super Smoke", w:"Cook start", d:"2 hrs", a:"Fat-side up. Low temp lets fat and collagen start breaking down slowly."},
-      {n:2, t:"250°F", w:"After smoke", d:"Until 165°F", a:"Raise temp and cook. Stall hits at 160–170°F — your RFX graph will show the plateau."},
+      {n:2, t:"250°F", w:"After smoke", d:"Until 165°F", a:"Raise temp and cook. Stall hits at 160–170°F — your PitLogic graph will show the plateau."},
       {n:3, t:"250°F", w:"At 165°F", d:"Until 205°F", a:"Wrap with a splash of apple juice or cider vinegar. Powers through stall, adds moisture."},
       {n:4, t:"165°F Keep Warm", w:"At 205°F", d:"30–60 min+", a:"Rest wrapped before pulling. Longer rest = better result."}
     ],
@@ -110,7 +110,7 @@ export const G = {
       {n:2, t:"450°F", w:"At 130–135°F", d:"3–5 min", a:"Raise to max and sear quickly, rotating every minute until 145°F."},
       {n:3, t:"Off", w:"At 145°F", d:"5 min", a:"Rest 5 min tented. Slice into medallions on the diagonal."}
     ],
-    tip:"Lean cuts dry out fast. Pull exactly at 145°F. Set your RFX alert at 140°F so you're watching the final rise closely."
+    tip:"Lean cuts dry out fast. Pull exactly at 145°F. Set your PitLogic alert at 140°F so you're watching the final rise closely."
   },
   "Whole Chicken": {
     p:["Cherry","Apple","Pecan"],
@@ -121,7 +121,7 @@ export const G = {
       {n:2, t:"375°F", w:"At 145°F breast", d:"Until 165°F breast", a:"Raise temp to crisp skin. This phase goes fast — watch it."},
       {n:3, t:"Off", w:"At 165°F breast", d:"5–10 min", a:"Rest 5–10 min. Verify thigh reads 175°F before carving."}
     ],
-    tip:"Use two RFX probes — one in the breast (165°F), one in the thigh (175°F). They cook at different rates."
+    tip:"Use two probes — one in the breast (165°F), one in the thigh (175°F). They cook at different rates."
   },
   "Spatchcock Chicken": {
     p:["Cherry","Apple"],
@@ -171,7 +171,7 @@ export const G = {
     stages:[
       {n:1, t:"200°F", w:"Cook start", d:"Until 145°F", a:"Whole trout, cleaned, seasoned inside cavity. Cedar plank or foil prevents sticking."}
     ],
-    tip:"Done when flesh flakes at the thickest point. Set your RFX alert at 135°F to watch the final rise closely."
+    tip:"Done when flesh flakes at the thickest point. Set your PitLogic alert at 135°F to watch the final rise closely."
   },
   "Plate Ribs": {
     p:["Oak","Hickory","Pecan"],
@@ -305,6 +305,6 @@ export const G = {
       {n:2, t:"450°F", w:"At 115–118°F", d:"4–6 min", a:"Sear on all sides, rotating every 90 seconds, until a tight crust forms."},
       {n:3, t:"Off", w:"At 128–130°F", d:"5–10 min", a:"Rest tented 5–10 min. Slice between bones into individual chops."}
     ],
-    tip:"Set your RFX alert at 110°F — the rack is small and temp rises fast once you sear. Frenching the bones (cleaning the rib tips) makes for a dramatic presentation."
+    tip:"Set your PitLogic alert at 110°F — the rack is small and temp rises fast once you sear. Frenching the bones (cleaning the rib tips) makes for a dramatic presentation."
   }
 };

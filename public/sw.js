@@ -1,4 +1,4 @@
-const CACHE = 'rfx-v2';
+const CACHE = 'pitlogic-v2';
 const SHELL = ['/rfx-cook-tracker/'];
 
 self.addEventListener('install', e => {

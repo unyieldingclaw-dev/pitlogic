@@ -1,6 +1,6 @@
 {
-  "name": "RFX Cook Tracker",
-  "short_name": "RFX",
+  "name": "PitLogic",
+  "short_name": "PitLogic",
   "description": "BBQ & smoking session tracker with probe logging, stall detection, and cook history",
   "start_url": "/rfx-cook-tracker/",
   "scope": "/rfx-cook-tracker/",
