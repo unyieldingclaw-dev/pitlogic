@@ -1,9 +1,9 @@
 {
-  "name": "RFX Cook Tracker",
-  "short_name": "RFX",
+  "name": "PitLogic",
+  "short_name": "PitLogic",
   "description": "BBQ & smoking session tracker with probe logging, stall detection, and cook history",
-  "start_url": "/rfx-cook-tracker/",
-  "scope": "/rfx-cook-tracker/",
+  "start_url": "/pitlogic/",
+  "scope": "/pitlogic/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#1C1A18",
@@ -11,13 +11,13 @@
   "categories": ["food", "lifestyle", "utilities"],
   "icons": [
     {
-      "src": "/rfx-cook-tracker/icon.svg",
+      "src": "/pitlogic/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/rfx-cook-tracker/icon.svg",
+      "src": "/pitlogic/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
