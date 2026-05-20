@@ -66,21 +66,18 @@
 - [x] Comparison checklist with keyboard/WCAG 2.1 support (Space key on rows)
 - [x] aria-pressed on mode toggle, fadein on mode content
 
-## 🚧 In Progress
-
-### PitLogic Rebrand + SDK Compliance + Telemetry Architecture (2026-05-18)
+### PitLogic Rebrand + SDK Compliance + Telemetry Architecture ✅ (2026-05-19)
 - [x] Phase 0: Design spec doc (`docs/superpowers/specs/2026-05-18-pitlogic-sdk-compliance-rebrand-design.md`)
 - [x] Phase 1: `src/lib/compliance/` — ADR-001 through ADR-004, providerGuardrails.md
 - [x] Phase 1: CLAUDE.md ThermoWorks SDK compliance section
-- [x] Phase 1: memory-bank/ updates (all 5 files)
-- [ ] Phase 1: auto-memory updates
-- [ ] Phase 2: Zod + TypeScript (tsconfig.lib.json, vite.config.js)
-- [ ] Phase 3: Migration system + tests + wire into main.jsx
-- [ ] Phase 4: Full rebrand (16 files)
-- [ ] Phases 5–9: src/lib/ domain types, normalizer, EventBus, Store, providers
-- [ ] Phase 10: Wire + verify
-- [ ] Phase 11: Tests
-- [ ] Phase 12: Final cleanup
+- [x] Phase 1: memory-bank/ + auto-memory updates
+- [x] Phase 2: Zod + TypeScript (tsconfig.lib.json, vite.config.js)
+- [x] Phase 3: Migration system + 6 tests + wire into main.jsx
+- [x] Phase 4: Full rebrand (package.json, manifest, sw.js, App.jsx, hooks, components, data)
+- [x] Phases 5–9: src/lib/ domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
+- [x] Phase 10: CsvProvider adapter + ProviderRegistry wired at startup
+- [x] Phase 11: Tests — normalize (6), MockProvider (5), TelemetryStore (7)
+- [x] Phase 12: memory-bank/ + auto-memory final cleanup
 
 ## 📋 Planned / Parking Lot
 
@@ -94,9 +91,14 @@
 
 ## 📊 Test Coverage
 
-- **Total tests**: 58 passing (as of 2026-05-08)
-- `analytics.test.js` — 273 lines, 7 analytics functions
-- `dataPortability.test.js` — 133 lines, export/import round-trip + merge logic
-- `planToEatParser.test.js` — 54 lines, CSV parsing edge cases
-- `helpers.test.js` — 34 lines, formatting + PROBE_COLORS
-- `useRecipes.test.js` — 27 lines, Plan to Eat integration + schema
+- **Total tests**: 96 passing (as of 2026-05-19)
+- `analytics.test.js` — 7 analytics functions
+- `dataPortability.test.js` — export/import round-trip + merge logic
+- `planToEatParser.test.js` — CSV parsing edge cases
+- `helpers.test.js` — formatting + PROBE_COLORS
+- `useRecipes.test.js` — Plan to Eat integration + schema
+- `usePrefs.test.js` — cut preferences (pitlogic-prefs-v1 key)
+- `migrationRunner.test.ts` — 6 cases: fresh install, success, corrupted data, partial, idempotent, no-overwrite
+- `normalize.test.ts` — 6 cases: active, disconnected, C→F, normalizedBy, malformed
+- `MockProvider.test.ts` — 5 cases: tick interval, rate, disconnect, multi-probe, unsubscribe
+- `TelemetryStore.test.ts` — 7 cases: register, disconnect, reconnect, stale, fresh, notify, unsubscribe
