@@ -1,0 +1,14 @@
+---
+description: WCAG 2.1 AA accessibility rules for JSX components — all rules are grep-verifiable
+globs: "**/*.jsx"
+alwaysApply: true
+---
+
+# Accessibility Rules
+
+These rules are testable. Each rule names a specific, grep-verifiable condition.
+
+- Every `<button>` with no visible text content must have an `aria-label` attribute — verify by grepping for `<button` and checking that text content or `aria-label` is present
+- Every toggle button must have `aria-pressed` set to the current boolean state — verify: `grep -n 'aria-pressed' src/` shows all toggle buttons
+- Every element with `role="checkbox"` must respond to both Enter and Space keydown events — verify that the `onKeyDown` handler includes both `e.key === 'Enter'` and `e.key === ' '` checks
+- Heading levels must not skip — `<h3>` may not appear without a preceding `<h2>` in the same component or section

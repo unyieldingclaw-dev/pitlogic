@@ -1,6 +1,6 @@
 # Progress Tracker
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-20
 
 ## ✅ Completed Features
 
@@ -20,6 +20,7 @@
 - [x] `StallCoach` — approaching/confirmed stall cards with action buttons
 - [x] `AnalyticsTab` — gradient bar chart, sigma-band average curve, cook quality scatter
 - [x] `TempChart` — EmberTooltip + per-probe gradients
+- [x] Compare mode in Analytics tab (`CompareChart` component, checklist selection)
 
 ### Recipes
 - [x] Recipe CRUD
@@ -43,25 +44,48 @@
 - [x] `role="alert"/"status"` on dynamic content
 - [x] `htmlFor`/`id` label associations on all form inputs
 - [x] `:focus-visible` keyboard navigation styles
+- [x] `aria-pressed` on mode toggle buttons
+- [x] Space key support on comparison checklist rows
 
 ### Utilities
 - [x] Mop timer with browser Notification API (permission request + fires at zero)
 - [x] Share card (html2canvas screenshot export)
 
 ### Visual Design — "Smoke & Fire" (2026-05-10)
-- [x] CSS Foundation: 4 tokens, 4 keyframes, 6 utility classes (`live-pulse`, `breathe-glow`, `shimmer-bar`, `gradient-text`, `card-interactive`, `temp-card`) with `prefers-reduced-motion` guard
-- [x] Navigation: `live-pulse` ripple dots, gradient+glow sidebar active item
-- [x] Dashboard: gradient stat pills, breathing active cook cards, warm hover on recent cards
-- [x] Active Cook View: `.temp-card` inset with ambient orb, shimmer progress fill, CSS-driven hot card glow
-- [x] Live Intelligence Panel: gradient-text on climb rate and ETA values
-- [x] TempChart: `ComposedChart` with `Area` fill layers under probe lines, vertical gradients, warm grid
+- [x] CSS Foundation: 4 tokens, 4 keyframes, 6 utility classes with `prefers-reduced-motion` guard
+- [x] Navigation, Dashboard, Active Cook View, Live Intelligence Panel, TempChart gradient treatment
 - [x] History Tab: `card-interactive` hover glow, gradient peak temp, live-pulse dot
-- [x] Analytics Tab: gradient stat values, amber avg curve with drop-shadow filter, scatter drop-shadow
-- [x] Settings: gradient Backup/Restore headers
+- [x] Analytics Tab: gradient stat values, amber avg curve, scatter drop-shadow, fade-in on mode switch
+
+### Cuts & Cook Preferences (2026-05-10)
+- [x] Expanded MEATS: Plate Ribs, Beef Cheeks, Picanha (Beef); Spare Ribs, Pork Belly, Ham, Pork Chops (Pork); Wings, Cornish Hen (Poultry); Lamb category
+- [x] 12 new cut guides with pellets, temps, stages, tips
+- [x] `usePrefs` hook — per-cut pit/pull overrides in `rfx-prefs-v1` localStorage
+- [x] ActiveTab inline "Save as default" amber badge
+- [x] SettingsSheet "My Defaults" section with per-cut reset
+
+### Claude Code Infrastructure (2026-05-20)
+- [x] `.claude/settings.json` — tracked project settings (Haiku env, permission denies, hook registrations)
+- [x] `block-dangerous-ops.sh` — 15 dangerous patterns blocked at PreToolUse
+- [x] `user-prompt-submit.sh` — memory-bank + context reminder at each turn
+- [x] `pre-edit-karpathy.sh` — Karpathy reminder + task contract path warning (never blocks)
+- [x] `test-strategist.md` agent — diff-scoped test gap analysis (haiku/effort:low)
+- [x] `maintainability-reviewer.md` agent — dead code + abstraction audit (haiku/effort:low)
+- [x] `security-reviewer.md` + `researcher.md` — model:haiku/effort frontmatter added
+- [x] `code-review.md` — upgraded to 8-phase with 5 parallel subagents + Opponent-Auditor + contract generation
+- [x] `test-audit.md` command — whole-codebase test gap analysis
+- [x] `comment-pass.md` command — dead code scan + WHY comment audit
+- [x] `memory-prune.md` command — memory-bank staleness/contradiction/sensitive data scan
+- [x] `handoff.md` command — graceful handoff with contract archival
+- [x] `.claude/contracts/.gitkeep` — contracts directory placeholder
+- [x] CI: test step + file size gate (400 warn / 650 fail, grandfathered, fetch-depth:2)
+- [x] 4 Cursor rules: architecture, code-quality (augmented), accessibility, memory-bank (augmented)
+- [x] Design doc: `docs/superpowers/specs/2026-05-20-testing-agent-flow-design.md`
+- [x] Global CLAUDE.md — corrected Haiku subagent configuration claim
 
 ## 🚧 In Progress
 
-Nothing currently in flight.
+Nothing currently in flight. All infra changes pending commit on `chore/update-memory-bank-2026-05-14`.
 
 ## 📋 Planned / Parking Lot
 
@@ -74,15 +98,17 @@ Nothing currently in flight.
 - [ ] Browser notification when a probe hits its target temp
 - [ ] Depends on real-time data feed
 
-### Cook Comparison Charts
-- [ ] Overlay temp curves from multiple cooks of same cut
-- [ ] UI in AnalyticsTab or HistoryTab detail view
+## 🐛 Known Bugs (Low Priority)
+
+- TempChart `width(-1) height(-1)` Recharts warning: `src/components/TempChart.jsx:88` — fix: move height to `<ResponsiveContainer height={h}>` not the wrapping div
+- CSP eval error in dev server from `vite.config.js` configureServer approach
 
 ## 📊 Test Coverage
 
-- **Total tests**: 58 passing (as of 2026-05-08)
-- `analytics.test.js` — 273 lines, 7 analytics functions
-- `dataPortability.test.js` — 133 lines, export/import round-trip + merge logic
-- `planToEatParser.test.js` — 54 lines, CSV parsing edge cases
-- `helpers.test.js` — 34 lines, formatting + PROBE_COLORS
-- `useRecipes.test.js` — 27 lines, Plan to Eat integration + schema
+- **Total tests**: 169 passing (16 test files) as of 2026-05-20
+- `analytics.test.js` — analytics functions, edge cases
+- `dataPortability.test.js` — export/import round-trip + merge logic
+- `planToEatParser.test.js` — CSV parsing edge cases
+- `helpers.test.js` — formatting + PROBE_COLORS
+- `useRecipes.test.js` — Plan to Eat integration + schema
+- (11 additional test files covering components, hooks, utils)

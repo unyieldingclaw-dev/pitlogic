@@ -1,0 +1,29 @@
+{
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
+  },
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.claude/settings.local.json)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "bash .claude/hooks/block-dangerous-ops.sh", "timeout": 600 }]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "bash .claude/hooks/pre-edit-karpathy.sh" }]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [{ "type": "command", "command": "bash .claude/hooks/user-prompt-submit.sh" }]
+      }
+    ]
+  }
+}
