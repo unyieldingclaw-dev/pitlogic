@@ -55,6 +55,24 @@ This is the single highest-leverage habit for improving output quality.
 - **Agents** — `.claude/agents/` defines specialized subagents (security-reviewer, researcher). Spawn with: "use the security-reviewer agent".
 - **MCP** — connect external services via `claude mcp add`. See `standards/MCP-SECURITY.md` before adding any server.
 
+## ThermoWorks SDK Compliance
+
+PitLogic is an independent cook analytics platform. ThermoWorks is an optional integration provider. These rules are mandatory in every session.
+
+**ARCHITECTURAL INVARIANT:** The analytics engine and all UI components MUST NOT import from `src/lib/providers/` or `src/lib/telemetry/eventBus/`. All provider communication crosses the domain boundary as materialized state from `TelemetryStore` only. Violation is grounds to reject a PR.
+
+**Before implementing any ThermoWorks-related feature**, run the 8-question filter in `src/lib/compliance/ADR-003-sdk-boundaries.md`. Any "yes" = stop and escalate before writing code.
+
+**PROHIBITED (no exceptions):**
+- Reverse engineering protocols, decompiling SDK, packet analysis to reconstruct undocumented behavior
+- Modifying, forking, or redistributing ThermoWorks SDK artifacts
+- Cloud-hosted ThermoWorks middleware or multi-tenant relay architecture
+- Any branding that implies official ThermoWorks affiliation or endorsement
+
+**ThermoWorks-specific code** is confined entirely to `src/lib/providers/adapters/thermoworks/`. Everything outside that directory must be vendor-agnostic.
+
+Full compliance details: `src/lib/compliance/` (ADR-001 through ADR-004, providerGuardrails.md).
+
 ## Handoff Protocol
 
 When user types "Handoff" or reports context >= 65%:

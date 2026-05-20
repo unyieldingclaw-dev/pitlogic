@@ -1,10 +1,10 @@
 # Project Brief
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-18
 
 ## Core Purpose
 
-RFX Cook Tracker is a personal BBQ cook logging and analytics tool. It lets a single user record temperature probe data, track active cooks with stall detection and ETA predictions, store cook history, and manage recipes — all as a client-side PWA with no backend.
+PitLogic is an independent personal BBQ cook logging and analytics platform. It lets a single user record temperature probe data, track active cooks with stall detection and ETA predictions, store cook history, and manage recipes — all as a client-side PWA with no backend. ThermoWorks is an optional integration provider, not the project identity.
 
 ## Non-Negotiable Constraints
 
@@ -16,8 +16,14 @@ RFX Cook Tracker is a personal BBQ cook logging and analytics tool. It lets a si
 ### Technical Constraints
 - No backend server — pure static SPA deployed to GitHub Pages
 - No external API calls in the critical path
-- All state persists in localStorage (keys: `rfx-v5` for cooks, `rfx-recipes-v1` for recipes)
+- All state persists in localStorage (keys: `pitlogic-v5` for cooks, `pitlogic-recipes-v1` for recipes, `pitlogic-prefs-v1` for preferences)
 - Windows 11 / PowerShell development environment
+
+### SDK Compliance Constraints
+- ThermoWorks integration governed by Software License Agreement — see `src/lib/compliance/`
+- Analytics engine and UI MUST NOT import from `src/lib/providers/` or `src/lib/telemetry/eventBus/`
+- ThermoWorks-specific code confined to `src/lib/providers/adapters/thermoworks/` only
+- No reverse engineering, no SDK redistribution, no cloud relay architecture
 
 ### User Experience
 - Mobile-responsive — used on phone next to the smoker
@@ -37,10 +43,13 @@ RFX Cook Tracker is a personal BBQ cook logging and analytics tool. It lets a si
 - [x] Accessibility sprint: semantic HTML, aria-*, focus-visible styles
 - [x] Mop timer with browser notifications
 
+### Phase 2 (In Progress)
+- [ ] **PitLogic rebrand + SDK compliance + telemetry architecture** (active milestone — see `docs/superpowers/specs/2026-05-18-pitlogic-sdk-compliance-rebrand-design.md`)
+
 ### Phase 2 (Parking Lot)
-- [ ] ThermoWorks real-time integration (MCP or CLI bridge to live sensor data)
+- [ ] ThermoWorks real-time integration (official SDK, adapter pattern via `TemperatureProvider` interface)
 - [ ] Probe target alerts (browser notification when probe hits target temp)
-- [ ] Cook comparison charts (overlay temp curves from multiple cooks of same cut)
+- [x] Cook comparison charts (shipped 2026-05-10 in AnalyticsTab)
 
 ## Out of Scope
 

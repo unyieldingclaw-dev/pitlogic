@@ -1,14 +1,14 @@
-# RFX Cook Tracker
+# PitLogic
 
-A personal BBQ cook logging and analytics tool. Track temperature probes, detect stalls, predict finish times, and review cook history — all client-side with no backend.
+An independent BBQ cook logging and analytics platform. Track temperature probes, detect stalls, predict finish times, and review cook history — all client-side with no backend.
 
-**Live**: https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
+**Live**: https://unyieldingclaw-dev.github.io/pitlogic/
 
 ## Features
 
 - **Active cook dashboard** — one card per active cook with ETA, stall probability, and per-probe climb rates
 - **Stall intelligence** — approaching/confirmed stall detection with action coaching
-- **Analytics** — gradient bar chart, sigma-band average curves, cook quality scatter
+- **Analytics** — gradient bar chart, sigma-band average curves, cook quality scatter, cook comparison charts
 - **Temperature charting** — per-probe gradients, hover tooltips
 - **Cook history** — detail view, delete with confirm, share card (screenshot export)
 - **Recipes** — CRUD + Plan to Eat CSV import
@@ -19,17 +19,17 @@ A personal BBQ cook logging and analytics tool. Track temperature probes, detect
 
 ## Tech Stack
 
-- React 19 + Vite (JavaScript/JSX)
-- Recharts for charts, Lucide icons
+- React 19 + Vite (JavaScript/JSX); TypeScript in `src/lib/` only
+- Recharts for charts, Lucide icons, Zod for provider-boundary validation
 - localStorage only — no backend, no accounts
-- Vitest + Testing Library for tests
+- Vitest + Testing Library for tests (96 passing)
 - GitHub Actions → GitHub Pages for CI/CD
 
 ## Getting Started
 
 ```powershell
 npm install
-npm run dev          # http://localhost:5173/rfx-cook-tracker/
+npm run dev          # http://localhost:5173/pitlogic/
 ```
 
 ## Testing
@@ -52,7 +52,9 @@ git push origin main # triggers deploy
 ## Data Storage
 
 All data is in localStorage:
-- `rfx-v5` — cooks, active cook state
-- `rfx-recipes-v1` — recipes
+- `pitlogic-v5` — cooks, active cook state
+- `pitlogic-recipes-v1` — recipes
+- `pitlogic-prefs-v1` — per-cut cook preferences
+- `pitlogic-migrations-v1` — migration state
 
 Use Settings (gear icon) to export a JSON backup or restore from a previous backup.

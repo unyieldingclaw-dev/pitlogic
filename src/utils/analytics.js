@@ -160,3 +160,28 @@ export function buildAverageCurve(cooks, cut) {
   if (buckets.length === 0) return null;
   return { curve: buckets, sampleSize: matching.length };
 }
+
+export function buildCompareCurves(cooks, probeIndex) {
+  return cooks.map(cook => {
+    const probe = cook.probes?.[probeIndex];
+    if (!probe || probe.readings.length < 2) {
+      return { cookId: cook.id, points: null };
+    }
+    const readings = probe.readings;
+    const maxT = readings[readings.length - 1].time;
+    const points = [];
+    for (let t = 0; t <= maxT; t += 15) {
+      if (t < readings[0].time) continue;
+      for (let i = 1; i < readings.length; i++) {
+        if (readings[i].time >= t) {
+          const prev = readings[i - 1];
+          const curr = readings[i];
+          const frac = curr.time === prev.time ? 0 : (t - prev.time) / (curr.time - prev.time);
+          points.push({ t, temp: parseFloat((prev.temp + frac * (curr.temp - prev.temp)).toFixed(1)) });
+          break;
+        }
+      }
+    }
+    return { cookId: cook.id, points };
+  });
+}

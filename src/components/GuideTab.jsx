@@ -96,7 +96,7 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
                 <div>
                   <div style={{ fontWeight: 500, marginBottom: 3 }}>Stall expected</div>
                   <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 13 }}>
-                    Expect a stall at {guide.sr} lasting {guide.sd}. Your RFX graph will show a flat line — the app auto-detects it and will alert you. Options: wrap, run hotter (275–300°F), or wait it out.
+                    Expect a stall at {guide.sr} lasting {guide.sd}. Your PitLogic graph will show a flat line — the app auto-detects it and will alert you. Options: wrap, run hotter (275–300°F), or wait it out.
                   </div>
                 </div>
               </div>
@@ -115,14 +115,14 @@ export default function GuideTab({ guideKey, setGuideKey, guideCat, setGuideCat,
             <div style={{ marginBottom: '.875rem' }}>
               <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text3)', textTransform: 'uppercase',
                 letterSpacing: '.04em', marginBottom: 8 }}>
-                RFX probe placement
+                Probe placement
               </div>
               <div className="card" style={{ fontSize: 13, lineHeight: 1.7 }}>
                 {guide.pull <= 145
                   ? 'Insert probe horizontally into the thickest part of the meat, parallel to any bone structure. For fish and poultry, aim for geometric center and avoid touching bone.'
                   : guide.stall
-                  ? 'Insert probe parallel to the grain into the thickest part. For brisket or shoulder, aim for geometric center — the 4 independent sensors in the RFX average to find true thermal center.'
-                  : 'Insert probe into the thickest part, away from any bone. Bone conducts heat differently and will give falsely high readings. The RFX 2.8mm tip makes precise placement easy.'
+                  ? 'Insert probe parallel to the grain into the thickest part. For brisket or shoulder, aim for geometric center — the 4 independent sensors average to find true thermal center.'
+                  : 'Insert probe into the thickest part, away from any bone. Bone conducts heat differently and will give falsely high readings.'
                 }
               </div>
             </div>

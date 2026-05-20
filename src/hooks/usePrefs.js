@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const KEY = 'rfx-prefs-v1';
+const KEY = 'pitlogic-prefs-v1';
 
 function load() {
   try {
