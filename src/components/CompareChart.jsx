@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Maximize2, X } from 'lucide-react';
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -55,6 +56,54 @@ function CompareTooltip({ active, payload, label }) {
   );
 }
 
+function ChartBody({ chartData, selectedCooks, curves, showAvgLine, height = 220 }) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
+        <defs>
+          <linearGradient id="avgBand-compare" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity={0.08} />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+        <XAxis
+          dataKey="t"
+          tickFormatter={v => `${Math.floor(v / 60)}h`}
+          stroke="var(--ash)"
+          tick={{ fill: 'var(--text3)', fontSize: 10 }}
+        />
+        <YAxis
+          stroke="var(--ash)"
+          tick={{ fill: 'var(--text3)', fontSize: 10 }}
+          tickFormatter={v => `${v}°`}
+          domain={['auto', 'auto']}
+        />
+        <Tooltip content={<CompareTooltip />} />
+        {showAvgLine && (
+          <>
+            <Area dataKey="lower" stroke="none" fill="none" legendType="none" isAnimationActive={false} />
+            <Area dataKey="upper" stroke="none" fill="url(#avgBand-compare)"
+              baseDataKey="lower" legendType="none" isAnimationActive={false} />
+            <Line dataKey="avg" name="Avg"
+              stroke="rgba(255,255,255,0.35)" strokeWidth={1.5}
+              strokeDasharray="4 3" dot={false} isAnimationActive={false} />
+          </>
+        )}
+        {selectedCooks.map((cook, i) => {
+          const curve = curves.find(c => c.cookId === cook.id);
+          if (!curve?.points) return null;
+          return (
+            <Line key={cook.id} dataKey={cook.id} name={shortDate(cook.startTime)}
+              stroke={COMPARE_COLORS[i]} strokeWidth={2}
+              dot={false} connectNulls={false} isAnimationActive={false} />
+          );
+        })}
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
 export default function CompareChart({ cooks, cut }) {
   const eligible = cooks
     .filter(c => c.status === 'complete' && c.cut === cut && c.probes?.[0]?.readings?.length >= 2)
@@ -63,6 +112,7 @@ export default function CompareChart({ cooks, cut }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [probeIndex, setProbeIndex] = useState(0);
   const [showAvg, setShowAvg] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     setSelectedIds(eligible.slice(0, 3).map(c => c.id));
@@ -100,8 +150,51 @@ export default function CompareChart({ cooks, cut }) {
     );
   }
 
+  const legend = (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+      {selectedCooks.map((cook, i) => (
+        <div key={cook.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}>
+          <span style={{ width: 20, height: 3, background: COMPARE_COLORS[i], borderRadius: 2, display: 'inline-block' }} />
+          {shortDate(cook.startTime)}
+        </div>
+      ))}
+      {showAvgLine && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text3)' }}>
+          <span style={{ width: 20, height: 0, display: 'inline-block', borderTop: '2px dashed rgba(255,255,255,0.35)' }} />
+          Avg
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div>
+    <div style={{ overflow: 'hidden' }}>
+      {/* Expanded full-screen overlay */}
+      {expanded && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 9000,
+          display: 'flex', flexDirection: 'column', padding: '16px 20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600 }}>
+              Compare — {cut}
+            </span>
+            <button
+              onClick={() => setExpanded(false)}
+              aria-label="Close expanded chart"
+              style={{ background: 'none', border: 'none', color: 'var(--text2)', cursor: 'pointer', padding: 4 }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          {legend}
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <ChartBody chartData={chartData} selectedCooks={selectedCooks}
+              curves={curves} showAvgLine={showAvgLine} height="100%" />
+          </div>
+        </div>
+      )}
+
       {/* Probe picker + avg toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {probeTabs.length > 1 && probeTabs.map(tab => (
@@ -134,83 +227,25 @@ export default function CompareChart({ cooks, cut }) {
         </label>
       </div>
 
-      {/* Legend */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-        {selectedCooks.map((cook, i) => (
-          <div key={cook.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}>
-            <span style={{
-              width: 20, height: 3, background: COMPARE_COLORS[i],
-              borderRadius: 2, display: 'inline-block',
-            }} />
-            {shortDate(cook.startTime)}
-          </div>
-        ))}
-        {showAvgLine && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text3)' }}>
-            <span style={{
-              width: 20, height: 0, display: 'inline-block',
-              borderTop: '2px dashed rgba(255,255,255,0.35)',
-            }} />
-            Avg
-          </div>
-        )}
-      </div>
+      {legend}
 
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height={220}>
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
-          <defs>
-            <linearGradient id="avgBand-compare" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.08} />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-          <XAxis
-            dataKey="t"
-            tickFormatter={v => `${Math.floor(v / 60)}h`}
-            stroke="var(--ash)"
-            tick={{ fill: 'var(--text3)', fontSize: 10 }}
-          />
-          <YAxis
-            stroke="var(--ash)"
-            tick={{ fill: 'var(--text3)', fontSize: 10 }}
-            tickFormatter={v => `${v}°`}
-            domain={['auto', 'auto']}
-          />
-          <Tooltip content={<CompareTooltip />} />
-          {showAvgLine && (
-            <>
-              <Area dataKey="lower" stroke="none" fill="none" legendType="none" isAnimationActive={false} />
-              <Area
-                dataKey="upper" stroke="none" fill="url(#avgBand-compare)"
-                baseDataKey="lower" legendType="none" isAnimationActive={false}
-              />
-              <Line
-                dataKey="avg" name="Avg"
-                stroke="rgba(255,255,255,0.35)" strokeWidth={1.5}
-                strokeDasharray="4 3" dot={false} isAnimationActive={false}
-              />
-            </>
-          )}
-          {selectedCooks.map((cook, i) => {
-            const curve = curves.find(c => c.cookId === cook.id);
-            if (!curve?.points) return null;
-            return (
-              <Line
-                key={cook.id}
-                dataKey={cook.id}
-                name={shortDate(cook.startTime)}
-                stroke={COMPARE_COLORS[i]}
-                strokeWidth={2}
-                dot={false}
-                connectNulls={false}
-                isAnimationActive={false}
-              />
-            );
-          })}
-        </ComposedChart>
-      </ResponsiveContainer>
+      {/* Chart with expand button */}
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={() => setExpanded(true)}
+          aria-label="Expand chart"
+          style={{
+            position: 'absolute', top: 6, right: 6, zIndex: 1,
+            background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 6, color: 'var(--text3)', cursor: 'pointer',
+            padding: '3px 5px', lineHeight: 0,
+          }}
+        >
+          <Maximize2 size={12} />
+        </button>
+        <ChartBody chartData={chartData} selectedCooks={selectedCooks}
+          curves={curves} showAvgLine={showAvgLine} height={220} />
+      </div>
 
       {/* Cook checklist */}
       <div style={{ marginTop: 16 }}>
@@ -252,6 +287,7 @@ export default function CompareChart({ cooks, cut }) {
                 background: isSelected ? `${COMPARE_COLORS[colorIdx]}18` : 'transparent',
                 border: `1px solid ${color}`,
                 transition: 'background 0.15s, border-color 0.15s',
+                minWidth: 0,
               }}
             >
               <input
@@ -259,13 +295,19 @@ export default function CompareChart({ cooks, cut }) {
                 checked={isSelected}
                 readOnly
                 tabIndex={-1}
-                style={{ accentColor: isSelected ? COMPARE_COLORS[colorIdx] : undefined, pointerEvents: 'none' }}
+                style={{ accentColor: isSelected ? COMPARE_COLORS[colorIdx] : undefined, pointerEvents: 'none', flexShrink: 0 }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: 'var(--text1)' }}>
-                  {cook.name ? `${cook.name} · ` : ''}{shortDate(cook.startTime)}
+                <div style={{
+                  fontSize: 13, color: 'var(--text1)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {shortDate(cook.startTime)}{cook.name ? ` — ${cook.name}` : ''}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                <div style={{
+                  fontSize: 11, color: 'var(--text3)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
                   {durationH && `${durationH}h`}
                   {finalTemp != null && ` · ${finalTemp}°F final`}
                   {missingProbe && (

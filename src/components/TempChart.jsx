@@ -84,7 +84,7 @@ export default function TempChart({ cook, height = 260, showStall = false, analy
     </div>
   );
   return (
-    <div style={{ position: 'relative', height }}>
+    <div style={{ position: 'relative', width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
           <defs>

@@ -317,4 +317,8 @@ describe('buildCompareCurves', () => {
     const result = buildCompareCurves([cook], 0);
     expect(result[0].points?.every(p => p.t <= 45)).toBe(true);
   });
+
+  it('returns empty array for empty input', () => {
+    expect(buildCompareCurves([], 0)).toEqual([]);
+  });
 });
