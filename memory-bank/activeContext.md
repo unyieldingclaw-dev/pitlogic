@@ -6,7 +6,7 @@
 
 **PitLogic milestone complete.** Branch `claude/frosty-hellman-9c2f1d` is ready to PR into main.
 
-Next: open PR, merge, update GitHub Pages repo name from `rfx-cook-tracker` → `pitlogic` when ready.
+Next: open PR (branch already pushed), merge, then rename GitHub repo to `pitlogic`.
 
 ## What's Working
 
@@ -30,9 +30,9 @@ Next: open PR, merge, update GitHub Pages repo name from `rfx-cook-tracker` → 
 
 ## Environment Status
 
-**Dev server**: run `npm run dev` → http://localhost:5173/rfx-cook-tracker/
-**Git**: branch `claude/frosty-hellman-9c2f1d`, clean, ahead of main by ~8 commits
-**GitHub Pages**: live at https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
+**Dev server**: run `npm run dev` → http://localhost:5173/pitlogic/
+**Git**: branch `claude/frosty-hellman-9c2f1d`, awaiting PR merge
+**GitHub Pages**: live at https://unyieldingclaw-dev.github.io/pitlogic/ (after repo rename + merge)
 
 ## Key Files
 

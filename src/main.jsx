@@ -11,7 +11,7 @@ ProviderRegistry.register(new CsvProvider());
 
 if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(location.hostname)) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/rfx-cook-tracker/sw.js');
+    navigator.serviceWorker.register('/pitlogic/sw.js');
   });
 }
 

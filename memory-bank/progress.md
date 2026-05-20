@@ -35,7 +35,7 @@
 - [x] PWA manifest (standalone, theme #FF6B35, flame icon)
 - [x] Service worker (stale-while-revalidate)
 - [x] GitHub Actions auto-deploy to GitHub Pages on push to main
-- [x] Live at https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
+- [x] Live at https://unyieldingclaw-dev.github.io/pitlogic/
 
 ### Accessibility
 - [x] All clickable divs converted to `<button>` elements

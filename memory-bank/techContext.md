@@ -9,7 +9,7 @@
 | OS | Windows 11 Home |
 | Shell | PowerShell (pwsh) |
 | IDE | Cursor |
-| Git Remote | https://github.com/unyieldingclaw-dev/rfx-cook-tracker |
+| Git Remote | https://github.com/unyieldingclaw-dev/pitlogic |
 | Package Manager | npm |
 
 ## Frontend Stack
@@ -36,8 +36,8 @@ Test files live in `src/utils/__tests__/` and `src/hooks/__tests__/`.
 
 - **Hosting**: GitHub Pages (static, no server)
 - **CI/CD**: GitHub Actions — `.github/workflows/deploy.yml` auto-deploys on push to `main`
-- **Live URL**: https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
-- **Base path**: `/rfx-cook-tracker/` (configured in vite.config.js)
+- **Live URL**: https://unyieldingclaw-dev.github.io/pitlogic/
+- **Base path**: `/pitlogic/` (configured in vite.config.js)
 
 ## Data Storage
 
@@ -76,8 +76,8 @@ src/lib/
 ## Commands
 
 ```powershell
-npm run dev          # dev server at http://localhost:5173/rfx-cook-tracker/
-npm test -- --run    # run all tests once (58 passing as of 2026-05-08)
+npm run dev          # dev server at http://localhost:5173/pitlogic/
+npm test -- --run    # run all tests once (96 passing as of 2026-05-19)
 npm run test:watch   # watch mode
 npm run test:coverage # coverage report
 npm run build        # production build
