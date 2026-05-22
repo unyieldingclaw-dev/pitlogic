@@ -6,6 +6,7 @@ import { PELLETS } from '../data/pellets';
 import { PROBE_COLORS, shortDate, elapsed } from '../utils/helpers';
 import TempChart from './TempChart';
 import { useMopTimer } from '../hooks/useMopTimer';
+import { useProbeAlert } from '../hooks/useProbeAlert';
 import MopTimerBadge from './MopTimerBadge';
 import { computeETA, computeStallProbability } from '../utils/analytics';
 import LiveIntelligencePanel from './LiveIntelligencePanel';
@@ -21,6 +22,7 @@ export default function ActiveTab({
 }) {
   const [showMore, setShowMore] = useState(false);
   const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
+  useProbeAlert(activeCook);
 
   /* ── New cook form ── */
   if (view === 'new') {
