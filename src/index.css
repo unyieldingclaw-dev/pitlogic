@@ -31,6 +31,32 @@
   --mono:          'JetBrains Mono', 'Fira Mono', monospace;
 }
 
+/* ── Light mode overrides ── */
+[data-theme="light"] {
+  --bg:            #F5F4F0;
+  --surface:       #FFFFFF;
+  --surface-raised:#EDECEA;
+  --surface-input: #FFFFFF;
+  --text:          #1A1A16;
+  --text2:         #5A5A55;
+  --text3:         #8A8A84;
+  --ash:           #C0C0BA;
+  --border:        rgba(255,107,53,0.18);
+  --border2:       rgba(0,0,0,0.09);
+  --glow-ember:    0 0 20px rgba(255,107,53,0.22);
+  --glow-ambient:  radial-gradient(circle, rgba(255,107,53,0.18), transparent 70%);
+  --surface-warm:  linear-gradient(160deg, #FFF8F4, #FFF4EE);
+}
+
+[data-theme="light"] .card-glass {
+  background: rgba(255,255,255,0.7);
+}
+
+[data-theme="light"] select option {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

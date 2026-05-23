@@ -42,5 +42,13 @@ export function usePrefs() {
     return Boolean(prefs.cutPrefs?.[cut]);
   }, [prefs.cutPrefs]);
 
-  return { prefs, setCutPref, resetCutPref, hasCutPref };
+  const setTheme = useCallback((theme) => {
+    setPrefs(p => {
+      const next = { ...p, theme };
+      localStorage.setItem(KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  return { prefs, setCutPref, resetCutPref, hasCutPref, setTheme };
 }
