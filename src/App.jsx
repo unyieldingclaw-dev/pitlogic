@@ -53,7 +53,7 @@ export default function App() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
-  const { prefs, setCutPref, resetCutPref } = usePrefs();
+  const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
@@ -70,6 +70,10 @@ export default function App() {
     if (d) { setCooks(d.cooks || []); setActiveCooks(d.activeCooks || (d.aid ? [d.aid] : [])); setDismissed(d.dis || {}); }
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = prefs.theme === 'light' ? 'light' : 'dark';
+  }, [prefs.theme]);
 
   const persist = (nc, ac, dis) => save({ cooks: nc, activeCooks: ac, dis });
   const update  = (nc, ac = activeCooks, dis = dismissed) => { setCooks(nc); persist(nc, ac, dis); };
@@ -529,6 +533,7 @@ export default function App() {
         onImportRecipes={handleImportRecipes}
         prefs={prefs}
         resetCutPref={resetCutPref}
+        setTheme={setTheme}
       />
 
       {/* Bottom nav (mobile) */}
