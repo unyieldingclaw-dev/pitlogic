@@ -7,6 +7,7 @@ import { PROBE_COLORS, shortDate, elapsed } from '../utils/helpers';
 import TempChart from './TempChart';
 import { useMopTimer } from '../hooks/useMopTimer';
 import { useProbeAlert } from '../hooks/useProbeAlert';
+import { useSmokerAlert } from '../hooks/useSmokerAlert';
 import MopTimerBadge from './MopTimerBadge';
 import { computeETA, computeStallProbability } from '../utils/analytics';
 import LiveIntelligencePanel from './LiveIntelligencePanel';
@@ -23,6 +24,7 @@ export default function ActiveTab({
   const [showMore, setShowMore] = useState(false);
   const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
   useProbeAlert(activeCook);
+  const smokerAlert = useSmokerAlert(activeCook);
 
   /* ── New cook form ── */
   if (view === 'new') {
@@ -113,6 +115,29 @@ export default function ActiveTab({
                 <input type="number" value={form.smokerTarget}
                   onChange={e => setForm(f => ({ ...f, smokerTarget: e.target.value }))} />
               </div>
+            </div>
+
+            {/* Low temp alarm */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+              borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid rgba(90,90,85,0.4)',
+              marginBottom: 8 }}>
+              <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label style={{ margin: 0, fontSize: 13, color: 'var(--text)' }} htmlFor="low-alarm-toggle">Low temp alarm</label>
+              </div>
+              <button type="button" id="low-alarm-toggle"
+                className={form.smokerLowAlarm?.enabled ? 'btn-primary' : 'btn-ghost'}
+                style={{ padding: '4px 12px', fontSize: 12 }}
+                aria-pressed={!!form.smokerLowAlarm?.enabled}
+                onClick={() => setForm(f => ({ ...f, smokerLowAlarm: { ...(f.smokerLowAlarm || { threshold: 200 }), enabled: !f.smokerLowAlarm?.enabled } }))}>
+                {form.smokerLowAlarm?.enabled ? 'On' : 'Off'}
+              </button>
+              {form.smokerLowAlarm?.enabled && (
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="low-alarm-threshold">Below °F</label>
+                  <input id="low-alarm-threshold" type="number" value={form.smokerLowAlarm.threshold}
+                    onChange={e => setForm(f => ({ ...f, smokerLowAlarm: { ...f.smokerLowAlarm, threshold: e.target.value } }))} />
+                </div>
+              )}
             </div>
 
             {/* Meat probes */}
@@ -329,6 +354,19 @@ export default function ActiveTab({
             <div style={{ fontWeight: 500, marginBottom: 3 }}>Carryover reminder</div>
             <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 12 }}>
               {activeCook.cut} will rise ~{guide.co}°F after pulling. For target {guide.pull}°F, consider pulling at {guide.pull - guide.co}–{guide.pull - Math.round(guide.co / 2)}°F.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Low smoker temp alert */}
+      {smokerAlert && (
+        <div role="alert" className="alert alert-amber" style={{ marginBottom: '1rem' }}>
+          <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--amber)', marginTop: 1 }} />
+          <div>
+            <div style={{ fontWeight: 500, marginBottom: 3 }}>Smoker temp low</div>
+            <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 12 }}>
+              Pit is at {lastSmok?.temp}°F — below the {activeCook.smokerLowAlarm?.threshold}°F alarm threshold. Check your fire or vents.
             </div>
           </div>
         </div>
