@@ -187,6 +187,10 @@ export default function App() {
     if (logged) { update(nc); setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' }); flash('Reading logged ✓'); }
   };
 
+  const updateSmokerAlarm = (cookId, alarm) => {
+    update(cooks.map(c => c.id === cookId ? { ...c, smokerLowAlarm: alarm } : c));
+  };
+
   const handleCSV = (e, cookId) => {
     const file = e.target.files[0]; if (!file) return;
     const cook = cooks.find(c => c.id === cookId); if (!cook) return;
@@ -498,6 +502,7 @@ export default function App() {
               setActiveCookIdx={setActiveCookIdx}
               onAddCook={() => setView('new')}
               onSprayEvent={logSprayEvent}
+              onUpdateSmokerAlarm={updateSmokerAlarm}
               prefs={prefs}
               setCutPref={setCutPref} />
           )}

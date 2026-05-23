@@ -1,5 +1,26 @@
 import { useEffect, useRef } from 'react';
 
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    // Three short beeps at 880 Hz
+    [0, 0.35, 0.7].forEach(offset => {
+      osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.25);
+    });
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 1);
+  } catch (_) {
+    // AudioContext blocked or unavailable — silent fallback
+  }
+}
+
 export function useSmokerAlert(activeCook) {
   const belowRef = useRef(false);
 
@@ -23,6 +44,7 @@ export function useSmokerAlert(activeCook) {
     if (lastSmok.temp < alarm.threshold) {
       if (!belowRef.current) {
         belowRef.current = true;
+        playBeep();
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('PitLogic — Smoker temp low!', {
             body: `Pit dropped to ${lastSmok.temp}°F (alarm: ${alarm.threshold}°F)`,
