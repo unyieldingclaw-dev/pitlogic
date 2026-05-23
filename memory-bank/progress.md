@@ -86,8 +86,16 @@
 - [ ] Wire live data into `ActiveTab` temp readings via `TelemetryStore`
 
 ### Probe Target Alerts
-- [ ] Browser notification when a probe hits its target temp
-- [ ] Depends on real-time data feed
+- [x] Browser notification when probe hits target temp (useProbeAlert, 2026-05-23)
+
+### Smoker Low Temp Alarm
+- [x] Browser notification + Web Audio beep when pit drops below threshold (useSmokerAlert, 2026-05-23)
+- [x] Mid-cook threshold edit + on/off toggle in active view
+- [ ] **iOS alarm options** — silent switch bypasses all browser audio/notifications on iOS; investigate native PWA push notifications or other iOS-specific workaround when ready
+
+### ThermoWorks Real-Time Integration
+- [ ] Implement `ThermoWorksAdapter` (currently a stub pending official SDK access)
+- [ ] Wire live data into `ActiveTab` temp readings via `TelemetryStore`
 
 ## 📊 Test Coverage
 

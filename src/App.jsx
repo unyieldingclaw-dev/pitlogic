@@ -54,7 +54,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref } = usePrefs();
-  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
+  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
   const activeId = activeCooks[activeCookIdx] ?? null;
@@ -151,12 +151,15 @@ export default function App() {
       mopTimer: form.mop?.enabled
         ? { enabled: true, intervalMin: form.mop.intervalMin, label: form.mop.label || '', events: [] }
         : null,
+      smokerLowAlarm: form.smokerLowAlarm?.enabled
+        ? { enabled: true, threshold: Number(form.smokerLowAlarm.threshold) }
+        : null,
     };
     const nc = [cook, ...cooks];
     const newActive = [...activeCooks, cook.id];
     setCooks(nc); setActiveCooks(newActive); setActiveCookIdx(newActive.length - 1);
     persist(nc, newActive, dismissed);
-    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
+    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
     setView('active'); setTab('active');
   };
 
@@ -182,6 +185,10 @@ export default function App() {
       return { ...c, probes: np, smokerReadings: ns };
     });
     if (logged) { update(nc); setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' }); flash('Reading logged ✓'); }
+  };
+
+  const updateSmokerAlarm = (cookId, alarm) => {
+    update(cooks.map(c => c.id === cookId ? { ...c, smokerLowAlarm: alarm } : c));
   };
 
   const handleCSV = (e, cookId) => {
@@ -495,6 +502,7 @@ export default function App() {
               setActiveCookIdx={setActiveCookIdx}
               onAddCook={() => setView('new')}
               onSprayEvent={logSprayEvent}
+              onUpdateSmokerAlarm={updateSmokerAlarm}
               prefs={prefs}
               setCutPref={setCutPref} />
           )}

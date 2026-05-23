@@ -6,6 +6,8 @@ import { PELLETS } from '../data/pellets';
 import { PROBE_COLORS, shortDate, elapsed } from '../utils/helpers';
 import TempChart from './TempChart';
 import { useMopTimer } from '../hooks/useMopTimer';
+import { useProbeAlert } from '../hooks/useProbeAlert';
+import { useSmokerAlert } from '../hooks/useSmokerAlert';
 import MopTimerBadge from './MopTimerBadge';
 import { computeETA, computeStallProbability } from '../utils/analytics';
 import LiveIntelligencePanel from './LiveIntelligencePanel';
@@ -17,10 +19,15 @@ export default function ActiveTab({
   stalls, wrapAlert, coAlert, confirmEnd, setConfirmEnd,
   onStart, onEnd, onLog, onCSV, onGoGuide, tick,
   allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent,
+  onUpdateSmokerAlarm,
   prefs, setCutPref,
 }) {
   const [showMore, setShowMore] = useState(false);
+  const [editingAlarm, setEditingAlarm] = useState(false);
+  const [alarmDraft, setAlarmDraft] = useState('');
   const { countdown, alert: mopAlert, dismissSpray } = useMopTimer(activeCook, onSprayEvent);
+  useProbeAlert(activeCook);
+  const smokerAlert = useSmokerAlert(activeCook);
 
   /* ── New cook form ── */
   if (view === 'new') {
@@ -111,6 +118,29 @@ export default function ActiveTab({
                 <input type="number" value={form.smokerTarget}
                   onChange={e => setForm(f => ({ ...f, smokerTarget: e.target.value }))} />
               </div>
+            </div>
+
+            {/* Low temp alarm */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+              borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid rgba(90,90,85,0.4)',
+              marginBottom: 8 }}>
+              <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label style={{ margin: 0, fontSize: 13, color: 'var(--text)' }} htmlFor="low-alarm-toggle">Low temp alarm</label>
+              </div>
+              <button type="button" id="low-alarm-toggle"
+                className={form.smokerLowAlarm?.enabled ? 'btn-primary' : 'btn-ghost'}
+                style={{ padding: '4px 12px', fontSize: 12 }}
+                aria-pressed={!!form.smokerLowAlarm?.enabled}
+                onClick={() => setForm(f => ({ ...f, smokerLowAlarm: { ...(f.smokerLowAlarm || { threshold: 200 }), enabled: !f.smokerLowAlarm?.enabled } }))}>
+                {form.smokerLowAlarm?.enabled ? 'On' : 'Off'}
+              </button>
+              {form.smokerLowAlarm?.enabled && (
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="low-alarm-threshold">Below °F</label>
+                  <input id="low-alarm-threshold" type="number" value={form.smokerLowAlarm.threshold}
+                    onChange={e => setForm(f => ({ ...f, smokerLowAlarm: { ...f.smokerLowAlarm, threshold: e.target.value } }))} />
+                </div>
+              )}
             </div>
 
             {/* Meat probes */}
@@ -332,6 +362,19 @@ export default function ActiveTab({
         </div>
       )}
 
+      {/* Low smoker temp alert */}
+      {smokerAlert && (
+        <div role="alert" className="alert alert-amber" style={{ marginBottom: '1rem' }}>
+          <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--amber)', marginTop: 1 }} />
+          <div>
+            <div style={{ fontWeight: 500, marginBottom: 3 }}>Smoker temp low</div>
+            <div style={{ color: 'var(--text2)', lineHeight: 1.5, fontSize: 12 }}>
+              Pit is at {lastSmok?.temp}°F — below the {activeCook.smokerLowAlarm?.threshold}°F alarm threshold. Check your fire or vents.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Wrap alert */}
       {wrapAlert && (
         <div role="alert" className="alert alert-green" style={{ marginBottom: '1rem', justifyContent: 'space-between' }}>
@@ -381,21 +424,69 @@ export default function ActiveTab({
 
       {/* Ambient smoker strip */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)',
-        borderRadius: 12, padding: '12px 16px', marginBottom: '1rem',
-        display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
-            letterSpacing: '0.1em', marginBottom: 4 }}>Smoker / Ambient</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 28, fontWeight: 500, color: 'var(--text)' }}>
-              {lastSmok ? `${lastSmok.temp}°` : '—'}
-            </span>
-            <span style={{ fontSize: 13, color: 'var(--text3)' }}>→ {activeCook.smokerTarget}°F</span>
-          </div>
-          <div className="progress-track" style={{ marginTop: 6 }}>
-            <div className="progress-fill" style={{ width: `${smokerPct}%`, background: 'var(--ash)' }} />
+        borderRadius: 12, padding: '12px 16px', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
+              letterSpacing: '0.1em', marginBottom: 4 }}>Smoker / Ambient</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 28, fontWeight: 500, color: 'var(--text)' }}>
+                {lastSmok ? `${lastSmok.temp}°` : '—'}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--text3)' }}>→ {activeCook.smokerTarget}°F</span>
+            </div>
+            <div className="progress-track" style={{ marginTop: 6 }}>
+              <div className="progress-fill" style={{ width: `${smokerPct}%`, background: 'var(--ash)' }} />
+            </div>
           </div>
         </div>
+        {/* Low alarm row */}
+        {activeCook.smokerLowAlarm && (
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border2)',
+            display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <span style={{ color: 'var(--text3)', flex: 1 }}>
+              Low alarm:&nbsp;
+              <span style={{ color: smokerAlert ? 'var(--amber)' : 'var(--text2)', fontFamily: 'var(--mono)' }}>
+                {activeCook.smokerLowAlarm.enabled ? `${activeCook.smokerLowAlarm.threshold}°F` : 'off'}
+              </span>
+            </span>
+            {editingAlarm ? (
+              <>
+                <input
+                  type="number"
+                  aria-label="Low alarm threshold"
+                  value={alarmDraft}
+                  onChange={e => setAlarmDraft(e.target.value)}
+                  style={{ width: 64, padding: '3px 6px', fontSize: 12 }}
+                />
+                <button className="btn-primary" style={{ padding: '3px 10px', fontSize: 12 }}
+                  onClick={() => {
+                    const t = Number(alarmDraft);
+                    if (!isNaN(t) && t > 0) {
+                      onUpdateSmokerAlarm(activeCook.id, { ...activeCook.smokerLowAlarm, threshold: t, enabled: true });
+                    }
+                    setEditingAlarm(false);
+                  }}>Save</button>
+                <button className="btn" style={{ padding: '3px 10px', fontSize: 12 }}
+                  onClick={() => setEditingAlarm(false)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <button className="btn-ghost" style={{ padding: '3px 10px', fontSize: 12 }}
+                  onClick={() => { setAlarmDraft(String(activeCook.smokerLowAlarm.threshold)); setEditingAlarm(true); }}>
+                  Edit
+                </button>
+                <button
+                  className={activeCook.smokerLowAlarm.enabled ? 'btn' : 'btn-ghost'}
+                  style={{ padding: '3px 10px', fontSize: 12 }}
+                  aria-pressed={activeCook.smokerLowAlarm.enabled}
+                  onClick={() => onUpdateSmokerAlarm(activeCook.id, { ...activeCook.smokerLowAlarm, enabled: !activeCook.smokerLowAlarm.enabled })}>
+                  {activeCook.smokerLowAlarm.enabled ? 'On' : 'Off'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Probe cards */}
