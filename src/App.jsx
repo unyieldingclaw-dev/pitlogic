@@ -205,17 +205,30 @@ export default function App() {
   };
 
   const handleCSV = (e, cookId) => {
-    const file = e.target.files[0]; if (!file) return;
+    const files = [...e.target.files]; e.target.value = '';
+    if (!files.length) return;
     const cook = cooks.find(c => c.id === cookId); if (!cook) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const res = parseCSV(ev.target.result, cook); if (!res) { flash('Could not parse CSV'); return; }
-      const { pData, sData } = res;
+    const readFile = f => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = ev => resolve(parseCSV(ev.target.result, cook));
+      reader.readAsText(f);
+    });
+    Promise.all(files.map(readFile)).then(results => {
+      const valid = results.filter(Boolean);
+      if (!valid.length) { flash('Could not parse CSV'); return; }
       const sort = arr => [...arr].sort((a, b) => a.time - b.time);
-      const nc = cooks.map(c => { if (c.id !== cookId) return c; return { ...c, probes: c.probes.map((p, i) => ({ ...p, readings: sort([...p.readings, ...(pData[i] || [])]) })), smokerReadings: sort([...c.smokerReadings, ...sData]) }; });
-      update(nc); flash('CSV imported ✓');
-    };
-    reader.readAsText(file); e.target.value = '';
+      const nc = cooks.map(c => {
+        if (c.id !== cookId) return c;
+        const allPData = cook.probes.map((_, i) => valid.flatMap(r => r.pData[i] || []));
+        const allSData = valid.flatMap(r => r.sData);
+        return { ...c,
+          probes: c.probes.map((p, i) => ({ ...p, readings: sort([...p.readings, ...allPData[i]]) })),
+          smokerReadings: sort([...c.smokerReadings, ...allSData]),
+        };
+      });
+      update(nc);
+      flash(`${valid.length} file${valid.length > 1 ? 's' : ''} imported ✓`);
+    });
   };
 
   const deleteCook = id => {
