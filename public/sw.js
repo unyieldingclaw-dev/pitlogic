@@ -1,4 +1,4 @@
-const CACHE = 'pitlogic-v2';
+const CACHE = 'pitlogic-v3';
 const SHELL = ['/pitlogic/'];
 
 self.addEventListener('install', e => {
