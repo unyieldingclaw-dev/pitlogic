@@ -18,6 +18,15 @@ import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
 
+function thin(readings, minGapMs = 60000) {
+  const out = [];
+  let lastTs = -Infinity;
+  for (const r of readings) {
+    if (r.ts - lastTs >= minGapMs) { out.push(r); lastTs = r.ts; }
+  }
+  return out;
+}
+
 function parseCSV(text, cook) {
   const lines = text.trim().split('\n'); if (lines.length < 2) return null;
   const hdrs = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
@@ -27,14 +36,14 @@ function parseCSV(text, cook) {
   let startTs = null; const pData = cook.probes.map(() => []); const sData = [];
   lines.slice(1).forEach(line => {
     const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-    const ts = tCol >= 0 ? new Date(cols[tCol]).getTime() : null;
+    const ts = tCol >= 0 ? new Date(cols[tCol].replace(' ', 'T')).getTime() : null;
     if (ts && isNaN(ts)) return;
     if (!startTs && ts) startTs = cook.startTime || ts;
     const mins = ts && startTs ? (ts - startTs) / 60000 : pData[0]?.length || 0;
     pCols.forEach((ci, pi) => { const temp = parseFloat(cols[ci]); if (!isNaN(temp) && pi < pData.length) pData[pi].push({ time: +mins.toFixed(2), ts: ts || Date.now(), temp }); });
     if (sCol >= 0) { const temp = parseFloat(cols[sCol]); if (!isNaN(temp)) sData.push({ time: +mins.toFixed(2), ts: ts || Date.now(), temp }); }
   });
-  return { pData, sData };
+  return { pData: pData.map(arr => thin(arr)), sData: thin(sData) };
 }
 
 export default function App() {
@@ -202,7 +211,8 @@ export default function App() {
     reader.onload = ev => {
       const res = parseCSV(ev.target.result, cook); if (!res) { flash('Could not parse CSV'); return; }
       const { pData, sData } = res;
-      const nc = cooks.map(c => { if (c.id !== cookId) return c; return { ...c, probes: c.probes.map((p, i) => ({ ...p, readings: [...p.readings, ...(pData[i] || [])] })), smokerReadings: [...c.smokerReadings, ...sData] }; });
+      const sort = arr => [...arr].sort((a, b) => a.time - b.time);
+      const nc = cooks.map(c => { if (c.id !== cookId) return c; return { ...c, probes: c.probes.map((p, i) => ({ ...p, readings: sort([...p.readings, ...(pData[i] || [])]) })), smokerReadings: sort([...c.smokerReadings, ...sData]) }; });
       update(nc); flash('CSV imported ✓');
     };
     reader.readAsText(file); e.target.value = '';
