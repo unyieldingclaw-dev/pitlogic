@@ -568,7 +568,7 @@ export default function ActiveTab({
           <button className="btn-primary" style={{ flex: 1 }} onClick={onLog}>Log Now</button>
           <label className="btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
             ↑ Import CSV
-            <input type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={e => onCSV(e, activeCook.id)} />
+            <input type="file" accept=".csv,.txt" multiple style={{ display: 'none' }} onChange={e => onCSV(e, activeCook.id)} />
           </label>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>ThermoWorks CSV export auto-detected</div>
