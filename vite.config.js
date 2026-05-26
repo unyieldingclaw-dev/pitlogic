@@ -22,12 +22,44 @@ export default defineConfig({
         },
       },
     },
+    {
+      name: 'dev-csp-patch',
+      // Vite 8 sets its own CSP header internally. Patching res.setHeader alone
+      // is unreliable because Vite may flush before our wrapper is in place.
+      // Patch res.write + res.end instead — these fire right before bytes go out,
+      // so we can still mutate headers at that point.
+      configureServer(server) {
+        const devCSP = [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' data: https://fonts.gstatic.com",
+          "img-src 'self' data: blob:",
+          "connect-src 'self' ws: wss:",
+        ].join('; ');
+
+        server.middlewares.use((_req, res, next) => {
+          const forceCSP = () => {
+            if (!res.headersSent) {
+              res.removeHeader('Content-Security-Policy');
+              res.setHeader('Content-Security-Policy', devCSP);
+            }
+          };
+          const origWrite = res.write.bind(res);
+          res.write = function (...args) { forceCSP(); return origWrite(...args); };
+          const origEnd = res.end.bind(res);
+          res.end = function (...args) { forceCSP(); return origEnd(...args); };
+          next();
+        });
+      },
+    },
   ],
   base: '/rfx-cook-tracker/',
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: [],
+    exclude: ['**/node_modules/**', '.claude/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

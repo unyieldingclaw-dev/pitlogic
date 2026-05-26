@@ -1,0 +1,14 @@
+---
+description: Architecture constraints for rfx-cook-tracker — all rules are grep-verifiable and machine-checkable
+alwaysApply: true
+---
+
+# Architecture Rules
+
+These constraints are testable. Each rule names a specific, verifiable condition.
+
+- No file in `src/` may import `zustand`, `redux`, `@reduxjs/toolkit`, or `react-context` — state is prop-drilled from `App.jsx`
+- No component file may call `localStorage` directly — all storage access must go through `useStorage`, `useRecipes`, or `usePrefs` (verify: `grep -r 'localStorage' src/components/`)
+- Every function exported from `src/utils/` must be pure: no `localStorage`, no `fetch`, no `useEffect`, no side effects (verify: `grep -r 'localStorage\|fetch\|useEffect' src/utils/`)
+- Every interactive element must be a `<button>` element — `<div onClick>` and `<span onClick>` are forbidden (verify: `grep -rn 'onClick' src/components/ | grep -v '<button'`)
+- No file in `src/` may exceed 500 lines — warn at 400, CI hard-fails new/modified files at 650

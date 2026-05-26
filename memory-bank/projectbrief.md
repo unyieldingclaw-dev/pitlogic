@@ -1,3 +1,16 @@
+---
+authority: immutable
+review-cycle: 365d
+retention: permanent
+staleness-threshold: 365
+tags: [project-brief]
+last-reviewed: 2026-05-10
+compaction_generation: 0
+source_type: human
+confidence: high
+lineage: initial
+---
+
 # Project Brief
 
 **Last Updated**: 2026-05-10
@@ -16,7 +29,7 @@ RFX Cook Tracker is a personal BBQ cook logging and analytics tool. It lets a si
 ### Technical Constraints
 - No backend server — pure static SPA deployed to GitHub Pages
 - No external API calls in the critical path
-- All state persists in localStorage (keys: `rfx-v5` for cooks, `rfx-recipes-v1` for recipes)
+- All state persists in localStorage (keys: `rfx-v5` for cooks, `rfx-recipes-v1` for recipes, `rfx-prefs-v1` for per-cut preferences)
 - Windows 11 / PowerShell development environment
 
 ### User Experience
@@ -40,7 +53,6 @@ RFX Cook Tracker is a personal BBQ cook logging and analytics tool. It lets a si
 ### Phase 2 (Parking Lot)
 - [ ] ThermoWorks real-time integration (MCP or CLI bridge to live sensor data)
 - [ ] Probe target alerts (browser notification when probe hits target temp)
-- [ ] Cook comparison charts (overlay temp curves from multiple cooks of same cut)
 
 ## Out of Scope
 

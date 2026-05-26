@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
@@ -19,6 +21,47 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Run tests
+        run: npm test -- --run
+
+      - name: File size gate
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const { execSync } = require('child_process');
+
+          const modified = new Set(
+            execSync('git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD')
+              .toString().trim().split('\n').filter(Boolean)
+          );
+
+          function countLines(file) {
+            return fs.readFileSync(file, 'utf8').split('\n').length;
+          }
+
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                if (['__tests__', 'dev'].includes(entry.name)) continue;
+                walk(full);
+              } else if (/\.(js|jsx|ts|tsx)$/.test(entry.name) && !/\.test\.(js|ts)x?$/.test(entry.name)) {
+                const lines = countLines(full);
+                const rel = path.relative('.', full);
+                const isModified = modified.has(rel);
+                if (lines > 650) {
+                  if (isModified) { console.error('FAIL:', rel, lines + ' lines (limit 650)'); process.exitCode = 1; }
+                  else console.warn('WARN (grandfathered):', rel, lines + ' lines');
+                } else if (lines > 400) {
+                  console.warn('WARN:', rel, lines + ' lines (approaching 650 limit)');
+                }
+              }
+            }
+          }
+          walk('src');
+          "
 
       - run: npm run build
 

@@ -2,6 +2,7 @@ import { Clock, Flame, ChevronRight } from 'lucide-react';
 import { PROBE_COLORS } from '../utils/helpers';
 import { dur, shortDate, elapsed } from '../utils/helpers';
 
+
 export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, onNewCook, onGoActive, tick }) {
   return (
     <div className="fadein">

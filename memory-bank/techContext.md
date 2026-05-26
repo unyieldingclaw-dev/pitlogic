@@ -1,6 +1,19 @@
+---
+authority: stable
+review-cycle: 90d
+retention: permanent
+staleness-threshold: 90
+tags: [tech-stack, environment]
+last-reviewed: 2026-05-26
+compaction_generation: 0
+source_type: human
+confidence: high
+lineage: initial
+---
+
 # Technical Context & Stack
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-26
 
 ## Development Environment
 
@@ -28,7 +41,7 @@
 - **Libraries**: @testing-library/react, @testing-library/user-event
 - **Coverage**: V8 provider + lcov reporter
 
-Test files live in `src/utils/__tests__/` and `src/hooks/__tests__/`.
+Test files live in `src/utils/__tests__/`, `src/hooks/__tests__/`, and `src/tests/`.
 
 ## Infrastructure
 
@@ -43,6 +56,7 @@ Test files live in `src/utils/__tests__/` and `src/hooks/__tests__/`.
 |-----|----------|
 | `rfx-v5` | Cooks array + activeCooks + dis (display state) |
 | `rfx-recipes-v1` | Recipes array |
+| `rfx-prefs-v1` | Per-cut pit/pull temp preferences |
 
 No server, no IndexedDB, no cookies.
 
@@ -60,7 +74,7 @@ No server, no IndexedDB, no cookies.
 
 ```powershell
 npm run dev          # dev server at http://localhost:5173/rfx-cook-tracker/
-npm test -- --run    # run all tests once (58 passing as of 2026-05-08)
+npm test -- --run    # run all tests once (98 passing as of 2026-05-26)
 npm run test:watch   # watch mode
 npm run test:coverage # coverage report
 npm run build        # production build

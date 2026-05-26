@@ -52,7 +52,7 @@ This is the single highest-leverage habit for improving output quality.
 ## Tools
 
 - **Hooks** — `.claude/settings.json` enforces rules deterministically (format, lint, block dangerous ops). See `docs/HOOKS-GUIDE.md`.
-- **Agents** — `.claude/agents/` defines specialized subagents (security-reviewer, researcher). Spawn with: "use the security-reviewer agent".
+- **Agents** — `.claude/agents/` defines specialized subagents (security-reviewer, researcher, test-strategist, maintainability-reviewer). Subagents run on Haiku (`CLAUDE_CODE_SUBAGENT_MODEL=haiku` in `.claude/settings.json`, `model: haiku`/`effort: low` in frontmatter). Spawn with: "use the security-reviewer agent".
 - **MCP** — connect external services via `claude mcp add`. See `standards/MCP-SECURITY.md` before adding any server.
 
 ## Handoff Protocol

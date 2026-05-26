@@ -170,6 +170,7 @@ export function buildCompareCurves(cooks, probeIndex) {
     const readings = probe.readings;
     const maxT = readings[readings.length - 1].time;
     const points = [];
+    // Assumes readings are sorted ascending by .time
     for (let t = 0; t <= maxT; t += 15) {
       if (t < readings[0].time) continue;
       for (let i = 1; i < readings.length; i++) {
