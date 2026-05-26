@@ -9,7 +9,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -23,7 +23,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
 
   const handleExport = () => {
     const data = buildExport(cookState, recipes);
-    triggerDownload(`rfx-backup-${todayStr()}.json`, data);
+    triggerDownload(`pitlogic-backup-${todayStr()}.json`, data);
   };
 
   const handleFile = e => {
@@ -126,6 +126,32 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Appearance */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 10 }}>
+            Appearance
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 13, color: 'var(--text2)' }}>Theme</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                className={prefs.theme !== 'light' ? 'btn-primary' : 'btn-ghost'}
+                style={{ padding: '5px 14px', fontSize: 12 }}
+                aria-pressed={prefs.theme !== 'light'}
+                onClick={() => setTheme('dark')}>
+                Dark
+              </button>
+              <button
+                className={prefs.theme === 'light' ? 'btn-primary' : 'btn-ghost'}
+                style={{ padding: '5px 14px', fontSize: 12 }}
+                aria-pressed={prefs.theme === 'light'}
+                onClick={() => setTheme('light')}>
+                Light
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Export */}

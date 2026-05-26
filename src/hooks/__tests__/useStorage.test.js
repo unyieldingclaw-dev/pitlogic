@@ -14,49 +14,49 @@ describe('useStorage', () => {
 
     it('returns parsed object when data exists', () => {
       const data = { cooks: [], activeCooks: [], dis: {} };
-      localStorage.setItem('rfx-v5', JSON.stringify(data));
+      localStorage.setItem('pitlogic-v5', JSON.stringify(data));
       expect(load()).toEqual(data);
     });
 
     it('returns null when stored value is invalid JSON', () => {
-      localStorage.setItem('rfx-v5', 'not-json');
+      localStorage.setItem('pitlogic-v5', 'not-json');
       expect(load()).toBeNull();
     });
 
     it('migrates legacy aid string to activeCooks array', () => {
-      localStorage.setItem('rfx-v5', JSON.stringify({ cooks: [], aid: 'cook-1' }));
+      localStorage.setItem('pitlogic-v5', JSON.stringify({ cooks: [], aid: 'cook-1' }));
       const result = load();
       expect(result.activeCooks).toEqual(['cook-1']);
       expect(result.aid).toBeUndefined();
     });
 
     it('migrates empty aid string to empty activeCooks array', () => {
-      localStorage.setItem('rfx-v5', JSON.stringify({ cooks: [], aid: '' }));
+      localStorage.setItem('pitlogic-v5', JSON.stringify({ cooks: [], aid: '' }));
       const result = load();
       expect(result.activeCooks).toEqual([]);
       expect(result.aid).toBeUndefined();
     });
 
     it('persists migrated data back to localStorage', () => {
-      localStorage.setItem('rfx-v5', JSON.stringify({ cooks: [], aid: 'cook-1' }));
+      localStorage.setItem('pitlogic-v5', JSON.stringify({ cooks: [], aid: 'cook-1' }));
       load();
-      const stored = JSON.parse(localStorage.getItem('rfx-v5'));
+      const stored = JSON.parse(localStorage.getItem('pitlogic-v5'));
       expect(stored.activeCooks).toEqual(['cook-1']);
       expect(stored.aid).toBeUndefined();
     });
 
     it('does not migrate when activeCooks already exists', () => {
-      localStorage.setItem('rfx-v5', JSON.stringify({ cooks: [], activeCooks: ['cook-2'], aid: 'cook-1' }));
+      localStorage.setItem('pitlogic-v5', JSON.stringify({ cooks: [], activeCooks: ['cook-2'], aid: 'cook-1' }));
       const result = load();
       expect(result.activeCooks).toEqual(['cook-2']);
     });
   });
 
   describe('save', () => {
-    it('writes JSON-serialized data to rfx-v5', () => {
+    it('writes JSON-serialized data to pitlogic-v5', () => {
       const data = { cooks: [{ id: '1' }], activeCooks: ['1'], dis: {} };
       save(data);
-      expect(JSON.parse(localStorage.getItem('rfx-v5'))).toEqual(data);
+      expect(JSON.parse(localStorage.getItem('pitlogic-v5'))).toEqual(data);
     });
 
     it('silently swallows localStorage errors', () => {
@@ -72,7 +72,7 @@ describe('useStorage', () => {
       const cooks = [{ id: '1' }];
       const activeCooks = ['1'];
       replaceAll({ cooks, activeCooks });
-      expect(JSON.parse(localStorage.getItem('rfx-v5'))).toEqual({ cooks, activeCooks, dis: {} });
+      expect(JSON.parse(localStorage.getItem('pitlogic-v5'))).toEqual({ cooks, activeCooks, dis: {} });
     });
   });
 });

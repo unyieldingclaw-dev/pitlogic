@@ -1,14 +1,15 @@
-# RFX Cook Tracker
+# PitLogic
 
-A personal BBQ cook logging and analytics tool. Track temperature probes, detect stalls, predict finish times, and review cook history — all client-side with no backend.
+An independent BBQ cook logging and analytics platform. Track temperature probes, get low-temp alarms, detect stalls, predict finish times, and review cook history — all client-side with no backend.
 
-**Live**: https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
+**Live**: https://unyieldingclaw-dev.github.io/pitlogic/
 
 ## Features
 
 - **Active cook dashboard** — one card per active cook with ETA, stall probability, and per-probe climb rates
+- **Temperature alarms** — browser notification + audio beep when a meat probe hits its target; configurable low-temp alarm for the ambient/smoker probe (editable mid-cook, re-fires on repeated drops)
 - **Stall intelligence** — approaching/confirmed stall detection with action coaching
-- **Analytics** — gradient bar chart, sigma-band average curves, cook quality scatter
+- **Analytics** — gradient bar chart, sigma-band average curves, cook quality scatter, cook comparison charts
 - **Temperature charting** — per-probe gradients, hover tooltips
 - **Cook history** — detail view, delete with confirm, share card (screenshot export)
 - **Recipes** — CRUD + Plan to Eat CSV import
@@ -19,40 +20,45 @@ A personal BBQ cook logging and analytics tool. Track temperature probes, detect
 
 ## Tech Stack
 
-- React 19 + Vite (JavaScript/JSX)
-- Recharts for charts, Lucide icons
+- React 19 + Vite (JavaScript/JSX); TypeScript in `src/lib/` only
+- Recharts for charts, Lucide icons, Zod for provider-boundary validation
 - localStorage only — no backend, no accounts
-- Vitest + Testing Library for tests
+- Vitest + Testing Library (111 passing)
 - GitHub Actions → GitHub Pages for CI/CD
 
 ## Getting Started
 
-```powershell
+```bash
 npm install
-npm run dev          # http://localhost:5173/rfx-cook-tracker/
+npm run dev          # http://localhost:5173/pitlogic/
 ```
 
 ## Testing
 
-```powershell
-npm test -- --run    # run all tests once
-npm run test:watch   # watch mode
-npm run test:coverage
+```bash
+npm test -- --run       # run all tests once
+npm run test:watch      # watch mode
+npm run test:coverage   # coverage report
 ```
 
 ## Deployment
 
 Push to `main` — GitHub Actions deploys automatically to GitHub Pages.
 
-```powershell
+```bash
 npm run build        # verify build is clean locally
 git push origin main # triggers deploy
 ```
 
 ## Data Storage
 
-All data is in localStorage:
-- `rfx-v5` — cooks, active cook state
-- `rfx-recipes-v1` — recipes
+All data stays in localStorage — nothing leaves your device:
 
-Use Settings (gear icon) to export a JSON backup or restore from a previous backup.
+| Key | Contents |
+|-----|----------|
+| `pitlogic-v5` | Cooks, active cook state |
+| `pitlogic-recipes-v1` | Recipes |
+| `pitlogic-prefs-v1` | Per-cut cook preferences |
+| `pitlogic-migrations-v1` | Migration state |
+
+Use the Settings gear to export a JSON backup or restore from a previous backup.

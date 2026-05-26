@@ -13,7 +13,7 @@ describe('usePrefs', () => {
   });
 
   it('loads existing prefs from localStorage on mount', () => {
-    localStorage.setItem('rfx-prefs-v1', JSON.stringify({ cutPrefs: { Brisket: { pit: 250, pull: 203 } } }));
+    localStorage.setItem('pitlogic-prefs-v1', JSON.stringify({ cutPrefs: { Brisket: { pit: 250, pull: 203 } } }));
     const { result } = renderHook(() => usePrefs());
     expect(result.current.prefs.cutPrefs.Brisket).toEqual({ pit: 250, pull: 203 });
   });
@@ -22,7 +22,7 @@ describe('usePrefs', () => {
     const { result } = renderHook(() => usePrefs());
     act(() => result.current.setCutPref('Brisket', { pit: 250, pull: 205 }));
     expect(result.current.prefs.cutPrefs.Brisket).toEqual({ pit: 250, pull: 205 });
-    expect(JSON.parse(localStorage.getItem('rfx-prefs-v1'))).toEqual({ cutPrefs: { Brisket: { pit: 250, pull: 205 } } });
+    expect(JSON.parse(localStorage.getItem('pitlogic-prefs-v1'))).toEqual({ cutPrefs: { Brisket: { pit: 250, pull: 205 } } });
   });
 
   it('setCutPref merges partial overrides into existing pref', () => {
@@ -37,7 +37,7 @@ describe('usePrefs', () => {
     act(() => result.current.setCutPref('Brisket', { pit: 250, pull: 203 }));
     act(() => result.current.resetCutPref('Brisket'));
     expect(result.current.prefs.cutPrefs.Brisket).toBeUndefined();
-    expect(JSON.parse(localStorage.getItem('rfx-prefs-v1')).cutPrefs.Brisket).toBeUndefined();
+    expect(JSON.parse(localStorage.getItem('pitlogic-prefs-v1')).cutPrefs.Brisket).toBeUndefined();
   });
 
   it('hasCutPref returns true when a pref exists', () => {
@@ -52,7 +52,7 @@ describe('usePrefs', () => {
   });
 
   it('returns empty cutPrefs when localStorage contains invalid JSON', () => {
-    localStorage.setItem('rfx-prefs-v1', 'not-json');
+    localStorage.setItem('pitlogic-prefs-v1', 'not-json');
     const { result } = renderHook(() => usePrefs());
     expect(result.current.prefs.cutPrefs).toEqual({});
   });

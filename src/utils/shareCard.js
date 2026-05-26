@@ -12,7 +12,7 @@ export async function captureShareCard(elementId) {
   return canvas;
 }
 
-export function downloadCanvas(canvas, filename = 'rfx-cook.png') {
+export function downloadCanvas(canvas, filename = 'pitlogic-cook.png') {
   const link = document.createElement('a');
   link.download = filename;
   link.href = canvas.toDataURL('image/png');

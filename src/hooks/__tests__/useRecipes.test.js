@@ -38,7 +38,7 @@ describe('useRecipes', () => {
 
   it('loads recipes from localStorage on mount', () => {
     const stored = [{ id: '1', name: 'Brisket Rub', ingredients: [] }];
-    localStorageMock.setItem('rfx-recipes-v1', JSON.stringify(stored));
+    localStorageMock.setItem('pitlogic-recipes-v1', JSON.stringify(stored));
     const { result } = renderHook(() => useRecipes());
     expect(result.current.recipes).toEqual(stored);
   });
@@ -55,7 +55,7 @@ describe('useRecipes', () => {
     });
 
     it('prepends to existing recipes', () => {
-      localStorageMock.setItem('rfx-recipes-v1', JSON.stringify([{ id: 'old-1', name: 'Old Rub', ingredients: [] }]));
+      localStorageMock.setItem('pitlogic-recipes-v1', JSON.stringify([{ id: 'old-1', name: 'Old Rub', ingredients: [] }]));
       const { result } = renderHook(() => useRecipes());
       act(() => { result.current.add({ name: 'New Rub', ingredients: [] }); });
       expect(result.current.recipes[0].name).toBe('New Rub');
@@ -65,7 +65,7 @@ describe('useRecipes', () => {
     it('persists the new recipe to localStorage', () => {
       const { result } = renderHook(() => useRecipes());
       act(() => { result.current.add({ name: 'Salt Rub', ingredients: [] }); });
-      const persisted = JSON.parse(localStorageMock.getItem('rfx-recipes-v1'));
+      const persisted = JSON.parse(localStorageMock.getItem('pitlogic-recipes-v1'));
       expect(persisted).toHaveLength(1);
       expect(persisted[0].name).toBe('Salt Rub');
     });
@@ -86,7 +86,7 @@ describe('useRecipes', () => {
       let id;
       act(() => { id = result.current.add({ name: 'Base Rub', ingredients: [], rating: 0 }); });
       act(() => { result.current.update(id, { rating: 5 }); });
-      const persisted = JSON.parse(localStorageMock.getItem('rfx-recipes-v1'));
+      const persisted = JSON.parse(localStorageMock.getItem('pitlogic-recipes-v1'));
       expect(persisted[0].rating).toBe(5);
     });
 
@@ -95,7 +95,7 @@ describe('useRecipes', () => {
         { id: 'r-1', name: 'Rub A', ingredients: [], rating: 0 },
         { id: 'r-2', name: 'Rub B', ingredients: [], rating: 0 },
       ];
-      localStorageMock.setItem('rfx-recipes-v1', JSON.stringify(initial));
+      localStorageMock.setItem('pitlogic-recipes-v1', JSON.stringify(initial));
       const { result } = renderHook(() => useRecipes());
       act(() => { result.current.update('r-1', { rating: 3 }); });
       const rubB = result.current.recipes.find(r => r.id === 'r-2');
@@ -117,7 +117,7 @@ describe('useRecipes', () => {
       let id;
       act(() => { id = result.current.add({ name: 'Gone Rub', ingredients: [] }); });
       act(() => { result.current.remove(id); });
-      const persisted = JSON.parse(localStorageMock.getItem('rfx-recipes-v1'));
+      const persisted = JSON.parse(localStorageMock.getItem('pitlogic-recipes-v1'));
       expect(persisted).toHaveLength(0);
     });
   });
@@ -171,7 +171,7 @@ describe('useRecipes', () => {
       act(() => { result.current.add({ name: 'Old Recipe', ingredients: [] }); });
       const fresh = [{ id: 'new-1', name: 'Fresh Recipe', ingredients: [] }];
       act(() => { result.current.replaceAll(fresh); });
-      const persisted = JSON.parse(localStorageMock.getItem('rfx-recipes-v1'));
+      const persisted = JSON.parse(localStorageMock.getItem('pitlogic-recipes-v1'));
       expect(persisted).toEqual(fresh);
     });
   });

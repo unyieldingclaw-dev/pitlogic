@@ -7,8 +7,8 @@ export default defineConfig({
     {
       name: 'dev-manifest-path',
       // In dev, Vite serves public/ from root (/manifest.json).
-      // The base is /rfx-cook-tracker/, so %BASE_URL%manifest.json would
-      // resolve to /rfx-cook-tracker/manifest.json — a path Vite can't serve.
+      // The base is /pitlogic/, so %BASE_URL%manifest.json would
+      // resolve to /pitlogic/manifest.json — a path Vite can't serve.
       // In dev only, rewrite to /manifest.json before Vite expands %BASE_URL%.
       transformIndexHtml: {
         order: 'pre',
@@ -54,7 +54,7 @@ export default defineConfig({
       },
     },
   ],
-  base: '/rfx-cook-tracker/',
+  base: '/pitlogic/',
   test: {
     globals: true,
     environment: 'jsdom',

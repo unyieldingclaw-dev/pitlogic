@@ -15,7 +15,7 @@ function OffscreenCard({ cook, chartImgUrl, id }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <div style={{ fontFamily: 'Oswald, sans-serif', fontSize: 32, color: '#FF6B35',
-            textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>RFX</div>
+            textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>PitLogic</div>
           <div style={{ fontSize: 9, letterSpacing: '0.15em', color: '#6B6B65', textTransform: 'uppercase' }}>Cook Tracker</div>
         </div>
         <div style={{ textAlign: 'right' }}>

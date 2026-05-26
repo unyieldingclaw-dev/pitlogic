@@ -49,7 +49,7 @@ lineage: initial
 - [x] PWA manifest (standalone, theme #FF6B35, flame icon)
 - [x] Service worker (stale-while-revalidate)
 - [x] GitHub Actions auto-deploy to GitHub Pages on push to main
-- [x] Live at https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
+- [x] Live at https://unyieldingclaw-dev.github.io/pitlogic/
 
 ### Accessibility
 - [x] All clickable divs converted to `<button>` elements
@@ -63,6 +63,9 @@ lineage: initial
 ### Utilities
 - [x] Mop timer with browser Notification API (permission request + fires at zero)
 - [x] Share card (html2canvas screenshot export)
+- [x] Probe target alerts — browser notification when probe hits target temp (`useProbeAlert`)
+- [x] Smoker low temp alarm — browser notification + Web Audio beep when pit drops below threshold (`useSmokerAlert`)
+- [x] Mid-cook threshold edit + on/off toggle in active view
 
 ### Visual Design — "Smoke & Fire" (2026-05-10)
 - [x] CSS Foundation: 4 tokens, 4 keyframes, 6 utility classes with `prefers-reduced-motion` guard
@@ -73,18 +76,31 @@ lineage: initial
 ### Cuts & Cook Preferences (2026-05-10)
 - [x] Expanded MEATS: Plate Ribs, Beef Cheeks, Picanha (Beef); Spare Ribs, Pork Belly, Ham, Pork Chops (Pork); Wings, Cornish Hen (Poultry); Lamb category
 - [x] 12 new cut guides with pellets, temps, stages, tips
-- [x] `usePrefs` hook — per-cut pit/pull overrides in `rfx-prefs-v1` localStorage
+- [x] `usePrefs` hook — per-cut pit/pull overrides in `pitlogic-prefs-v1` localStorage
 - [x] ActiveTab inline "Save as default" amber badge
 - [x] SettingsSheet "My Defaults" section with per-cut reset
 
-### Misc (2026-05-25)
+### Misc
 - [x] MIT license added (repo root `LICENSE`)
 - [x] CompareChart fullscreen mode (`be60511`)
+
+### PitLogic Rebrand + SDK Compliance + Telemetry Architecture ✅ (2026-05-19)
+- [x] Phase 0: Design spec doc (`docs/superpowers/specs/2026-05-18-pitlogic-sdk-compliance-rebrand-design.md`)
+- [x] Phase 1: `src/lib/compliance/` — ADR-001 through ADR-004, providerGuardrails.md
+- [x] Phase 1: CLAUDE.md ThermoWorks SDK compliance section
+- [x] Phase 1: memory-bank/ + auto-memory updates
+- [x] Phase 2: Zod + TypeScript (tsconfig.lib.json, vite.config.js)
+- [x] Phase 3: Migration system + 6 tests + wire into main.jsx
+- [x] Phase 4: Full rebrand (package.json, manifest, sw.js, App.jsx, hooks, components, data)
+- [x] Phases 5–9: src/lib/ domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
+- [x] Phase 10: CsvProvider adapter + ProviderRegistry wired at startup
+- [x] Phase 11: Tests — normalize (6), MockProvider (5), TelemetryStore (7)
+- [x] Phase 12: memory-bank/ + auto-memory final cleanup
 
 ### Test Coverage (2026-05-26)
 - [x] `useStorage.test.js` — 10 tests: load (empty/valid/invalid JSON/aid migration × 4), save (writes/swallows errors), replaceAll
 - [x] `useRecipes.test.js` — 15 hook tests added: add (prepend, persist, id), update (patch, persist, non-matching), remove (filter, persist), importMany (counts, case-insensitive dedup, source stamp), replaceAll (overwrite, persist)
-- [x] Vitest worktree leak fixed — `exclude: ['.claude/**']` in vite.config.js (was 169 tests inflated from worktree; real count is 98)
+- [x] Vitest worktree leak fixed — `exclude: ['.claude/**']` in vite.config.js
 
 ### Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 - [x] `.claude/settings.json` — tracked project settings (Haiku env, permission denies, hook registrations)
@@ -106,21 +122,16 @@ lineage: initial
 - [x] Global CLAUDE.md — corrected Haiku subagent configuration claim
 - [x] `scripts/update-reviewed.sh` — PostToolUse hook: auto-updates `last-reviewed:` frontmatter in memory-bank files on every Write/Edit
 - [x] `health-check.md` command — runs mb doctor + test suite + build + git status; prints pass/warn/fail summary
-
-## 🚧 In Progress
-
-Nothing currently in flight. `chore/update-memory-bank-2026-05-14` has 4 committed commits pending PR to main. `claude/frosty-hellman-9c2f1d` holds PitLogic rebrand + telemetry arch work — awaiting merge/close decision.
+- [x] `standards/` directory (8 files) — ACCESSIBILITY, AGENTIC-SAFETY, CODE-QUALITY, LOGGING, MCP-SECURITY, SECURITY-GUARDRAILS, WORKFLOW + docs/HOOKS-GUIDE.md
 
 ## 📋 Planned / Parking Lot
 
 ### ThermoWorks Real-Time Integration
-- [ ] Research ThermoWorks API / Smoke X connectivity
-- [ ] MCP server or CLI bridge to pipe live sensor data
-- [ ] Wire live data into `ActiveTab` temp readings
+- [ ] Implement `ThermoWorksAdapter` (currently a stub pending official SDK access)
+- [ ] Wire live data into `ActiveTab` temp readings via `TelemetryStore`
 
-### Probe Target Alerts
-- [ ] Browser notification when a probe hits its target temp
-- [ ] Depends on real-time data feed
+### iOS Alarm
+- [ ] **iOS alarm options** — silent switch bypasses all browser audio/notifications on iOS; investigate native PWA push notifications or other iOS-specific workaround when ready
 
 ## 🐛 Known Bugs (Low Priority)
 
@@ -128,7 +139,7 @@ Nothing currently in flight. `chore/update-memory-bank-2026-05-14` has 4 committ
 
 ## 📊 Test Coverage
 
-- **Total tests**: 98 passing (7 test files) as of 2026-05-26
+- **Total tests**: 137 passing (13 test files) as of 2026-05-26
 - `analytics.test.js` — analytics functions, edge cases
 - `dataPortability.test.js` — export/import round-trip + merge logic
 - `planToEatParser.test.js` — CSV parsing edge cases
@@ -136,5 +147,9 @@ Nothing currently in flight. `chore/update-memory-bank-2026-05-14` has 4 committ
 - `useRecipes.test.js` — hook API (add, update, remove, importMany, replaceAll, load) + Plan to Eat integration
 - `usePrefs.test.js` — per-cut pref CRUD, localStorage round-trip, invalid JSON (`src/tests/usePrefs.test.js`)
 - `useStorage.test.js` — load/save/replaceAll, legacy aid migration, error swallowing
-
-Note: prior count of 169/16 was inflated by Vitest scanning `.claude/worktrees/`. Fixed via `exclude: ['.claude/**']` in vite.config.js.
+- `useProbeAlert.test.js` — probe target notification tests
+- `useSmokerAlert.test.js` — smoker low temp alarm tests
+- `migrationRunner.test.ts` — 6 cases: fresh install, success, corrupted data, partial, idempotent, no-overwrite
+- `normalize.test.ts` — 6 cases: active, disconnected, C→F, normalizedBy, malformed
+- `MockProvider.test.ts` — 5 cases: tick interval, rate, disconnect, multi-probe, unsubscribe
+- `TelemetryStore.test.ts` — 7 cases: register, disconnect, reconnect, stale, fresh, notify, unsubscribe

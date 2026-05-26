@@ -18,6 +18,15 @@ import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
 
+function thin(readings, minGapMs = 60000) {
+  const out = [];
+  let lastTs = -Infinity;
+  for (const r of readings) {
+    if (r.ts - lastTs >= minGapMs) { out.push(r); lastTs = r.ts; }
+  }
+  return out;
+}
+
 function parseCSV(text, cook) {
   const lines = text.trim().split('\n'); if (lines.length < 2) return null;
   const hdrs = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
@@ -27,14 +36,14 @@ function parseCSV(text, cook) {
   let startTs = null; const pData = cook.probes.map(() => []); const sData = [];
   lines.slice(1).forEach(line => {
     const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-    const ts = tCol >= 0 ? new Date(cols[tCol]).getTime() : null;
+    const ts = tCol >= 0 ? new Date(cols[tCol].replace(' ', 'T')).getTime() : null;
     if (ts && isNaN(ts)) return;
     if (!startTs && ts) startTs = cook.startTime || ts;
     const mins = ts && startTs ? (ts - startTs) / 60000 : pData[0]?.length || 0;
     pCols.forEach((ci, pi) => { const temp = parseFloat(cols[ci]); if (!isNaN(temp) && pi < pData.length) pData[pi].push({ time: +mins.toFixed(2), ts: ts || Date.now(), temp }); });
     if (sCol >= 0) { const temp = parseFloat(cols[sCol]); if (!isNaN(temp)) sData.push({ time: +mins.toFixed(2), ts: ts || Date.now(), temp }); }
   });
-  return { pData, sData };
+  return { pData: pData.map(arr => thin(arr)), sData: thin(sData) };
 }
 
 export default function App() {
@@ -53,8 +62,8 @@ export default function App() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
-  const { prefs, setCutPref, resetCutPref } = usePrefs();
-  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
+  const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
+  const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
   const activeId = activeCooks[activeCookIdx] ?? null;
@@ -70,6 +79,10 @@ export default function App() {
     if (d) { setCooks(d.cooks || []); setActiveCooks(d.activeCooks || (d.aid ? [d.aid] : [])); setDismissed(d.dis || {}); }
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = prefs.theme === 'light' ? 'light' : 'dark';
+  }, [prefs.theme]);
 
   const persist = (nc, ac, dis) => save({ cooks: nc, activeCooks: ac, dis });
   const update  = (nc, ac = activeCooks, dis = dismissed) => { setCooks(nc); persist(nc, ac, dis); };
@@ -151,12 +164,15 @@ export default function App() {
       mopTimer: form.mop?.enabled
         ? { enabled: true, intervalMin: form.mop.intervalMin, label: form.mop.label || '', events: [] }
         : null,
+      smokerLowAlarm: form.smokerLowAlarm?.enabled
+        ? { enabled: true, threshold: Number(form.smokerLowAlarm.threshold) }
+        : null,
     };
     const nc = [cook, ...cooks];
     const newActive = [...activeCooks, cook.id];
     setCooks(nc); setActiveCooks(newActive); setActiveCookIdx(newActive.length - 1);
     persist(nc, newActive, dismissed);
-    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, weight: '', equipment: '', pellet: '' });
+    setForm({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
     setView('active'); setTab('active');
   };
 
@@ -184,17 +200,35 @@ export default function App() {
     if (logged) { update(nc); setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' }); flash('Reading logged ✓'); }
   };
 
+  const updateSmokerAlarm = (cookId, alarm) => {
+    update(cooks.map(c => c.id === cookId ? { ...c, smokerLowAlarm: alarm } : c));
+  };
+
   const handleCSV = (e, cookId) => {
-    const file = e.target.files[0]; if (!file) return;
+    const files = [...e.target.files]; e.target.value = '';
+    if (!files.length) return;
     const cook = cooks.find(c => c.id === cookId); if (!cook) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const res = parseCSV(ev.target.result, cook); if (!res) { flash('Could not parse CSV'); return; }
-      const { pData, sData } = res;
-      const nc = cooks.map(c => { if (c.id !== cookId) return c; return { ...c, probes: c.probes.map((p, i) => ({ ...p, readings: [...p.readings, ...(pData[i] || [])] })), smokerReadings: [...c.smokerReadings, ...sData] }; });
-      update(nc); flash('CSV imported ✓');
-    };
-    reader.readAsText(file); e.target.value = '';
+    const readFile = f => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = ev => resolve(parseCSV(ev.target.result, cook));
+      reader.readAsText(f);
+    });
+    Promise.all(files.map(readFile)).then(results => {
+      const valid = results.filter(Boolean);
+      if (!valid.length) { flash('Could not parse CSV'); return; }
+      const sort = arr => [...arr].sort((a, b) => a.time - b.time);
+      const nc = cooks.map(c => {
+        if (c.id !== cookId) return c;
+        const allPData = cook.probes.map((_, i) => valid.flatMap(r => r.pData[i] || []));
+        const allSData = valid.flatMap(r => r.sData);
+        return { ...c,
+          probes: c.probes.map((p, i) => ({ ...p, readings: sort([...p.readings, ...allPData[i]]) })),
+          smokerReadings: sort([...c.smokerReadings, ...allSData]),
+        };
+      });
+      update(nc);
+      flash(`${valid.length} file${valid.length > 1 ? 's' : ''} imported ✓`);
+    });
   };
 
   const deleteCook = id => {
@@ -270,7 +304,7 @@ export default function App() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
       height: '100vh', background: 'var(--bg)', flexDirection: 'column', gap: 16 }}>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--ember)',
-        textShadow: '0 0 30px rgba(255,107,53,0.6)', letterSpacing: '0.1em' }}>RFX</div>
+        textShadow: '0 0 30px rgba(255,107,53,0.6)', letterSpacing: '0.1em' }}>PitLogic</div>
       <div style={{ fontSize: 12, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Loading your cooks…</div>
     </div>
   );
@@ -385,7 +419,7 @@ export default function App() {
         <div style={{ padding: '0 1.25rem 1.5rem', borderBottom: '1px solid var(--border2)', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--ember)',
-              textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>RFX</div>
+              textShadow: '0 0 20px rgba(255,107,53,0.5)', letterSpacing: '0.05em' }}>PitLogic</div>
             <button aria-label="Settings" onClick={() => setShowSettings(true)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)',
                 padding: 4, borderRadius: 6, marginTop: 4 }}>
@@ -439,7 +473,7 @@ export default function App() {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700,
-              color: 'var(--ember)', textShadow: '0 0 16px rgba(255,107,53,0.4)', letterSpacing: '0.05em', lineHeight: 1 }}>RFX</div>
+              color: 'var(--ember)', textShadow: '0 0 16px rgba(255,107,53,0.4)', letterSpacing: '0.05em', lineHeight: 1 }}>PitLogic</div>
             <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text3)', textTransform: 'uppercase' }}>Cook Tracker</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -495,6 +529,7 @@ export default function App() {
               setActiveCookIdx={setActiveCookIdx}
               onAddCook={() => setView('new')}
               onSprayEvent={logSprayEvent}
+              onUpdateSmokerAlarm={updateSmokerAlarm}
               prefs={prefs}
               setCutPref={setCutPref} />
           )}
@@ -521,6 +556,7 @@ export default function App() {
         onImportRecipes={handleImportRecipes}
         prefs={prefs}
         resetCutPref={resetCutPref}
+        setTheme={setTheme}
       />
 
       {/* Bottom nav (mobile) */}

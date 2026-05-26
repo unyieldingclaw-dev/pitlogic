@@ -17,19 +17,13 @@ lineage: initial
 
 ## Current Focus
 
-Branch `chore/update-memory-bank-2026-05-14` is 4 commits ahead of main — Claude Code infra, CompareChart fullscreen, and MIT license are all committed. **Next action: open PR to main.**
+All work is now merged to `main`. The PitLogic rebrand + telemetry architecture (from `claude/frosty-hellman-9c2f1d`) and the Claude Code infrastructure + test coverage (from `chore/update-memory-bank-2026-05-14`) are both merged and will auto-deploy to GitHub Pages on push.
 
-A separate branch `claude/frosty-hellman-9c2f1d` holds the PitLogic rebrand + telemetry architecture work (not yet merged — pending review/decision).
-
-Three additional local branches exist, not yet merged or documented:
-- `claude/ecstatic-golick-1ed1ab` — tip at main (`fb3d542`); stale Claude worktree, likely safe to delete
-- `feat/standards-and-hooks-guide` — 1 commit ahead of main; adds `standards/` directory + `docs/HOOKS-GUIDE.md` from template
-- `feat/token-budget-karpathy` — 1 commit ahead of main; adds Karpathy principles + token budget settings to CLAUDE.md
+**Next action: push to origin/main.**
 
 ## What's Working
 
-- 98 tests passing (7 test files) — real count after fixing Vitest worktree leak + adding useRecipes hook tests
-- Production build clean
+- All tests passing — production build clean
 - GitHub Pages deployed and auto-deploying on push to main
 - PWA installable on mobile
 - Full data export/import (JSON backup with merge/replace modes)
@@ -38,6 +32,9 @@ Three additional local branches exist, not yet merged or documented:
 - Expanded cuts library: 21 total cuts across 5 categories including Lamb
 - Per-cut cook preferences: inline save + Settings manager with reset
 - Compare mode in Analytics tab (CompareChart, HistoryTab updates)
+- PitLogic branding throughout — no RFX visible in UI
+- Migration system: first-run key rename `rfx-* → pitlogic-*`, idempotent
+- Telemetry architecture: domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
@@ -77,38 +74,50 @@ All 22 operations from the testing agent flow plan are complete:
 - `accessibility.mdc` — aria-label, aria-pressed, keyboard, heading order
 - `memory-bank.mdc` — augmented with 4 testable rules section
 
-**Global CLAUDE.md** — fixed incorrect Haiku claim (line 20)
-
 ## Immediate Next Steps
 
-1. **Open PR** — `chore/update-memory-bank-2026-05-14` → main (commits are already staged)
-2. **PitLogic decision** — decide whether to merge/close `claude/frosty-hellman-9c2f1d` (full rebrand + telemetry arch)
-3. **Open bugs** (lower priority):
-   - CSP eval error in dev server: `vite.config.js` configureServer approach (TempChart height bug resolved in `be60511`)
+1. **Push to origin/main** — triggers auto-deploy to GitHub Pages
+2. **Rename GitHub repo** to `pitlogic` (or `pitlogic-app`) — update Pages URL in manifest + sw.js
+3. **Implement `ThermoWorksAdapter`** when official SDK access is available
+4. **Wire CSV import UI** through `CsvProvider` (existing UI untouched for now)
 
-## Parking Lot Features
+## Open Issues
 
-1. **ThermoWorks real-time integration** — MCP server / CLI bridge for live sensor data
-2. **Probe target alerts** — browser notification at target temp (depends on real-time feed)
+- CSP eval error in dev server: `vite.config.js` configureServer approach (low priority)
+- iOS silent switch bypasses all browser audio/notifications — investigate PWA push notifications
 
 ## Environment Status
 
-**Dev server**: run `npm run dev` → http://localhost:5173/rfx-cook-tracker/
-**Git**: branch `chore/update-memory-bank-2026-05-14`, 4 commits ahead of main; working tree has uncommitted changes (memory-bank updates, useRecipes tests, vite.config.js, useStorage.test.js, health-check.md, scripts/)
-**GitHub Pages**: live at https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
+**Dev server**: run `npm run dev` → http://localhost:5173/pitlogic/
+**Git**: on `main`, fully merged with origin/main (pending push)
+**GitHub Pages**: live at https://unyieldingclaw-dev.github.io/pitlogic/
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `src/App.jsx` | Root — all state, nav, wiring |
-| `src/hooks/useStorage.js` | localStorage `rfx-v5` (cooks, activeCooks, dis) |
-| `src/hooks/useRecipes.js` | localStorage `rfx-recipes-v1` |
+| `src/hooks/useStorage.js` | localStorage `pitlogic-v5` (cooks, activeCooks, dis) |
+| `src/hooks/useRecipes.js` | localStorage `pitlogic-recipes-v1` |
+| `src/hooks/useProbeAlert.js` | Browser notification when probe hits target temp |
+| `src/hooks/useSmokerAlert.js` | Browser notification + Web Audio when pit drops below threshold |
+| `src/lib/migrations/` | Idempotent key-rename migration, run at startup |
+| `src/lib/telemetry/` | Domain types, normalizer (Zod), EventBus, Store |
+| `src/lib/providers/` | TemperatureProvider interface + adapters (CSV, Mock, ThermoWorks stub) |
+| `src/lib/compliance/` | ADR-001 through ADR-004, providerGuardrails.md |
 | `src/utils/analytics.js` | All analytics + stall detection |
 | `src/utils/dataPortability.js` | Export/import pure functions |
 | `src/components/SettingsSheet.jsx` | Backup/restore UI + My Defaults section |
-| `src/hooks/usePrefs.js` | Per-cut temp preferences, localStorage `rfx-prefs-v1` |
+| `src/hooks/usePrefs.js` | Per-cut temp preferences, localStorage `pitlogic-prefs-v1` |
 | `src/data/meats.js` | Meat categories + cuts lists |
 | `src/data/cuts.js` | Cut guides (temps, stages, pellets, tips) |
 | `.github/workflows/deploy.yml` | CI/CD auto-deploy + test gate + file size gate |
 | `.claude/settings.json` | Hooks, permission denies, Haiku subagent config |
+
+## Recent Session History
+
+- **2026-05-26**: Memory-bank prune; merged infra branch + PitLogic rebrand to main; resolved merge conflicts
+- **2026-05-19**: PitLogic milestone fully implemented — Phases 2–12 complete (Zod/TS, migrations, rebrand, src/lib/ architecture, tests)
+- **2026-05-18**: PitLogic compliance + rebrand + telemetry architecture design; Phase 0+1 implemented
+- **2026-05-10**: "Smoke & Fire" visual refresh; cook comparison charts in AnalyticsTab
+- **2026-05-08**: Stall Intelligence v2, Accessibility Sprint, PWA/GitHub Pages Deploy, Data Export/Import
