@@ -59,6 +59,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: [],
+    exclude: ['**/node_modules/**', '.claude/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
