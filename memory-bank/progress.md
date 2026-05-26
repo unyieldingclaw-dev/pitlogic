@@ -1,6 +1,19 @@
+---
+authority: accumulating
+review-cycle: 30d
+retention: rolling-3-months
+staleness-threshold: 30
+tags: [progress, completed, planned]
+last-reviewed: 2026-05-26
+compaction_generation: 0
+source_type: human
+confidence: high
+lineage: initial
+---
+
 # Progress Tracker
 
-**Last Updated**: 2026-05-20
+**Last Updated**: 2026-05-26
 
 ## ✅ Completed Features
 
@@ -64,7 +77,16 @@
 - [x] ActiveTab inline "Save as default" amber badge
 - [x] SettingsSheet "My Defaults" section with per-cut reset
 
-### Claude Code Infrastructure (2026-05-20)
+### Misc (2026-05-25)
+- [x] MIT license added (repo root `LICENSE`)
+- [x] CompareChart fullscreen mode (`be60511`)
+
+### Test Coverage (2026-05-26)
+- [x] `useStorage.test.js` — 10 tests: load (empty/valid/invalid JSON/aid migration × 4), save (writes/swallows errors), replaceAll
+- [x] `useRecipes.test.js` — 15 hook tests added: add (prepend, persist, id), update (patch, persist, non-matching), remove (filter, persist), importMany (counts, case-insensitive dedup, source stamp), replaceAll (overwrite, persist)
+- [x] Vitest worktree leak fixed — `exclude: ['.claude/**']` in vite.config.js (was 169 tests inflated from worktree; real count is 98)
+
+### Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 - [x] `.claude/settings.json` — tracked project settings (Haiku env, permission denies, hook registrations)
 - [x] `block-dangerous-ops.sh` — 15 dangerous patterns blocked at PreToolUse
 - [x] `user-prompt-submit.sh` — memory-bank + context reminder at each turn
@@ -82,10 +104,12 @@
 - [x] 4 Cursor rules: architecture, code-quality (augmented), accessibility, memory-bank (augmented)
 - [x] Design doc: `docs/superpowers/specs/2026-05-20-testing-agent-flow-design.md`
 - [x] Global CLAUDE.md — corrected Haiku subagent configuration claim
+- [x] `scripts/update-reviewed.sh` — PostToolUse hook: auto-updates `last-reviewed:` frontmatter in memory-bank files on every Write/Edit
+- [x] `health-check.md` command — runs mb doctor + test suite + build + git status; prints pass/warn/fail summary
 
 ## 🚧 In Progress
 
-Nothing currently in flight. All infra changes pending commit on `chore/update-memory-bank-2026-05-14`.
+Nothing currently in flight. `chore/update-memory-bank-2026-05-14` has 4 committed commits pending PR to main. `claude/frosty-hellman-9c2f1d` holds PitLogic rebrand + telemetry arch work — awaiting merge/close decision.
 
 ## 📋 Planned / Parking Lot
 
@@ -100,15 +124,17 @@ Nothing currently in flight. All infra changes pending commit on `chore/update-m
 
 ## 🐛 Known Bugs (Low Priority)
 
-- TempChart `width(-1) height(-1)` Recharts warning: `src/components/TempChart.jsx:88` — fix: move height to `<ResponsiveContainer height={h}>` not the wrapping div
 - CSP eval error in dev server from `vite.config.js` configureServer approach
 
 ## 📊 Test Coverage
 
-- **Total tests**: 169 passing (16 test files) as of 2026-05-20
+- **Total tests**: 98 passing (7 test files) as of 2026-05-26
 - `analytics.test.js` — analytics functions, edge cases
 - `dataPortability.test.js` — export/import round-trip + merge logic
 - `planToEatParser.test.js` — CSV parsing edge cases
 - `helpers.test.js` — formatting + PROBE_COLORS
-- `useRecipes.test.js` — Plan to Eat integration + schema
-- (11 additional test files covering components, hooks, utils)
+- `useRecipes.test.js` — hook API (add, update, remove, importMany, replaceAll, load) + Plan to Eat integration
+- `usePrefs.test.js` — per-cut pref CRUD, localStorage round-trip, invalid JSON (`src/tests/usePrefs.test.js`)
+- `useStorage.test.js` — load/save/replaceAll, legacy aid migration, error swallowing
+
+Note: prior count of 169/16 was inflated by Vitest scanning `.claude/worktrees/`. Fixed via `exclude: ['.claude/**']` in vite.config.js.

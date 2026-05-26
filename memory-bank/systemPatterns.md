@@ -1,6 +1,19 @@
+---
+authority: stable
+review-cycle: 90d
+retention: permanent
+staleness-threshold: 90
+tags: [architecture, patterns]
+last-reviewed: 2026-05-26
+compaction_generation: 0
+source_type: human
+confidence: high
+lineage: initial
+---
+
 # System Patterns & Architecture Decisions
 
-**Last Updated**: 2026-05-10
+**Last Updated**: 2026-05-26
 
 ## Architecture Pattern: Prop-Drilled State from App.jsx
 
@@ -20,18 +33,20 @@ App.jsx (state owner)
 │   ├── StallCoach
 │   └── TempChart
 ├── HistoryTab — reads cooks[], calls onDelete
-├── RecipesTab — receives recipes, add, remove, importMany as props
+├── RecipesTab — receives recipes, add, update, remove, importMany, replaceAll as props
 ├── GuideTab — static
 └── SettingsSheet — receives import handlers for backup/restore
 ```
 
 ## Pattern: Custom Hooks for localStorage
 
-`src/hooks/useStorage.js` — manages the `rfx-v5` localStorage key. Exposes: `cooks`, `activeCooks`, `dis`, `save()`, `replaceAll()`.
+`src/hooks/useStorage.js` — manages the `rfx-v5` localStorage key. Exports pure functions: `load()`, `save()`, `replaceAll()`. Components call `load()` on mount; `cooks`/`activeCooks`/`dis` live in App.jsx state.
 
-`src/hooks/useRecipes.js` — manages `rfx-recipes-v1`. Exposes: `recipes`, `addRecipe()`, `removeRecipe()`, `importMany()`, `replaceAll()`.
+`src/hooks/useRecipes.js` — manages `rfx-recipes-v1`. Exposes: `recipes`, `add()`, `update()`, `remove()`, `importMany()`, `replaceAll()`.
 
 `src/hooks/useMopTimer.js` — countdown timer with browser Notification API.
+
+`src/hooks/usePrefs.js` — per-cut pit/pull temp preferences, manages `rfx-prefs-v1` localStorage key.
 
 **Rule**: Never access localStorage directly in components — always go through hooks.
 
@@ -50,8 +65,8 @@ All complex logic lives in `src/utils/` as pure functions with no React deps:
 
 ```
 src/
-  components/   15 components (tabs + sub-components)
-  hooks/        3 hooks + __tests__/
+  components/   16 components (tabs + sub-components)
+  hooks/        4 hooks + __tests__/
   utils/        5 utility modules + __tests__/
   data/         meats.js, cuts.js, pellets.js (static reference data)
 ```

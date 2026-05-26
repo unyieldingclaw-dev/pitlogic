@@ -1,14 +1,34 @@
+---
+authority: volatile
+review-cycle: 7d
+retention: rolling-3-months
+staleness-threshold: 7
+tags: [current-focus, active]
+last-reviewed: 2026-05-26
+compaction_generation: 0
+source_type: human
+confidence: high
+lineage: initial
+---
+
 # Active Context - Current State
 
-**Last Updated**: 2026-05-20
+**Last Updated**: 2026-05-26
 
 ## Current Focus
 
-Claude Code infrastructure plan complete. Branch `chore/update-memory-bank-2026-05-14` has both memory-bank updates and infra work uncommitted — ready for commit + PR.
+Branch `chore/update-memory-bank-2026-05-14` is 4 commits ahead of main — Claude Code infra, CompareChart fullscreen, and MIT license are all committed. **Next action: open PR to main.**
+
+A separate branch `claude/frosty-hellman-9c2f1d` holds the PitLogic rebrand + telemetry architecture work (not yet merged — pending review/decision).
+
+Three additional local branches exist, not yet merged or documented:
+- `claude/ecstatic-golick-1ed1ab` — tip at main (`fb3d542`); stale Claude worktree, likely safe to delete
+- `feat/standards-and-hooks-guide` — 1 commit ahead of main; adds `standards/` directory + `docs/HOOKS-GUIDE.md` from template
+- `feat/token-budget-karpathy` — 1 commit ahead of main; adds Karpathy principles + token budget settings to CLAUDE.md
 
 ## What's Working
 
-- 169 tests passing (16 test files)
+- 98 tests passing (7 test files) — real count after fixing Vitest worktree leak + adding useRecipes hook tests
 - Production build clean
 - GitHub Pages deployed and auto-deploying on push to main
 - PWA installable on mobile
@@ -19,7 +39,7 @@ Claude Code infrastructure plan complete. Branch `chore/update-memory-bank-2026-
 - Per-cut cook preferences: inline save + Settings manager with reset
 - Compare mode in Analytics tab (CompareChart, HistoryTab updates)
 
-## Claude Code Infrastructure (completed 2026-05-20)
+## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
 All 22 operations from the testing agent flow plan are complete:
 
@@ -42,9 +62,9 @@ All 22 operations from the testing agent flow plan are complete:
 - `handoff.md` — graceful context handoff with contract archival
 
 **Settings** (`.claude/settings.json` — new tracked file):
-- `CLAUDE_CODE_SUBAGENT_MODEL: haiku` env
+- Env: `MAX_THINKING_TOKENS: 10000`, `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: 50`, `CLAUDE_CODE_SUBAGENT_MODEL: haiku`, `DISABLE_NON_ESSENTIAL_MODEL_CALLS: 1`
 - Permission denies: .env, .env.*, settings.local.json
-- Hook registrations: block-dangerous-ops (Bash), pre-edit-karpathy (Edit|Write), user-prompt-submit
+- Hook registrations: block-dangerous-ops (PreToolUse/Bash), pre-edit-karpathy (PreToolUse/Edit|Write), user-prompt-submit (UserPromptSubmit), update-reviewed.sh (PostToolUse/Write|Edit)
 
 **CI** (`.github/workflows/deploy.yml`):
 - `fetch-depth: 2` on checkout
@@ -61,21 +81,20 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Commit + PR** — stage and commit all infra changes on current branch, open PR to main
-2. **Open bugs** (lower priority):
-   - TempChart `width(-1) height(-1)` warning: `src/components/TempChart.jsx:88` — change `<div height={h}><ResponsiveContainer height="100%">` to `<div><ResponsiveContainer height={h}>`
-   - CSP eval error in dev server: `vite.config.js` configureServer approach
+1. **Open PR** — `chore/update-memory-bank-2026-05-14` → main (commits are already staged)
+2. **PitLogic decision** — decide whether to merge/close `claude/frosty-hellman-9c2f1d` (full rebrand + telemetry arch)
+3. **Open bugs** (lower priority):
+   - CSP eval error in dev server: `vite.config.js` configureServer approach (TempChart height bug resolved in `be60511`)
 
 ## Parking Lot Features
 
 1. **ThermoWorks real-time integration** — MCP server / CLI bridge for live sensor data
 2. **Probe target alerts** — browser notification at target temp (depends on real-time feed)
-3. **Cook comparison charts** — already in progress on this branch (CompareChart complete)
 
 ## Environment Status
 
 **Dev server**: run `npm run dev` → http://localhost:5173/rfx-cook-tracker/
-**Git**: branch `chore/update-memory-bank-2026-05-14`, changes uncommitted
+**Git**: branch `chore/update-memory-bank-2026-05-14`, 4 commits ahead of main; working tree has uncommitted changes (memory-bank updates, useRecipes tests, vite.config.js, useStorage.test.js, health-check.md, scripts/)
 **GitHub Pages**: live at https://unyieldingclaw-dev.github.io/rfx-cook-tracker/
 
 ## Key Files
