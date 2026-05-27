@@ -56,7 +56,6 @@ Test files live in `src/utils/__tests__/`, `src/hooks/__tests__/`, and `src/test
 
 | Key | Contents |
 |-----|----------|
-<<<<<<< HEAD
 | `pitlogic-v5` | Cooks array + activeCooks + dis (display state) |
 | `pitlogic-recipes-v1` | Recipes array |
 | `pitlogic-prefs-v1` | User preferences |
@@ -91,7 +90,7 @@ src/lib/
 
 ```powershell
 npm run dev          # dev server at http://localhost:5173/pitlogic/
-npm test -- --run    # run all tests once (137 passing as of 2026-05-26)
+npm test -- --run    # run all tests once (146 passing as of 2026-05-27)
 npm run test:watch   # watch mode
 npm run test:coverage # coverage report
 npm run build        # production build

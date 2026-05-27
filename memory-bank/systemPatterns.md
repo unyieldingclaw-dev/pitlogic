@@ -40,13 +40,13 @@ App.jsx (state owner)
 
 ## Pattern: Custom Hooks for localStorage
 
-`src/hooks/useStorage.js` — manages the `rfx-v5` localStorage key. Exports pure functions: `load()`, `save()`, `replaceAll()`. Components call `load()` on mount; `cooks`/`activeCooks`/`dis` live in App.jsx state.
+`src/hooks/useStorage.js` — manages the `pitlogic-v5` localStorage key. Exports pure functions: `load()`, `save()`, `replaceAll()`. Components call `load()` on mount; `cooks`/`activeCooks`/`dis` live in App.jsx state.
 
-`src/hooks/useRecipes.js` — manages `rfx-recipes-v1`. Exposes: `recipes`, `add()`, `update()`, `remove()`, `importMany()`, `replaceAll()`.
+`src/hooks/useRecipes.js` — manages `pitlogic-recipes-v1`. Exposes: `recipes`, `add()`, `update()`, `remove()`, `importMany()`, `replaceAll()`.
 
 `src/hooks/useMopTimer.js` — countdown timer with browser Notification API.
 
-`src/hooks/usePrefs.js` — per-cut pit/pull temp preferences, manages `rfx-prefs-v1` localStorage key.
+`src/hooks/usePrefs.js` — per-cut pit/pull temp preferences, manages `pitlogic-prefs-v1` localStorage key.
 
 **Rule**: Never access localStorage directly in components — always go through hooks.
 
@@ -58,6 +58,7 @@ All complex logic lives in `src/utils/` as pure functions with no React deps:
 - `helpers.js` — `dur`, `shortDate`, formatting utilities, `PROBE_COLORS`
 - `planToEatParser.js` — CSV parsing for Plan to Eat format
 - `shareCard.js` — html2canvas screenshot logic
+- `csvTemperatureParser.js` — ThermoWorks-style CSV parser for cook temperature readings
 
 **Rule**: Keep these functions pure (no side effects, no localStorage, no React) so they stay trivially testable.
 
@@ -66,8 +67,8 @@ All complex logic lives in `src/utils/` as pure functions with no React deps:
 ```
 src/
   components/   16 components (tabs + sub-components)
-  hooks/        4 hooks + __tests__/
-  utils/        5 utility modules + __tests__/
+  hooks/        6 hooks + __tests__/
+  utils/        6 utility modules + __tests__/
   data/         meats.js, cuts.js, pellets.js (static reference data)
 ```
 

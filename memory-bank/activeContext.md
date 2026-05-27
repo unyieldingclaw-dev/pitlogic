@@ -76,10 +76,9 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Push to origin/main** — triggers auto-deploy to GitHub Pages
-2. **Rename GitHub repo** to `pitlogic` (or `pitlogic-app`) — update Pages URL in manifest + sw.js
-3. **Implement `ThermoWorksAdapter`** when official SDK access is available
-4. **Wire CSV import UI** through `CsvProvider` (existing UI untouched for now)
+1. **Push to origin/main** — triggers auto-deploy to GitHub Pages (1 unpushed commit: CSV parser refactor)
+2. **Implement `ThermoWorksAdapter`** when official SDK access is available
+3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
 
@@ -114,10 +113,3 @@ All 22 operations from the testing agent flow plan are complete:
 | `.github/workflows/deploy.yml` | CI/CD auto-deploy + test gate + file size gate |
 | `.claude/settings.json` | Hooks, permission denies, Haiku subagent config |
 
-## Recent Session History
-
-- **2026-05-26**: Memory-bank prune; merged infra branch + PitLogic rebrand to main; resolved merge conflicts
-- **2026-05-19**: PitLogic milestone fully implemented — Phases 2–12 complete (Zod/TS, migrations, rebrand, src/lib/ architecture, tests)
-- **2026-05-18**: PitLogic compliance + rebrand + telemetry architecture design; Phase 0+1 implemented
-- **2026-05-10**: "Smoke & Fire" visual refresh; cook comparison charts in AnalyticsTab
-- **2026-05-08**: Stall Intelligence v2, Accessibility Sprint, PWA/GitHub Pages Deploy, Data Export/Import
