@@ -19,7 +19,7 @@ lineage: initial
 
 All work is now merged to `main`. The PitLogic rebrand + telemetry architecture (from `claude/frosty-hellman-9c2f1d`) and the Claude Code infrastructure + test coverage (from `chore/update-memory-bank-2026-05-14`) are both merged and will auto-deploy to GitHub Pages on push.
 
-**Next action: push to origin/main.**
+**Fully merged and pushed.** GitHub Pages auto-deploy triggered.
 
 ## What's Working
 
@@ -89,7 +89,7 @@ All 22 operations from the testing agent flow plan are complete:
 ## Environment Status
 
 **Dev server**: run `npm run dev` → http://localhost:5173/pitlogic/
-**Git**: on `main`, fully merged with origin/main (pending push)
+**Git**: on `main`, fully merged and pushed; remote URL updated to `https://github.com/unyieldingclaw-dev/pitlogic.git`
 **GitHub Pages**: live at https://unyieldingclaw-dev.github.io/pitlogic/
 
 ## Key Files

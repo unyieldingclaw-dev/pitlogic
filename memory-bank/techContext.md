@@ -22,7 +22,7 @@ lineage: initial
 | OS | Windows 11 Home |
 | Shell | PowerShell (pwsh) |
 | IDE | Cursor |
-| Git Remote | https://github.com/unyieldingclaw-dev/pitlogic |
+| Git Remote | https://github.com/unyieldingclaw-dev/pitlogic.git |
 | Package Manager | npm |
 
 ## Frontend Stack
