@@ -20,6 +20,7 @@ lineage: initial
 Full completed-items history archived in `progress-archive.md`.
 
 ### Recent Milestones
+- **2026-05-28**: ThermoWorks MQTT adapter complete — `ThermoWorksAdapter`, `useThermoWorksProvider`, "Live Device" UI; 146 → 169 tests across 16 files
 - **2026-05-27**: CSV parser extracted to `src/utils/csvTemperatureParser.js` (9 tests); inline `thin()`/`parseCSV()` removed from `App.jsx`
 - **2026-05-26**: PitLogic rebrand + telemetry architecture merged to main; Claude Code infrastructure (hooks, agents, commands, CI, standards) merged to main; 137 → 146 tests
 - **2026-05-19**: PitLogic Phases 0–12 complete — SDK compliance ADRs, migrations, src/lib/ provider pipeline, Zod normalizer
@@ -29,13 +30,14 @@ Full completed-items history archived in `progress-archive.md`.
 
 ### ThermoWorks Real-Time Integration
 - [x] Design spec complete — `docs/superpowers/specs/2026-05-27-thermoworks-mqtt-adapter-design.md`
-- [ ] Write implementation plan (writing-plans skill)
-- [ ] Implement `ThermoWorksAdapter` — replace stub with `mqtt.js` over WebSocket (ThermaConnect protocol)
-- [ ] Implement `useThermoWorksProvider` hook — lifecycle orchestration, normalizer → eventBus wiring
-- [ ] Add "Live Device" section to `SettingsSheet.jsx` — broker URL, credentials, connect/disconnect
-- [ ] Wire `{ status, error }` from hook into App.jsx / header status indicator
-- [ ] Add `mqtt` npm dependency
-- [ ] Verify HiveMQ Cloud ACL topic isolation before shipping wildcard subscription
+- [x] Implementation plan — `docs/superpowers/plans/2026-05-27-thermoworks-mqtt-adapter.md`
+- [x] `ThermoWorksAdapter` — ThermaConnect MQTT implementation with full test coverage (16 tests)
+- [x] `useThermoWorksProvider` hook — lifecycle orchestration + normalizer → eventBus wiring (7 tests)
+- [x] "Live Device" section in `SettingsSheet.jsx` — broker URL, credentials, connect/disconnect, status indicator
+- [x] Hook wired into `App.jsx` — `mqttStatus`, `mqttError`, `onMqttConnect`, `onMqttDisconnect` props to SettingsSheet
+- [x] `mqtt` npm dependency added
+- [ ] Verify HiveMQ Cloud ACL topic isolation before first live use
+- [ ] End-to-end test with real RFX Gateway + HiveMQ Cloud broker
 
 ### iOS Alarm
 - [ ] **iOS alarm options** — silent switch bypasses all browser audio/notifications on iOS; investigate native PWA push notifications or other iOS-specific workaround when ready
@@ -46,7 +48,7 @@ Full completed-items history archived in `progress-archive.md`.
 
 ## 📊 Test Coverage
 
-- **Total tests**: 146 passing (14 test files) as of 2026-05-27
+- **Total tests**: 169 passing (16 test files) as of 2026-05-28
 - `analytics.test.js` — analytics functions, edge cases
 - `dataPortability.test.js` — export/import round-trip + merge logic
 - `planToEatParser.test.js` — CSV parsing edge cases
@@ -61,3 +63,5 @@ Full completed-items history archived in `progress-archive.md`.
 - `MockProvider.test.ts` — 5 cases: tick interval, rate, disconnect, multi-probe, unsubscribe
 - `TelemetryStore.test.ts` — 7 cases: register, disconnect, reconnect, stale, fresh, notify, unsubscribe
 - `csvTemperatureParser.test.js` — 9 cases: empty input, header-only, probe temps, smoker column, time as minutes, skip non-numeric, thinning, empty pData, case-insensitive headers
+- `ThermoWorksAdapter.test.ts` — 16 cases: transformPayload (8: single channel, multi-channel, non-T type, seconds-epoch, non-integer ts, malformed JSON, no channels, unknown topic) + lifecycle (8: connect/subscribe, idempotent connect, exactly-one message listener, disconnect+reconnect, no handler after disconnect, multi-channel emit, reconnect sessionPresent=true, reconnect sessionPresent=false)
+- `useThermoWorksProvider.test.js` — 7 cases: initial state, connect success, missing config error, adapter throw, disconnect, unmount cleanup, event pipeline wiring
