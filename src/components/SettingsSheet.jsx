@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
 
@@ -23,12 +23,22 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     }
   });
   const [mqttSaved, setMqttSaved] = useState(false);
+  // Track timer ref to prevent setState-after-unmount if the sheet closes within the flash duration
+  const mqttSavedTimerRef = useRef(null);
 
   const handleMqttSave = () => {
     localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(mqttConfig));
+    if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
     setMqttSaved(true);
-    setTimeout(() => setMqttSaved(false), 2000);
+    mqttSavedTimerRef.current = setTimeout(() => setMqttSaved(false), 2000);
   };
+
+  useEffect(() => {
+    return () => {
+      // Cancel pending "Saved ✓" flash timer to avoid setState after unmount
+      if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
+    };
+  }, []);
 
   if (!open) return null;
 
@@ -230,18 +240,18 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
           </div>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button className="btn-ghost" onClick={handleMqttSave}
+            <button type="button" className="btn-ghost" onClick={handleMqttSave}
               style={{ fontSize: 13, padding: '6px 14px' }}>
               {mqttSaved ? 'Saved ✓' : 'Save'}
             </button>
             {mqttStatus === 'connected' ? (
-              <button className="btn-ghost" onClick={onMqttDisconnect}
+              <button type="button" className="btn-ghost" onClick={onMqttDisconnect}
                 aria-label="Disconnect from MQTT broker"
                 style={{ fontSize: 13, padding: '6px 14px', color: 'var(--red)', borderColor: 'var(--red)' }}>
                 Disconnect
               </button>
             ) : (
-              <button className="btn-primary" onClick={onMqttConnect}
+              <button type="button" className="btn-primary" onClick={onMqttConnect}
                 disabled={mqttStatus === 'connecting'}
                 aria-label="Connect to MQTT broker"
                 style={{ fontSize: 13, padding: '6px 14px' }}>
