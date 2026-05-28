@@ -9,11 +9,26 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
   const [error, setError] = useState(null);
+  const [mqttConfig, setMqttConfig] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pitlogic-mqtt-v1') ?? 'null') ??
+        { brokerUrl: '', username: '', password: '' };
+    } catch {
+      return { brokerUrl: '', username: '', password: '' };
+    }
+  });
+  const [mqttSaved, setMqttSaved] = useState(false);
+
+  const handleMqttSave = () => {
+    localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(mqttConfig));
+    setMqttSaved(true);
+    setTimeout(() => setMqttSaved(false), 2000);
+  };
 
   if (!open) return null;
 
@@ -151,6 +166,96 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                 Light
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Live Device */}
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+            Live Device
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Connect to a ThermoWorks RFX Gateway via your MQTT broker.{' '}
+            <span style={{ color: 'var(--amber)', fontSize: 12 }}>
+              Browser compromise = MQTT credential compromise. Personal use only.
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+            <div>
+              <label htmlFor="mqtt-broker-url" style={{ display: 'block', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
+                Broker URL
+              </label>
+              <input
+                id="mqtt-broker-url"
+                type="text"
+                value={mqttConfig.brokerUrl}
+                onChange={e => setMqttConfig(c => ({ ...c, brokerUrl: e.target.value }))}
+                placeholder="wss://your-cluster.hivemq.cloud:8884/mqtt"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                  fontSize: 13, fontFamily: 'var(--mono)' }}
+              />
+            </div>
+            <div>
+              <label htmlFor="mqtt-username" style={{ display: 'block', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
+                Username
+              </label>
+              <input
+                id="mqtt-username"
+                type="text"
+                value={mqttConfig.username}
+                onChange={e => setMqttConfig(c => ({ ...c, username: e.target.value }))}
+                placeholder="pitlogic"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                  fontSize: 13 }}
+              />
+            </div>
+            <div>
+              <label htmlFor="mqtt-password" style={{ display: 'block', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
+                Password
+              </label>
+              <input
+                id="mqtt-password"
+                type="password"
+                value={mqttConfig.password}
+                onChange={e => setMqttConfig(c => ({ ...c, password: e.target.value }))}
+                placeholder="••••••••"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                  fontSize: 13 }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button className="btn-ghost" onClick={handleMqttSave}
+              style={{ fontSize: 13, padding: '6px 14px' }}>
+              {mqttSaved ? 'Saved ✓' : 'Save'}
+            </button>
+            {mqttStatus === 'connected' ? (
+              <button className="btn-ghost" onClick={onMqttDisconnect}
+                aria-label="Disconnect from MQTT broker"
+                style={{ fontSize: 13, padding: '6px 14px', color: 'var(--red)', borderColor: 'var(--red)' }}>
+                Disconnect
+              </button>
+            ) : (
+              <button className="btn-primary" onClick={onMqttConnect}
+                disabled={mqttStatus === 'connecting'}
+                aria-label="Connect to MQTT broker"
+                style={{ fontSize: 13, padding: '6px 14px' }}>
+                {mqttStatus === 'connecting' ? 'Connecting…' : 'Connect'}
+              </button>
+            )}
+            <span style={{ fontSize: 12, color: mqttStatus === 'connected' ? 'var(--green)' :
+              mqttStatus === 'error' ? 'var(--red)' : 'var(--text3)' }}
+              role="status" aria-live="polite">
+              {mqttStatus === 'connected' && '● Connected'}
+              {mqttStatus === 'connecting' && '○ Connecting…'}
+              {mqttStatus === 'disconnected' && '○ Disconnected'}
+              {mqttStatus === 'error' && `✕ ${mqttError ?? 'Error'}`}
+            </span>
           </div>
         </div>
 
