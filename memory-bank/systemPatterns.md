@@ -48,6 +48,8 @@ App.jsx (state owner)
 
 `src/hooks/usePrefs.js` — per-cut pit/pull temp preferences, manages `pitlogic-prefs-v1` localStorage key.
 
+`src/hooks/useThermoWorksProvider.js` *(pending implementation)* — MQTT adapter lifecycle orchestration; reads config from `pitlogic-mqtt-v1`, constructs `ThermoWorksAdapter`, wires output through `normalizeProviderEvent` → `globalEventBus`; exposes `{ status, error, connect, disconnect }`.
+
 **Rule**: Never access localStorage directly in components — always go through hooks.
 
 ## Pattern: Pure Utility Functions for Testability

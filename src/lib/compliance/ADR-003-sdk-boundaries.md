@@ -55,10 +55,18 @@ Only `src/lib/providers/adapters/thermoworks/` may contain ThermoWorks-specific 
 
 ## Current Status
 
-`ThermoWorksAdapter` is a documented stub. No SDK is currently integrated. Implementation requires:
-1. Official SDK access obtained
-2. This 8-question filter passed for every feature
-3. All ThermoWorks-specific code contained within `src/lib/providers/adapters/thermoworks/`
+`ThermoWorksAdapter` implementation is spec'd and pending. Integration uses the **ThermaConnect open MQTT protocol** (published by ThermoWorks-Integrations) — no proprietary SDK is required.
+
+Design spec: `docs/superpowers/specs/2026-05-27-thermoworks-mqtt-adapter-design.md`
+
+ADR-003 8-question filter result for ThermaConnect integration:
+- All 8 questions answered "no" — integration is compliant
+- Q6 (hosting exposure) noted: user manages their own broker; no cloud-hosted middleware
+
+Implementation requirements:
+1. This 8-question filter passed for every new feature (already done for initial integration)
+2. All ThermoWorks-specific code contained within `src/lib/providers/adapters/thermoworks/`
+3. Broker ACL verified to restrict topic namespace per authenticated user
 
 ## Rationale
 

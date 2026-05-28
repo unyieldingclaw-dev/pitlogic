@@ -61,12 +61,17 @@ const normalized = normalize(rawEvent);  // normalizer is called by the pipeline
 ## Approved Integration Model for ThermoWorks
 
 ```
-ThermoWorks Device
-↓ (official SDK / official documented API only)
+RFX Gateway
+↓ ThermaConnect open MQTT protocol (WSS)
+User-managed MQTT broker (e.g. HiveMQ Cloud)
+↓ mqtt.js WebSocket (browser-only, no backend)
 ThermoWorksAdapter.ts (src/lib/providers/adapters/thermoworks/)
-↓ RawProviderEvent { capturedAt, probeId, temp, unit, ... }
+↓ RawProviderEvent { probeId, capturedAt, temperature, unit, source }
+normalizeProviderEvent() → globalEventBus → TelemetryStore
 [rest of pipeline]
 ```
+
+Protocol: ThermaConnect (open, documented — github.com/ThermoWorks-Integrations/ThermaConnect). No proprietary SDK bundled or redistributed.
 
 `ThermoWorksAdapter` is the **only** file that may contain ThermoWorks-specific code. The adapter boundary is the full extent of the proprietary footprint.
 

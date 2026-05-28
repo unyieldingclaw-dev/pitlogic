@@ -14,6 +14,7 @@ An independent BBQ cook logging and analytics platform. Track temperature probes
 - **Cook history** — detail view, delete with confirm, share card (screenshot export)
 - **Recipes** — CRUD + Plan to Eat CSV import
 - **Data portability** — JSON backup export + import (merge or replace)
+- **Live device integration** — ThermoWorks RFX Gateway via ThermaConnect MQTT over WebSocket; auto-discovers all probes; no backend required
 - **Mop timer** — countdown with browser notification at zero
 - **PWA** — installable on mobile, offline-capable after first load
 - **Accessible** — WCAG 2.1 AA: keyboard nav, aria-*, semantic HTML
@@ -23,7 +24,7 @@ An independent BBQ cook logging and analytics platform. Track temperature probes
 - React 19 + Vite (JavaScript/JSX); TypeScript in `src/lib/` only
 - Recharts for charts, Lucide icons, Zod for provider-boundary validation
 - localStorage only — no backend, no accounts
-- Vitest + Testing Library (111 passing)
+- Vitest + Testing Library (146 passing)
 - GitHub Actions → GitHub Pages for CI/CD
 
 ## Getting Started
@@ -60,5 +61,6 @@ All data stays in localStorage — nothing leaves your device:
 | `pitlogic-recipes-v1` | Recipes |
 | `pitlogic-prefs-v1` | Per-cut cook preferences |
 | `pitlogic-migrations-v1` | Migration state |
+| `pitlogic-mqtt-v1` | MQTT broker URL + credentials (ThermoWorks live integration) |
 
 Use the Settings gear to export a JSON backup or restore from a previous backup.

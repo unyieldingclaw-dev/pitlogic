@@ -28,8 +28,14 @@ Full completed-items history archived in `progress-archive.md`.
 ## 📋 Planned / Parking Lot
 
 ### ThermoWorks Real-Time Integration
-- [ ] Implement `ThermoWorksAdapter` (currently a stub pending official SDK access)
-- [ ] Wire live data into `ActiveTab` temp readings via `TelemetryStore`
+- [x] Design spec complete — `docs/superpowers/specs/2026-05-27-thermoworks-mqtt-adapter-design.md`
+- [ ] Write implementation plan (writing-plans skill)
+- [ ] Implement `ThermoWorksAdapter` — replace stub with `mqtt.js` over WebSocket (ThermaConnect protocol)
+- [ ] Implement `useThermoWorksProvider` hook — lifecycle orchestration, normalizer → eventBus wiring
+- [ ] Add "Live Device" section to `SettingsSheet.jsx` — broker URL, credentials, connect/disconnect
+- [ ] Wire `{ status, error }` from hook into App.jsx / header status indicator
+- [ ] Add `mqtt` npm dependency
+- [ ] Verify HiveMQ Cloud ACL topic isolation before shipping wildcard subscription
 
 ### iOS Alarm
 - [ ] **iOS alarm options** — silent switch bypasses all browser audio/notifications on iOS; investigate native PWA push notifications or other iOS-specific workaround when ready

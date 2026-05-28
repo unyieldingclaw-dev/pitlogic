@@ -1,12 +1,14 @@
 # ThermoWorks Adapter — Compliance Notices
 
-This directory contains the ThermoWorks integration stub. Integration is gated by contractual and architectural requirements.
+This directory contains the ThermoWorks integration via the **ThermaConnect open MQTT protocol**.
 
 ## Status
 
-**STUB** — All methods throw `NotImplementedError`. No SDK is currently linked.
+**IMPLEMENTATION PENDING** — Spec written (`docs/superpowers/specs/2026-05-27-thermoworks-mqtt-adapter-design.md`). Current file is a stub; implementation plan in progress.
 
-## Before Implementing
+**Protocol:** ThermaConnect (open, documented MQTT protocol published by ThermoWorks-Integrations). No proprietary SDK — browser-only `mqtt.js` over WebSocket.
+
+## Before Modifying
 
 Run the 8-question engineering decision filter from ADR-003:
 
@@ -24,13 +26,15 @@ Run the 8-question engineering decision filter from ADR-003:
 ## Approved Integration Model
 
 ```
-ThermoWorks Device
-  ↓ Official SDK / Official API
-ThermoWorksAdapter (this file)
+RFX Gateway
+  ↓ ThermaConnect MQTT (open protocol, WSS)
+User-managed MQTT broker (e.g. HiveMQ Cloud)
+  ↓ mqtt.js WebSocket (browser)
+ThermoWorksAdapter (this directory)
   ↓ RawProviderEvent (Record<string, unknown>)
-Normalization Layer
+Normalization Layer (normalizeProviderEvent)
   ↓ NormalizedTelemetryEvent
-TelemetryStore / SessionStore
+globalEventBus → TelemetryStore
   ↓ materialized state
 Analytics / UI
 ```

@@ -76,8 +76,8 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Push to origin/main** — triggers auto-deploy to GitHub Pages (1 unpushed commit: CSV parser refactor)
-2. **Implement `ThermoWorksAdapter`** when official SDK access is available
+1. **Write implementation plan** for ThermoWorks MQTT adapter (invoke writing-plans skill) — spec at `docs/superpowers/specs/2026-05-27-thermoworks-mqtt-adapter-design.md`
+2. **Implement** `ThermoWorksAdapter` (replace stub with `mqtt.js`), `useThermoWorksProvider` hook, and Settings UI "Live Device" section — per spec
 3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
