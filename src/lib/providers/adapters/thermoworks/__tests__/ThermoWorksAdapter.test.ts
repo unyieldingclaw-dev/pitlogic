@@ -100,7 +100,10 @@ const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockClientOn, simula
     };
   });
 
-vi.mock('mqtt', () => ({ connectAsync: mockConnectAsync }));
+vi.mock('mqtt', () => ({
+  default: { connectAsync: mockConnectAsync },
+  connectAsync: mockConnectAsync,
+}));
 
 import { ThermoWorksAdapter } from '../ThermoWorksAdapter.js';
 

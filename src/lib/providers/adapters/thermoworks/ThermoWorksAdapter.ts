@@ -11,7 +11,7 @@
  * - Any analytics logic
  */
 
-import { connectAsync } from 'mqtt';
+import mqtt from 'mqtt';
 import type { IConnackPacket, MqttClient } from 'mqtt';
 import type { TemperatureProvider } from '../../core/TemperatureProvider.js';
 import type { RawProviderEvent } from '../../core/ProviderTypes.js';
@@ -81,7 +81,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
 
   async connect(): Promise<void> {
     if (this._client) return;
-    const client = await connectAsync(this._config.brokerUrl, {
+    const client = await mqtt.connectAsync(this._config.brokerUrl, {
       username: this._config.username,
       password: this._config.password,
     });
