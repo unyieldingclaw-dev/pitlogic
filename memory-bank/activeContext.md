@@ -13,13 +13,13 @@ lineage: initial
 
 # Active Context - Current State
 
-**Last Updated**: 2026-05-26
+**Last Updated**: 2026-05-28
 
 ## Current Focus
 
-All work is now merged to `main`. The PitLogic rebrand + telemetry architecture (from `claude/frosty-hellman-9c2f1d`) and the Claude Code infrastructure + test coverage (from `chore/update-memory-bank-2026-05-14`) are both merged and will auto-deploy to GitHub Pages on push.
+ThermoWorks MQTT adapter — spec and plan written and committed to main. Implementation not yet started. 2 commits ahead of origin/main (not pushed yet); plan file also untracked. Push first, then implement.
 
-**Fully merged and pushed.** GitHub Pages auto-deploy triggered.
+**Branch**: `main` — 2 commits ahead of origin/main, NOT yet pushed.
 
 ## What's Working
 
@@ -76,8 +76,13 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Write implementation plan** for ThermoWorks MQTT adapter (invoke writing-plans skill) — spec at `docs/superpowers/specs/2026-05-27-thermoworks-mqtt-adapter-design.md`
-2. **Implement** `ThermoWorksAdapter` (replace stub with `mqtt.js`), `useThermoWorksProvider` hook, and Settings UI "Live Device" section — per spec
+1. **Push pending commits** — 2 commits ahead + plan file untracked:
+   ```powershell
+   git add "docs/superpowers/plans/2026-05-27-thermoworks-mqtt-adapter.md"
+   git commit -m "docs: add ThermoWorks MQTT adapter implementation plan"
+   git push origin main
+   ```
+2. **Implement** `ThermoWorksAdapter` (replace stub with `mqtt.js`), `useThermoWorksProvider` hook, and Settings UI "Live Device" section — per plan at `docs/superpowers/plans/2026-05-27-thermoworks-mqtt-adapter.md`
 3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues

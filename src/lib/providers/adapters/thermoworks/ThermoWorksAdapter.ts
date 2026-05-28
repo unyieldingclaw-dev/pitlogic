@@ -101,6 +101,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     await this._client.endAsync(true);
     this._client = null;
     this._messageHandlerRegistered = false;
+    this._handlers.clear();
   }
 
   private _registerMessageHandler(): void {
@@ -112,8 +113,8 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   }
 
   private async _onReconnect(connack: IConnackPacket): Promise<void> {
-    if (connack.sessionPresent) return;
-    await this._client!.subscribeAsync('/probes/+/events');
+    if (connack.sessionPresent || !this._client) return;
+    await this._client.subscribeAsync('/probes/+/events');
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
