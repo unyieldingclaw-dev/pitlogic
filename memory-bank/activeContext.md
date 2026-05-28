@@ -17,9 +17,9 @@ lineage: initial
 
 ## Current Focus
 
-ThermoWorks MQTT adapter — spec and plan written and committed to main. Implementation not yet started. 2 commits ahead of origin/main (not pushed yet); plan file also untracked. Push first, then implement.
+ThermoWorks MQTT adapter — fully implemented, reviewed, and pushed to main. 169 tests passing. CI deploying to GitHub Pages.
 
-**Branch**: `main` — 2 commits ahead of origin/main, NOT yet pushed.
+**Branch**: `main` — up to date with origin/main.
 
 ## What's Working
 
@@ -76,13 +76,8 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Push pending commits** — 2 commits ahead + plan file untracked:
-   ```powershell
-   git add "docs/superpowers/plans/2026-05-27-thermoworks-mqtt-adapter.md"
-   git commit -m "docs: add ThermoWorks MQTT adapter implementation plan"
-   git push origin main
-   ```
-2. **Implement** `ThermoWorksAdapter` (replace stub with `mqtt.js`), `useThermoWorksProvider` hook, and Settings UI "Live Device" section — per plan at `docs/superpowers/plans/2026-05-27-thermoworks-mqtt-adapter.md`
+1. **End-to-end test** with a real RFX Gateway + HiveMQ Cloud broker (manual — requires hardware)
+2. **Verify HiveMQ Cloud ACL** topic isolation before first live use (see Broker Setup Reference in plan)
 3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
