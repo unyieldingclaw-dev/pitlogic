@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-// Hoisted mocks — must exist before vi.mock() runs
+// vi.hoisted() runs before vi.mock() which runs before top-level imports.
+// These mock fns are defined here so they can be referenced inside the vi.mock() factories below.
+// Modifying vi.hoisted() or vi.mock() blocks requires keeping them in sync — they are intentionally coupled.
 const { mockConnect, mockSubscribe, mockDisconnect, mockPublish, mockNormalize } = vi.hoisted(() => ({
   mockConnect: vi.fn().mockResolvedValue(undefined),
   mockSubscribe: vi.fn().mockReturnValue(() => {}),
@@ -129,5 +131,7 @@ describe('useThermoWorksProvider', () => {
 
     expect(mockNormalize).toHaveBeenCalledWith(fakeRaw, 'thermoworks');
     expect(mockPublish).toHaveBeenCalledWith(fakeNormalized);
+    // Note: individual handler failure isolation (one handler error doesn't block others)
+    // is tested at the ThermoWorksAdapter layer — see ThermoWorksAdapter.test.ts.
   });
 });

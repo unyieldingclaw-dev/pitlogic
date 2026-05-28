@@ -13,7 +13,7 @@ function loadConfig() {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
-    return null;
+    return null; // JSON corruption → treat as missing config; connect() will surface a user-readable error
   }
 }
 
@@ -35,6 +35,9 @@ export function useThermoWorksProvider() {
 
     try {
       const adapter = new ThermoWorksAdapter(config);
+      // Raw events cross the provider boundary here: normalize validates shape (Zod),
+      // then publish delivers to TelemetryStore via the eventBus. Normalization happens
+      // in the hook, not in the adapter, to keep the adapter purely transport-layer.
       const unsub = adapter.subscribe(rawEvent => {
         const normalized = normalizeProviderEvent(rawEvent, adapter.id);
         globalEventBus.publish(normalized);
