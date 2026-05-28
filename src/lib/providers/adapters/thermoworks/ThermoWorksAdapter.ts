@@ -121,7 +121,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     const events = transformPayload(topic, payload);
     for (const event of events) {
       for (const handler of this._handlers) {
-        try { handler(event); } catch { /* isolate handler failures */ }
+        try { handler(event); } catch { /* isolate handler failures — user code must not block other handlers */ }
       }
     }
   }

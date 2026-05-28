@@ -73,7 +73,7 @@ describe('transformPayload', () => {
 });
 
 // Hoisted mock values — must be defined before vi.mock() runs
-const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockClientOn, simulateMessage, simulateReconnect, listeners } =
+const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockClientOn, simulateMessage, simulateReconnect, clearListeners } =
   vi.hoisted(() => {
     const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
     const mockClient = {
@@ -94,7 +94,9 @@ const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockClientOn, simula
       simulateReconnect: (sessionPresent: boolean) => {
         (listeners['connect'] ?? []).forEach(cb => cb({ sessionPresent }));
       },
-      listeners,
+      clearListeners: () => {
+        Object.keys(listeners).forEach(k => { delete listeners[k]; });
+      },
     };
   });
 
@@ -107,8 +109,7 @@ const VALID_CONFIG = { brokerUrl: 'wss://test.hivemq.cloud:8884/mqtt', username:
 describe('ThermoWorksAdapter — connection lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Clear all listeners from previous tests
-    Object.keys(listeners).forEach(key => { delete listeners[key]; });
+    clearListeners();
     mockConnectAsync.mockResolvedValue({
       on: mockClientOn,
       subscribeAsync: mockSubscribeAsync,
@@ -138,7 +139,7 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     await adapter.connect();
     // Simulate a reconnect that would naively re-register if unguarded
     simulateReconnect(false);
-    const messageListenerCalls = mockClientOn.mock.calls.filter(([event]: [string]) => event === 'message');
+    const messageListenerCalls = mockClientOn.mock.calls.filter(([event]) => event === 'message');
     expect(messageListenerCalls).toHaveLength(1);
   });
 
