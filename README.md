@@ -7,7 +7,7 @@ An independent BBQ cook logging and analytics platform. Track temperature probes
 ## Features
 
 - **Active cook dashboard** — one card per active cook with ETA, stall probability, and per-probe climb rates
-- **Temperature alarms** — browser notification + audio beep when a meat probe hits its target; configurable low-temp alarm for the ambient/smoker probe (editable mid-cook, re-fires on repeated drops)
+- **Temperature alarms** — browser notification when a meat probe hits its target; audio beep + browser notification for the smoker/pit low-temp alarm (editable mid-cook, re-fires on repeated drops)
 - **Stall intelligence** — approaching/confirmed stall detection with action coaching
 - **Analytics** — gradient bar chart, sigma-band average curves, cook quality scatter, cook comparison charts
 - **Temperature charting** — per-probe gradients, hover tooltips
@@ -24,7 +24,7 @@ An independent BBQ cook logging and analytics platform. Track temperature probes
 - React 19 + Vite (JavaScript/JSX); TypeScript in `src/lib/` only
 - Recharts for charts, Lucide icons, Zod for provider-boundary validation
 - localStorage only — no backend, no accounts
-- Vitest + Testing Library (146 passing)
+- Vitest + Testing Library (169 passing, 16 files)
 - GitHub Actions → GitHub Pages for CI/CD
 
 ## Getting Started
