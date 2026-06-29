@@ -25,11 +25,15 @@ export interface ThermoWorksConfig {
 /**
  * Transforms a raw ThermaConnect RFX MQTT message into zero or more RawProviderEvents.
  * Pure function — exported for unit testing without a mock broker.
+ *
+ * Real gateway payload (topic: /devices/{deviceId}/events):
+ *   { gatewayId, deviceId, ts (ms epoch), sensors: [{ sensorId, value, units }] }
+ * Gateway state topics (/devices/{id}/state) carry no sensors array and are silently ignored.
  */
 export function transformPayload(topic: string, rawPayload: Buffer | string): RawProviderEvent[] {
-  const match = topic.match(/^\/probes\/([^/]+)\/events$/);
+  const match = topic.match(/^\/devices\/([^/]+)\/events$/);
   if (!match) return [];
-  const probeTopicId = match[1];
+  const topicDeviceId = match[1];
 
   let parsed: unknown;
   try {
@@ -40,31 +44,25 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
     return [];
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !Array.isArray((parsed as Record<string, unknown>).channels)
-  ) {
-    // TEMP DEBUG: log full payload so we can see what the real gateway sends
-    console.warn('[thermoworks] unexpected payload structure', { topic, parsed });
-    return [];
-  }
+  if (typeof parsed !== 'object' || parsed === null) return [];
+  const p = parsed as Record<string, unknown>;
+  if (!Array.isArray(p.sensors)) return [];
+  if (!Number.isInteger(p.ts) || (p.ts as number) < 1e10) return [];
 
+  const deviceId = typeof p.deviceId === 'string' ? p.deviceId : topicDeviceId;
+  const ts = p.ts as number;
   const events: RawProviderEvent[] = [];
-  for (const channel of (parsed as { channels: unknown[] }).channels) {
-    const ch = channel as Record<string, unknown>;
-    if (!Number.isInteger(ch.ts) || (ch.ts as number) < 1e10) continue;
-    if (!Array.isArray(ch.readings)) continue;
-    for (const reading of ch.readings as Record<string, unknown>[]) {
-      if (reading.type !== 'T') continue;
-      events.push({
-        probeId: `${probeTopicId}-ch${ch.number}`,
-        capturedAt: ch.ts as number,
-        temperature: reading.value as number,
-        unit: 'F',
-        source: 'live',
-      });
-    }
+
+  for (const sensor of p.sensors as Record<string, unknown>[]) {
+    if (typeof sensor.sensorId !== 'string' && typeof sensor.sensorId !== 'number') continue;
+    if (typeof sensor.value !== 'number') continue;
+    events.push({
+      probeId: `${deviceId}-s${sensor.sensorId}`,
+      capturedAt: ts,
+      temperature: sensor.value,
+      unit: sensor.units === 'C' ? 'C' : 'F',
+      source: 'live',
+    });
   }
   return events;
 }
@@ -87,7 +85,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
       password: this._config.password,
     });
     this._client = client;
-    await client.subscribeAsync('/probes/+/events');
+    await client.subscribeAsync('/devices/+/events');
     this._registerMessageHandler();
     client.on('connect', (connack: IConnackPacket) => { void this._onReconnect(connack); });
   }
@@ -115,7 +113,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
 
   private async _onReconnect(connack: IConnackPacket): Promise<void> {
     if (connack.sessionPresent || !this._client) return;
-    await this._client.subscribeAsync('/probes/+/events');
+    await this._client.subscribeAsync('/devices/+/events');
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
