@@ -9,7 +9,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, liveProbes }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -267,6 +267,28 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               {mqttStatus === 'error' && `✕ ${mqttError ?? 'Error'}`}
             </span>
           </div>
+          {liveProbes?.size > 0 && (
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
+                letterSpacing: '0.08em', marginBottom: 6 }}>Live Probes</div>
+              {[...liveProbes.values()].map(probe => (
+                <div key={probe.probeId} style={{ display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', padding: '4px 0', fontSize: 13 }}>
+                  <span style={{ color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 12 }}>
+                    {probe.label}
+                  </span>
+                  <span style={{
+                    color: probe.status === 'active' ? 'var(--green)' :
+                           probe.status === 'stale' ? 'var(--amber)' : 'var(--text3)',
+                    fontFamily: 'var(--mono)', fontSize: 13,
+                  }}>
+                    {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°F` : '—'}
+                    {probe.status === 'stale' && ' (stale)'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Export */}

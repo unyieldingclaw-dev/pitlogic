@@ -5,6 +5,7 @@ import { save, load, replaceAll as storageReplaceAll } from './hooks/useStorage.
 import { useRecipes } from './hooks/useRecipes.js';
 import { usePrefs } from './hooks/usePrefs';
 import { useThermoWorksProvider } from './hooks/useThermoWorksProvider.js';
+import { useLiveProbes } from './hooks/useLiveProbes.js';
 import { dur, shortDate } from './utils/helpers';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
@@ -38,6 +39,7 @@ export default function App() {
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
+  const liveProbes = useLiveProbes();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
@@ -476,7 +478,7 @@ export default function App() {
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
-              allActiveCooks={allActiveCooks} tick={tick}
+              allActiveCooks={allActiveCooks} tick={tick} liveProbes={liveProbes}
               onGoActive={(cookId) => {
                 if (cookId) {
                   const idx = activeCooks.indexOf(cookId);
@@ -536,6 +538,7 @@ export default function App() {
         mqttError={mqttProvider.error}
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
+        liveProbes={liveProbes}
       />
 
       {/* Bottom nav (mobile) */}
