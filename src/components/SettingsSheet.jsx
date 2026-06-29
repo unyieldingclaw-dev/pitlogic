@@ -23,8 +23,8 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     }
   });
   const [mqttSaved, setMqttSaved] = useState(false);
-  // Track timer ref to prevent setState-after-unmount if the sheet closes within the flash duration
   const mqttSavedTimerRef = useRef(null);
+  const mouseDownInsideSheet = useRef(false);
 
   const handleMqttSave = () => {
     localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(mqttConfig));
@@ -82,8 +82,8 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     <div role="dialog" aria-modal="true" aria-label="Settings"
       style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end',
         justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="fadein" style={{ background: 'var(--surface)', borderRadius: '16px 16px 0 0',
+      onClick={e => { if (e.target === e.currentTarget && !mouseDownInsideSheet.current) onClose(); mouseDownInsideSheet.current = false; }}>
+      <div className="fadein" onMouseDown={() => { mouseDownInsideSheet.current = true; }} style={{ background: 'var(--surface)', borderRadius: '16px 16px 0 0',
         width: '100%', maxWidth: 480, padding: '1.5rem', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
         maxHeight: '85vh', overflowY: 'auto' }}>
 
