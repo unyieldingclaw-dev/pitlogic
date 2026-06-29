@@ -45,7 +45,8 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
     parsed === null ||
     !Array.isArray((parsed as Record<string, unknown>).channels)
   ) {
-    console.warn('[thermoworks] unexpected payload structure', { topic });
+    // TEMP DEBUG: log full payload so we can see what the real gateway sends
+    console.warn('[thermoworks] unexpected payload structure', { topic, parsed });
     return [];
   }
 
