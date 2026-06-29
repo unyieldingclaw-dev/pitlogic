@@ -81,16 +81,23 @@ No server, no IndexedDB, no cookies.
 ```
 src/lib/
 ├── migrations/     one-time idempotent localStorage key migrations
-├── providers/      TemperatureProvider interface + adapters (csv, thermoworks stub, mock)
-├── telemetry/      domain types, normalizer (Zod), EventBus, TelemetryStore, SessionStore
+├── providers/      TemperatureProvider interface + adapters (csv, thermoworks, mock)
+├── telemetry/
+│   ├── domain/     TelemetryModels.ts — NormalizedTemperature, ProbeState, ActiveReading
+│   ├── eventBus/   EventBus.ts + globalEventBus singleton (providers publish here)
+│   ├── normalization/  Zod normalizer — RawProviderEvent → ActiveReading
+│   ├── store/      TelemetryStore.ts + globalStore.ts singleton (React reads from here)
+│   └── session/    SessionStore.ts
 └── compliance/     ADR-001 through ADR-004, providerGuardrails.md
 ```
+
+`globalStore.ts` is the domain-boundary singleton: `new TelemetryStore(globalEventBus)`. UI hooks import ONLY from here, never from eventBus or providers directly (ADR-001).
 
 ## Commands
 
 ```powershell
 npm run dev          # dev server at http://localhost:5173/pitlogic/
-npm test -- --run    # run all tests once (146 passing as of 2026-05-27)
+npm test -- --run    # run all tests once (171 passing as of 2026-06-29)
 npm run test:watch   # watch mode
 npm run test:coverage # coverage report
 npm run build        # production build
