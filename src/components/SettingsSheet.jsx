@@ -24,6 +24,9 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
   });
   const [mqttSaved, setMqttSaved] = useState(false);
   const mqttSavedTimerRef = useRef(null);
+  // Tracks whether the mousedown that preceded a click started inside the sheet,
+  // so dragging to select password-field text (mouseup lands on the backdrop)
+  // doesn't get treated as a backdrop click and close the sheet.
   const mouseDownInsideSheet = useRef(false);
 
   const handleMqttSave = () => {

@@ -47,6 +47,9 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
   if (typeof parsed !== 'object' || parsed === null) return [];
   const p = parsed as Record<string, unknown>;
   if (!Array.isArray(p.sensors)) return [];
+  // 1e10 is the seconds/milliseconds epoch boundary (~2001-09 in ms, ~year 5138 in s) —
+  // gateways are expected to send ms epoch; anything below this is rejected as malformed
+  // rather than silently misinterpreted as seconds.
   if (!Number.isInteger(p.ts) || (p.ts as number) < 1e10) return [];
 
   const deviceId = typeof p.deviceId === 'string' ? p.deviceId : topicDeviceId;
@@ -57,6 +60,8 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
     if (typeof sensor.sensorId !== 'string' && typeof sensor.sensorId !== 'number') continue;
     if (typeof sensor.value !== 'number') continue;
     events.push({
+      // probeId format `{deviceId}-s{sensorId}` disambiguates multiple sensors on one
+      // gateway device — mirrors how the RFX Gateway itself labels per-channel probes.
       probeId: `${deviceId}-s${sensor.sensorId}`,
       capturedAt: ts,
       temperature: sensor.value,

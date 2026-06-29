@@ -65,6 +65,11 @@ describe('transformPayload', () => {
     expect(transformPayload(TOPIC, Buffer.from('not json'))).toHaveLength(0);
   });
 
+  it('returns empty array for an empty sensors array', () => {
+    const payload = makePayload([]);
+    expect(transformPayload(TOPIC, payload)).toHaveLength(0);
+  });
+
   it('returns empty array when payload has no sensors array (e.g. gateway state message)', () => {
     const payload = Buffer.from(JSON.stringify({ gatewayId: 'T142B2FD392FC', deviceId: 'M123456789012', ts: 2_000_000_000_000 }));
     expect(transformPayload(TOPIC, payload)).toHaveLength(0);

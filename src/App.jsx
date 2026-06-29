@@ -478,7 +478,7 @@ export default function App() {
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
-              allActiveCooks={allActiveCooks} tick={tick} liveProbes={liveProbes}
+              allActiveCooks={allActiveCooks} liveProbes={liveProbes}
               onGoActive={(cookId) => {
                 if (cookId) {
                   const idx = activeCooks.indexOf(cookId);
