@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight, Flame } from 'lucide-react';
+import { ChevronRight, Flame } from 'lucide-react';
 import { MEATS } from '../data/meats';
 import { G } from '../data/cuts';
 

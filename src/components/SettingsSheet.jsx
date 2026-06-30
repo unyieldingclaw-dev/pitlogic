@@ -63,7 +63,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
       const result = parseImport(ev.target.result);
       if (!result.ok) { setError(result.error); setPreview(null); return; }
       setError(null);
-      const { merged: _m, added: newCooks, skipped: skipCooks } = mergeCooks(cookState.cooks, result.data.cooks);
+      const { added: newCooks, skipped: skipCooks } = mergeCooks(cookState.cooks, result.data.cooks);
       const existingNames = new Set(recipes.map(r => r.name.toLowerCase()));
       const newRecipes = result.data.recipes.filter(r => !existingNames.has(r.name.toLowerCase())).length;
       const skipRecipes = result.data.recipes.length - newRecipes;

@@ -15,7 +15,7 @@ export function useMopTimer(activeCook, onSprayEvent) {
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled) { setSecondsLeft(null); setAlert(false); return; }
+    if (!enabled) { setSecondsLeft(null); setAlert(false); return; } // eslint-disable-line react-hooks/set-state-in-effect
     const totalSecs = mop.intervalMin * 60;
     const lastEvent = mop.events?.slice(-1)[0];
     const lastTs = lastEvent?.ts ?? activeCook.startTime;
@@ -39,7 +39,7 @@ export function useMopTimer(activeCook, onSprayEvent) {
       });
     }, 1000);
     return () => clearInterval(intervalRef.current);
-  }, [enabled, activeCook?.id, mop?.events?.length]);
+  }, [enabled, activeCook?.id, mop?.events?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissSpray = useCallback(() => {
     setAlert(false);

@@ -1,4 +1,4 @@
-import { Flame, Clock, Star, ChevronRight, Plus } from 'lucide-react';
+import { Flame, ChevronRight } from 'lucide-react';
 import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
 
 function StatPill({ label, value }) {
@@ -29,7 +29,7 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeId, activeCook, allActiveCooks, liveProbes, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, onGoActive, onNewCook, onSelectCook }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
