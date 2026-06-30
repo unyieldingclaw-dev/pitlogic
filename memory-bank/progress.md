@@ -20,6 +20,7 @@ lineage: initial
 Full completed-items history archived in `progress-archive.md`.
 
 ### Recent Milestones
+- **2026-06-30**: `useCsvProvider` hook + Settings "Replay CSV" card — CSV file → CsvProvider → telemetry pipeline → Live Readings card; 171 → 183 tests
 - **2026-06-30**: ThermoWorks integration merged to main (PR #6) — full live probe UI pipeline deployed to GitHub Pages; 43 pre-existing lint errors resolved (0 errors, 0 warnings); 171 tests passing
 - **2026-06-29**: Live probe UI pipeline complete (feature branch) — `globalStore.ts` singleton, `useLiveProbes` hook, Dashboard "Live Readings" card, SettingsSheet probe list; ThermoWorksAdapter payload parser fixed for real gateway format (`sensors[]`, `/devices/+/events`, probeId `{deviceId}-s{sensorId}`); 169 → 171 tests
 - **2026-05-28**: ThermoWorks MQTT adapter complete — `ThermoWorksAdapter`, `useThermoWorksProvider`, "Live Device" UI; 146 → 169 tests across 16 files
