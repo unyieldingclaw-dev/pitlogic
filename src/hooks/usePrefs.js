@@ -31,7 +31,7 @@ export function usePrefs() {
 
   const resetCutPref = useCallback((cut) => {
     setPrefs(p => {
-      const { [cut]: _removed, ...rest } = p.cutPrefs || {};
+      const { [cut]: _removed, ...rest } = p.cutPrefs || {}; // eslint-disable-line no-unused-vars
       const next = { ...p, cutPrefs: rest };
       localStorage.setItem(KEY, JSON.stringify(next));
       return next;

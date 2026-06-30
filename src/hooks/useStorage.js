@@ -1,7 +1,7 @@
 const KEY = 'pitlogic-v5';
 
 export const save = data => {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {}
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* storage unavailable */ }
 };
 
 export const replaceAll = ({ cooks, activeCooks }) => {
@@ -20,5 +20,5 @@ export const load = () => {
       localStorage.setItem(KEY, JSON.stringify(d));
     }
     return d;
-  } catch(e) { return null; }
+  } catch { return null; }
 };

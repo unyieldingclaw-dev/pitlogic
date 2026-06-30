@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { PROBE_COLORS } from '../utils/helpers';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function buildChartData(cook) {
   const ts = new Set();
   cook.probes.forEach(p => p.readings.forEach(r => ts.add(r.time)));
@@ -20,6 +21,7 @@ export function buildChartData(cook) {
   });
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function analyzeProbe(probe) {
   const r = probe.readings;
   if (r.length < 2) return null;

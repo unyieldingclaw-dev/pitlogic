@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
+import { probeStatusColor } from '../utils/helpers';
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -9,7 +10,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -23,8 +24,11 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     }
   });
   const [mqttSaved, setMqttSaved] = useState(false);
-  // Track timer ref to prevent setState-after-unmount if the sheet closes within the flash duration
   const mqttSavedTimerRef = useRef(null);
+  // Tracks whether the mousedown that preceded a click started inside the sheet,
+  // so dragging to select password-field text (mouseup lands on the backdrop)
+  // doesn't get treated as a backdrop click and close the sheet.
+  const mouseDownInsideSheet = useRef(false);
 
   const handleMqttSave = () => {
     localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(mqttConfig));
@@ -59,7 +63,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
       const result = parseImport(ev.target.result);
       if (!result.ok) { setError(result.error); setPreview(null); return; }
       setError(null);
-      const { merged: _m, added: newCooks, skipped: skipCooks } = mergeCooks(cookState.cooks, result.data.cooks);
+      const { added: newCooks, skipped: skipCooks } = mergeCooks(cookState.cooks, result.data.cooks);
       const existingNames = new Set(recipes.map(r => r.name.toLowerCase()));
       const newRecipes = result.data.recipes.filter(r => !existingNames.has(r.name.toLowerCase())).length;
       const skipRecipes = result.data.recipes.length - newRecipes;
@@ -82,8 +86,8 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     <div role="dialog" aria-modal="true" aria-label="Settings"
       style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end',
         justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="fadein" style={{ background: 'var(--surface)', borderRadius: '16px 16px 0 0',
+      onClick={e => { if (e.target === e.currentTarget && !mouseDownInsideSheet.current) onClose(); mouseDownInsideSheet.current = false; }}>
+      <div className="fadein" onMouseDown={() => { mouseDownInsideSheet.current = true; }} style={{ background: 'var(--surface)', borderRadius: '16px 16px 0 0',
         width: '100%', maxWidth: 480, padding: '1.5rem', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
         maxHeight: '85vh', overflowY: 'auto' }}>
 
@@ -265,6 +269,67 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               {mqttStatus === 'connecting' && '○ Connecting…'}
               {mqttStatus === 'disconnected' && '○ Disconnected'}
               {mqttStatus === 'error' && `✕ ${mqttError ?? 'Error'}`}
+            </span>
+          </div>
+          {liveProbes?.size > 0 && (
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
+                letterSpacing: '0.08em', marginBottom: 6 }}>Live Probes</div>
+              {[...liveProbes.values()].map(probe => (
+                <div key={probe.probeId} style={{ display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', padding: '4px 0', fontSize: 13 }}>
+                  <span style={{ color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 12 }}>
+                    {probe.label}
+                  </span>
+                  <span style={{
+                    color: probeStatusColor(probe.status),
+                    fontFamily: 'var(--mono)', fontSize: 13,
+                  }}>
+                    {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°F` : '—'}
+                    {probe.status === 'stale' && ' (stale)'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Replay CSV */}
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+            Replay CSV
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Load a ThermoWorks temperature CSV to display it in the Live Readings card.
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', fontSize: 13, cursor: 'pointer',
+              border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text2)',
+              background: 'transparent' }}>
+              <Upload size={14} /> Choose CSV
+              <input
+                type="file"
+                accept=".csv,.txt"
+                aria-label="Choose CSV file to replay"
+                style={{ display: 'none' }}
+                onChange={e => { if (e.target.files?.[0]) { onCsvReplay(e.target.files[0]); e.target.value = ''; } }}
+              />
+            </label>
+            {csvStatus === 'done' && (
+              <button type="button" onClick={onCsvReset}
+                aria-label="Clear replayed CSV data"
+                style={{ fontSize: 13, padding: '6px 14px', border: '1px solid var(--border)',
+                  borderRadius: 8, background: 'transparent', color: 'var(--text3)', cursor: 'pointer' }}>
+                Clear
+              </button>
+            )}
+            <span style={{ fontSize: 12,
+              color: csvStatus === 'done' ? 'var(--green)' : csvStatus === 'error' ? 'var(--red)' : 'var(--text3)' }}
+              role="status" aria-live="polite">
+              {csvStatus === 'replaying' && '○ Loading…'}
+              {csvStatus === 'done' && '● Loaded'}
+              {csvStatus === 'error' && `✕ ${csvError ?? 'Parse failed'}`}
             </span>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { useProbeAlert } from '../useProbeAlert';
 const mockNotification = vi.fn();
 mockNotification.permission = 'granted';
 mockNotification.requestPermission = vi.fn().mockResolvedValue('granted');
-global.Notification = mockNotification;
+globalThis.Notification = mockNotification;
 
 function makeCook(id, probes) {
   return { id, probes };

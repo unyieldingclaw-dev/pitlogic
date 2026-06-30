@@ -3,7 +3,7 @@ import { PROBE_COLORS } from '../utils/helpers';
 import { dur, shortDate, elapsed } from '../utils/helpers';
 
 
-export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, onNewCook, onGoActive, tick }) {
+export default function HistoryTab({ cooks, activeId, activeCook, onSelectCook, onNewCook, onGoActive }) {
   return (
     <div className="fadein">
       {activeId && activeCook && (

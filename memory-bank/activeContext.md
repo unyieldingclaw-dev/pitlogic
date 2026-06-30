@@ -13,17 +13,17 @@ lineage: initial
 
 # Active Context - Current State
 
-**Last Updated**: 2026-05-28
+**Last Updated**: 2026-06-29
 
 ## Current Focus
 
-ThermoWorks MQTT adapter — fully implemented, reviewed, and pushed to main. 169 tests passing. CI deploying to GitHub Pages.
+ThermoWorks end-to-end pipeline — complete on feature branch, ready to merge and smoke-test with real hardware.
 
-**Branch**: `main` — up to date with origin/main.
+**Branch**: `claude/thermoworks-integration-dou7k5` — merged to main 2026-06-30 (PR #6). GitHub Pages auto-deploying.
 
 ## What's Working
 
-- All tests passing — production build clean
+- 171 tests passing — production build clean
 - GitHub Pages deployed and auto-deploying on push to main
 - PWA installable on mobile
 - Full data export/import (JSON backup with merge/replace modes)
@@ -35,6 +35,7 @@ ThermoWorks MQTT adapter — fully implemented, reviewed, and pushed to main. 16
 - PitLogic branding throughout — no RFX visible in UI
 - Migration system: first-run key rename `rfx-* → pitlogic-*`, idempotent
 - Telemetry architecture: domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
+- **Live probe pipeline (feature branch)**: MQTT → ThermoWorksAdapter → useThermoWorksProvider → globalEventBus → globalStore (TelemetryStore) → useLiveProbes → DashboardTab "Live Readings" card + SettingsSheet probe list
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
@@ -76,8 +77,8 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **End-to-end test** with a real RFX Gateway + HiveMQ Cloud broker (manual — requires hardware)
-2. **Verify HiveMQ Cloud ACL** topic isolation before first live use (see Broker Setup Reference in plan)
+1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`)
+2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
 3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
@@ -95,18 +96,22 @@ All 22 operations from the testing agent flow plan are complete:
 
 | File | Purpose |
 |------|---------|
-| `src/App.jsx` | Root — all state, nav, wiring |
+| `src/App.jsx` | Root — all state, nav, wiring; imports `useLiveProbes`, passes `liveProbes` to DashboardTab + SettingsSheet |
+| `src/hooks/useLiveProbes.js` | Subscribes to globalStore, manages stale check, returns `Map<probeId, ProbeState>` |
+| `src/lib/telemetry/store/globalStore.ts` | Singleton: `TelemetryStore` wired to `globalEventBus` — the domain boundary crossing point |
+| `src/lib/providers/adapters/thermoworks/ThermoWorksAdapter.ts` | Real gateway format: `/devices/+/events`, `sensors[]` array, probeId `{deviceId}-s{sensorId}` |
 | `src/hooks/useStorage.js` | localStorage `pitlogic-v5` (cooks, activeCooks, dis) |
 | `src/hooks/useRecipes.js` | localStorage `pitlogic-recipes-v1` |
 | `src/hooks/useProbeAlert.js` | Browser notification when probe hits target temp |
 | `src/hooks/useSmokerAlert.js` | Browser notification + Web Audio when pit drops below threshold |
 | `src/lib/migrations/` | Idempotent key-rename migration, run at startup |
-| `src/lib/telemetry/` | Domain types, normalizer (Zod), EventBus, Store |
-| `src/lib/providers/` | TemperatureProvider interface + adapters (CSV, Mock, ThermoWorks stub) |
+| `src/lib/telemetry/` | Domain types, normalizer (Zod), EventBus, TelemetryStore, SessionStore |
+| `src/lib/providers/` | TemperatureProvider interface + adapters (CSV, Mock, ThermoWorks) |
 | `src/lib/compliance/` | ADR-001 through ADR-004, providerGuardrails.md |
 | `src/utils/analytics.js` | All analytics + stall detection |
 | `src/utils/dataPortability.js` | Export/import pure functions |
-| `src/components/SettingsSheet.jsx` | Backup/restore UI + My Defaults section |
+| `src/components/DashboardTab.jsx` | Dashboard — includes "Live Readings" card when `liveProbes.size > 0` |
+| `src/components/SettingsSheet.jsx` | Backup/restore + My Defaults + Live Device section with probe list |
 | `src/hooks/usePrefs.js` | Per-cut temp preferences, localStorage `pitlogic-prefs-v1` |
 | `src/data/meats.js` | Meat categories + cuts lists |
 | `src/data/cuts.js` | Cut guides (temps, stages, pellets, tips) |

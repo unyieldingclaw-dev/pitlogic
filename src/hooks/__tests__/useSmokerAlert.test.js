@@ -5,7 +5,7 @@ import { useSmokerAlert } from '../useSmokerAlert';
 const mockNotification = vi.fn();
 mockNotification.permission = 'granted';
 mockNotification.requestPermission = vi.fn().mockResolvedValue('granted');
-global.Notification = mockNotification;
+globalThis.Notification = mockNotification;
 
 function makeCook(id, smokerReadings, alarm) {
   return { id, smokerReadings, smokerLowAlarm: alarm };
