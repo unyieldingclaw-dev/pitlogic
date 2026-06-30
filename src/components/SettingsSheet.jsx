@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
+import { probeStatusColor } from '../utils/helpers';
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -281,8 +282,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                     {probe.label}
                   </span>
                   <span style={{
-                    color: probe.status === 'active' ? 'var(--green)' :
-                           probe.status === 'stale' ? 'var(--amber)' : 'var(--text3)',
+                    color: probeStatusColor(probe.status),
                     fontFamily: 'var(--mono)', fontSize: 13,
                   }}>
                     {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°F` : '—'}

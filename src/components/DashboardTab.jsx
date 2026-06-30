@@ -1,5 +1,5 @@
 import { Flame, Clock, Star, ChevronRight, Plus } from 'lucide-react';
-import { dur, shortDate, PROBE_COLORS } from '../utils/helpers';
+import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
 
 function StatPill({ label, value }) {
   return (
@@ -97,12 +97,12 @@ export default function DashboardTab({ cooks, activeId, activeCook, allActiveCoo
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[...liveProbes.values()].map(probe => (
               <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
-                border: `1px solid ${probe.status === 'active' ? 'rgba(16,185,129,0.3)' : probe.status === 'stale' ? 'rgba(245,158,11,0.3)' : 'var(--border)'}` }}>
+                border: `1px solid ${probeStatusBorderColor(probe.status)}` }}>
                 <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2, fontFamily: 'var(--mono)' }}>
                   {probe.label}
                 </div>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 18,
-                  color: probe.status === 'active' ? 'var(--green)' : probe.status === 'stale' ? 'var(--amber)' : 'var(--text3)' }}>
+                  color: probeStatusColor(probe.status) }}>
                   {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
                 </div>
               </div>
