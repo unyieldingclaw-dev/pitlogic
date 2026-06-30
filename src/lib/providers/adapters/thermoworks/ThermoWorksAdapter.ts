@@ -20,11 +20,54 @@ export interface ThermoWorksConfig {
   brokerUrl: string;
   username: string;
   password: string;
+  unit?: 'F' | 'C';
 }
+
+// ---------------------------------------------------------------------------
+// Device meta event types — emitted by subscribeDeviceMeta(), NOT by subscribe().
+// Device state must NOT flow through globalEventBus; it stays in hook-local state.
+// ---------------------------------------------------------------------------
+
+export interface DeviceStateChannelInfo {
+  number: string | number;
+  label?: string;
+  highAlarming: boolean;
+  lowAlarming: boolean;
+}
+
+export interface DeviceStateEvent {
+  type: 'state';
+  deviceId: string;
+  firmware?: string;
+  wifiStrength?: number;
+  battery?: number | null;
+  channels: DeviceStateChannelInfo[];
+}
+
+export interface DeviceBatteryEvent {
+  type: 'battery';
+  deviceId: string;
+  battery: number;
+}
+
+export interface DeviceFirmwareEvent {
+  type: 'firmware';
+  deviceId: string;
+  firmware: string;
+}
+
+export type DeviceMetaEvent = DeviceStateEvent | DeviceBatteryEvent | DeviceFirmwareEvent;
+
+// ---------------------------------------------------------------------------
+// Pure transform functions — exported for unit testing without a mock broker.
+// ---------------------------------------------------------------------------
+
+const EVENTS_TOPIC_RE = /^\/(?:probes|devices)\/([^/]+)\/events$/;
+const STATE_TOPIC_RE = /^\/devices\/([^/]+)\/state$/;
+const SUBSCRIPTIONS = ['/probes/+/events', '/devices/+/events', '/devices/+/state'];
 
 /**
  * Transforms a raw ThermaConnect MQTT message into zero or more RawProviderEvents.
- * Pure function — exported for unit testing without a mock broker.
  *
  * ThermaConnect telemetry format (topic: /probes/{probeId}/events or /devices/{deviceId}/events):
  *   { gatewayId?, channels: [{ number, ts (ms epoch), readings: [{ value, type }] }] }
@@ -32,8 +75,12 @@ export interface ThermoWorksConfig {
  * others are silently ignored. Battery/firmware messages have no channels array and are
  * discarded. Timestamp validation is per-channel — bad-ts channels are skipped individually.
  */
-export function transformPayload(topic: string, rawPayload: Buffer | string): RawProviderEvent[] {
-  const match = topic.match(/^\/(?:probes|devices)\/([^/]+)\/events$/);
+export function transformPayload(
+  topic: string,
+  rawPayload: Buffer | string,
+  unit: 'F' | 'C' = 'F',
+): RawProviderEvent[] {
+  const match = topic.match(EVENTS_TOPIC_RE);
   if (!match) return [];
   const topicProbeId = match[1];
 
@@ -69,12 +116,60 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
         probeId: `${topicProbeId}-ch${channelNumber}`,
         capturedAt: ts as number,
         temperature: reading.value,
-        unit: 'F',
+        unit,
         source: 'live',
       });
     }
   }
   return events;
+}
+
+/**
+ * Parses a ThermaConnect /devices/{id}/state message into a DeviceStateEvent.
+ * Returns null for non-state topics or unparseable payloads.
+ */
+export function parseStatePayload(
+  topic: string,
+  rawPayload: Buffer | string,
+): DeviceStateEvent | null {
+  const match = topic.match(STATE_TOPIC_RE);
+  if (!match) return null;
+  const topicDeviceId = match[1];
+
+  let parsed: unknown;
+  try {
+    const str = typeof rawPayload === 'string' ? rawPayload : rawPayload.toString('utf-8');
+    parsed = JSON.parse(str);
+  } catch {
+    return null;
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) return null;
+  const p = parsed as Record<string, unknown>;
+
+  const channels: DeviceStateChannelInfo[] = [];
+  if (Array.isArray(p.channels)) {
+    for (const ch of p.channels as Record<string, unknown>[]) {
+      if (ch.number === undefined || ch.number === null) continue;
+      const high = ch.highAlarm as Record<string, unknown> | undefined;
+      const low = ch.lowAlarm as Record<string, unknown> | undefined;
+      channels.push({
+        number: ch.number as string | number,
+        label: typeof ch.label === 'string' ? ch.label : undefined,
+        highAlarming: high?.alarming === true,
+        lowAlarming: low?.alarming === true,
+      });
+    }
+  }
+
+  return {
+    type: 'state',
+    deviceId: typeof p.device === 'string' ? p.device : topicDeviceId,
+    firmware: typeof p.firmware === 'string' ? p.firmware : undefined,
+    wifiStrength: typeof p.wifi_strength === 'number' ? p.wifi_strength : undefined,
+    battery: typeof p.battery === 'number' ? p.battery : null,
+    channels,
+  };
 }
 
 export class ThermoWorksAdapter implements TemperatureProvider {
@@ -83,6 +178,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   private _client: MqttClient | null = null;
   private _messageHandlerRegistered = false;
   private readonly _handlers = new Set<(event: RawProviderEvent) => void>();
+  private readonly _metaHandlers = new Set<(event: DeviceMetaEvent) => void>();
 
   constructor(config: ThermoWorksConfig) {
     this._config = config;
@@ -95,7 +191,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
       password: this._config.password,
     });
     this._client = client;
-    await client.subscribeAsync(['/probes/+/events', '/devices/+/events']);
+    await client.subscribeAsync(SUBSCRIPTIONS);
     this._registerMessageHandler();
     client.on('connect', (connack: IConnackPacket) => { void this._onReconnect(connack); });
   }
@@ -105,12 +201,33 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     return () => { this._handlers.delete(handler); };
   }
 
+  /** Subscribe to device metadata events (state, battery, firmware). */
+  subscribeDeviceMeta(handler: (event: DeviceMetaEvent) => void): () => void {
+    this._metaHandlers.add(handler);
+    return () => { this._metaHandlers.delete(handler); };
+  }
+
   async disconnect(): Promise<void> {
     if (!this._client) return;
     await this._client.endAsync(true);
     this._client = null;
     this._messageHandlerRegistered = false;
     this._handlers.clear();
+    this._metaHandlers.clear();
+  }
+
+  /**
+   * Publishes a device config update to /devices/{deviceId}/config with retain=true.
+   * The retained message ensures the device receives the config on its next connect.
+   * Throws if not connected.
+   */
+  async publishDeviceConfig(deviceId: string, config: Record<string, unknown>): Promise<void> {
+    if (!this._client) throw new Error('[thermoworks] publishDeviceConfig: not connected');
+    await this._client.publishAsync(
+      `/devices/${deviceId}/config`,
+      JSON.stringify(config),
+      { retain: true },
+    );
   }
 
   private _registerMessageHandler(): void {
@@ -123,15 +240,56 @@ export class ThermoWorksAdapter implements TemperatureProvider {
 
   private async _onReconnect(connack: IConnackPacket): Promise<void> {
     if (connack.sessionPresent || !this._client) return;
-    await this._client.subscribeAsync(['/probes/+/events', '/devices/+/events']);
+    await this._client.subscribeAsync(SUBSCRIPTIONS);
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
-    const events = transformPayload(topic, payload);
+    // Temperature readings → temperature event handlers
+    const events = transformPayload(topic, payload, this._config.unit);
     for (const event of events) {
       for (const handler of this._handlers) {
-        try { handler(event); } catch { /* isolate handler failures — user code must not block other handlers */ }
+        try { handler(event); } catch { /* isolate handler failures */ }
       }
     }
+
+    // Device meta (state, battery, firmware) → meta event handlers
+    const meta = this._parseDeviceMeta(topic, payload);
+    if (meta) {
+      for (const handler of this._metaHandlers) {
+        try { handler(meta); } catch { /* isolate handler failures */ }
+      }
+    }
+  }
+
+  private _parseDeviceMeta(topic: string, payload: Buffer): DeviceMetaEvent | null {
+    // State topic
+    const stateMeta = parseStatePayload(topic, payload);
+    if (stateMeta) return stateMeta;
+
+    // Battery / firmware sub-messages from events topics
+    const eventsMatch = topic.match(EVENTS_TOPIC_RE);
+    if (!eventsMatch) return null;
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(payload.toString('utf-8'));
+    } catch {
+      return null;
+    }
+
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const p = parsed as Record<string, unknown>;
+    if (Array.isArray(p.channels)) return null; // telemetry message, handled by transformPayload
+
+    const deviceId = typeof p.gatewayId === 'string' ? p.gatewayId : eventsMatch[1];
+
+    if (typeof p.battery === 'number') {
+      return { type: 'battery', deviceId, battery: p.battery };
+    }
+    if (typeof p.firmware === 'string') {
+      return { type: 'firmware', deviceId, firmware: p.firmware };
+    }
+
+    return null;
   }
 }

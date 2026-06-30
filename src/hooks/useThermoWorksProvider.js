@@ -20,7 +20,9 @@ function loadConfig() {
 export function useThermoWorksProvider() {
   const [status, setStatus] = useState('disconnected');
   const [error, setError] = useState(null);
-  const sessionRef = useRef(null); // { adapter, unsub }
+  // Device meta (state/battery/firmware) stays in hook-local state — must NOT flow through globalEventBus.
+  const [deviceState, setDeviceState] = useState(() => new Map());
+  const sessionRef = useRef(null); // { adapter, unsub, unsubMeta }
 
   const connect = useCallback(async () => {
     const config = loadConfig();
@@ -42,8 +44,23 @@ export function useThermoWorksProvider() {
         const normalized = normalizeProviderEvent(rawEvent, adapter.id);
         globalEventBus.publish(normalized);
       });
+      const unsubMeta = adapter.subscribeDeviceMeta(event => {
+        setDeviceState(prev => {
+          const map = new Map(prev);
+          if (event.type === 'state') {
+            map.set(event.deviceId, event);
+          } else if (event.type === 'battery') {
+            const existing = map.get(event.deviceId);
+            if (existing) map.set(event.deviceId, { ...existing, battery: event.battery });
+          } else if (event.type === 'firmware') {
+            const existing = map.get(event.deviceId);
+            if (existing) map.set(event.deviceId, { ...existing, firmware: event.firmware });
+          }
+          return map;
+        });
+      });
       await adapter.connect();
-      sessionRef.current = { adapter, unsub };
+      sessionRef.current = { adapter, unsub, unsubMeta };
       setStatus('connected');
     } catch (err) {
       setStatus('error');
@@ -53,12 +70,19 @@ export function useThermoWorksProvider() {
 
   const disconnect = useCallback(async () => {
     if (!sessionRef.current) return;
-    const { adapter, unsub } = sessionRef.current;
+    const { adapter, unsub, unsubMeta } = sessionRef.current;
     unsub();
+    unsubMeta();
     await adapter.disconnect();
     sessionRef.current = null;
     setStatus('disconnected');
     setError(null);
+    setDeviceState(new Map());
+  }, []);
+
+  const publishDeviceConfig = useCallback(async (deviceId, config) => {
+    if (!sessionRef.current) throw new Error('[thermoworks] publishDeviceConfig: not connected');
+    await sessionRef.current.adapter.publishDeviceConfig(deviceId, config);
   }, []);
 
   useEffect(() => {
@@ -67,11 +91,12 @@ export function useThermoWorksProvider() {
       const session = sessionRef.current;
       if (session) {
         session.unsub();
+        session.unsubMeta();
         void session.adapter.disconnect();
         sessionRef.current = null;
       }
     };
   }, []);
 
-  return { status, error, connect, disconnect };
+  return { status, error, connect, disconnect, deviceState, publishDeviceConfig };
 }

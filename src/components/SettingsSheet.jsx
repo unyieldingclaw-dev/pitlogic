@@ -10,17 +10,22 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes, deviceState }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
   const [error, setError] = useState(null);
   const [mqttConfig, setMqttConfig] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('pitlogic-mqtt-v1') ?? 'null') ??
-        { brokerUrl: '', username: '', password: '' };
+      const stored = JSON.parse(localStorage.getItem('pitlogic-mqtt-v1') ?? 'null') ?? {};
+      return {
+        brokerUrl: stored.brokerUrl ?? '',
+        username: stored.username ?? '',
+        password: stored.password ?? '',
+        unit: stored.unit ?? 'F',
+      };
     } catch {
-      return { brokerUrl: '', username: '', password: '' };
+      return { brokerUrl: '', username: '', password: '', unit: 'F' };
     }
   });
   const [mqttSaved, setMqttSaved] = useState(false);
@@ -205,6 +210,11 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                   border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
                   fontSize: 13, fontFamily: 'var(--mono)' }}
               />
+              {mqttConfig.brokerUrl && /^(ws|mqtt):\/\//i.test(mqttConfig.brokerUrl) && (
+                <div role="alert" style={{ fontSize: 12, color: 'var(--amber)', marginTop: 4 }}>
+                  Non-TLS URL — credentials will be sent in plaintext. Use wss:// or mqtts://.
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="mqtt-username" style={{ display: 'block', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
@@ -235,6 +245,27 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                   border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
                   fontSize: 13 }}
               />
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>Temperature Unit</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  aria-pressed={mqttConfig.unit !== 'C'}
+                  className={mqttConfig.unit !== 'C' ? 'btn-primary' : 'btn-ghost'}
+                  style={{ fontSize: 13, padding: '5px 16px' }}
+                  onClick={() => setMqttConfig(c => ({ ...c, unit: 'F' }))}>
+                  °F
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mqttConfig.unit === 'C'}
+                  className={mqttConfig.unit === 'C' ? 'btn-primary' : 'btn-ghost'}
+                  style={{ fontSize: 13, padding: '5px 16px' }}
+                  onClick={() => setMqttConfig(c => ({ ...c, unit: 'C' }))}>
+                  °C
+                </button>
+              </div>
             </div>
           </div>
 
@@ -283,6 +314,43 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                     {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°F` : '—'}
                     {probe.status === 'stale' && ' (stale)'}
                   </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {deviceState?.size > 0 && (
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
+                letterSpacing: '0.08em', marginBottom: 8 }}>Device Health</div>
+              {[...deviceState.values()].map(device => (
+                <div key={device.deviceId} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
+                      {device.deviceId}
+                    </span>
+                    <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--text3)' }}>
+                      {device.battery != null && (
+                        <span style={{ color: device.battery < 20 ? 'var(--red)' : 'var(--text3)' }}>
+                          Bat {device.battery}%
+                        </span>
+                      )}
+                      {device.wifiStrength != null && (
+                        <span>WiFi {device.wifiStrength}</span>
+                      )}
+                      {device.firmware && (
+                        <span>v{device.firmware}</span>
+                      )}
+                    </div>
+                  </div>
+                  {device.channels?.some(ch => ch.highAlarming || ch.lowAlarming) && (
+                    <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>
+                      {device.channels.filter(ch => ch.highAlarming || ch.lowAlarming).map(ch => (
+                        <span key={String(ch.number)}>
+                          {ch.label || `Ch ${ch.number}`}: {ch.highAlarming ? 'HIGH' : 'LOW'}{' '}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

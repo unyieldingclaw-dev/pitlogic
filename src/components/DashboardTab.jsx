@@ -29,7 +29,18 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, onGoActive, onNewCook, onSelectCook }) {
+// ProbeId format: {topicId}-ch{channelNumber}
+function getChannelMeta(probeId, deviceState) {
+  if (!deviceState?.size) return null;
+  const idx = probeId.lastIndexOf('-ch');
+  if (idx === -1) return null;
+  const device = deviceState.get(probeId.slice(0, idx));
+  if (!device) return null;
+  const chNum = probeId.slice(idx + 3);
+  return device.channels?.find(ch => String(ch.number) === chNum) ?? null;
+}
+
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, deviceState, onGoActive, onNewCook, onSelectCook }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
@@ -95,18 +106,30 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>Live Readings</span>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[...liveProbes.values()].map(probe => (
-              <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
-                border: `1px solid ${probeStatusBorderColor(probe.status)}` }}>
-                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2, fontFamily: 'var(--mono)' }}>
-                  {probe.label}
+            {[...liveProbes.values()].map(probe => {
+              const chMeta = getChannelMeta(probe.probeId, deviceState);
+              const label = chMeta?.label || probe.label;
+              const isAlarming = chMeta?.highAlarming || chMeta?.lowAlarming;
+              return (
+                <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
+                  border: `1px solid ${isAlarming ? 'rgba(239,68,68,0.5)' : probeStatusBorderColor(probe.status)}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{label}</span>
+                    {isAlarming && (
+                      <span role="status" aria-label={chMeta.highAlarming ? 'High alarm' : 'Low alarm'}
+                        style={{ fontSize: 9, background: 'rgba(239,68,68,0.2)', color: 'var(--red)',
+                          borderRadius: 4, padding: '1px 4px', fontWeight: 600, letterSpacing: '0.04em' }}>
+                        {chMeta.highAlarming ? 'HIGH' : 'LOW'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 18,
+                    color: isAlarming ? 'var(--red)' : probeStatusColor(probe.status) }}>
+                    {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
+                  </div>
                 </div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 18,
-                  color: probeStatusColor(probe.status) }}>
-                  {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
