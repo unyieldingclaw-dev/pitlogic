@@ -41,7 +41,7 @@ const lsMock = (() => {
     _clear: () => { store = {}; },
   };
 })();
-Object.defineProperty(global, 'localStorage', { value: lsMock, writable: true });
+Object.defineProperty(globalThis, 'localStorage', { value: lsMock, writable: true });
 
 const VALID_CONFIG = JSON.stringify({
   brokerUrl: 'wss://test.hivemq.cloud:8884/mqtt',

@@ -9,7 +9,7 @@ const localStorageMock = {
   removeItem: vi.fn(key => { delete store[key]; }),
   clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]); }),
 };
-Object.defineProperty(global, 'localStorage', { value: localStorageMock });
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 
 import { parsePlanToEatCSV } from '../../utils/planToEatParser';
 import { useRecipes } from '../useRecipes';

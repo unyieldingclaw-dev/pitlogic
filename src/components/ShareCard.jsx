@@ -87,7 +87,7 @@ export default function ShareButton({ cook, chartContainerRef, flash }) {
       const canvas = await captureShareCard(CARD_ID);
       downloadCanvas(canvas, `${cook.cut.replace(/\s+/g, '-')}-cook.png`);
       flash?.('Downloaded!');
-    } catch(e) { flash?.('Download failed'); }
+    } catch { flash?.('Download failed'); }
     setWorking(false);
   };
 
@@ -97,7 +97,7 @@ export default function ShareButton({ cook, chartContainerRef, flash }) {
       const canvas = await captureShareCard(CARD_ID);
       await copyCanvasToClipboard(canvas);
       flash?.('Copied to clipboard!');
-    } catch(e) { flash?.('Copy failed — try Download instead'); }
+    } catch { flash?.('Copy failed — try Download instead'); }
     setWorking(false);
   };
 

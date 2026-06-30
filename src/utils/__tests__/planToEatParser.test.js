@@ -8,9 +8,7 @@ describe('parsePlanToEatCSV', () => {
   });
 
   it('returns empty array when Name column is missing', () => {
-    const csv = 'Title,Ingredients\nMemphis Rub,paprika';
-    // 'Title' matches the nameCol check, so this actually does parse
-    // Use a truly missing name column header instead
+    // 'Title' would match the nameCol check so use a truly missing name column header instead
     const csvNoName = 'Foo,Ingredients\nMemphis Rub,paprika';
     expect(parsePlanToEatCSV(csvNoName)).toEqual([]);
   });

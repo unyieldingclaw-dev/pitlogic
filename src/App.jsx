@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { MEATS } from './data/meats';
 import { G } from './data/cuts';
-import { save, load, replaceAll as storageReplaceAll } from './hooks/useStorage.js';
+import { save, load } from './hooks/useStorage.js';
 import { useRecipes } from './hooks/useRecipes.js';
 import { usePrefs } from './hooks/usePrefs';
 import { useThermoWorksProvider } from './hooks/useThermoWorksProvider.js';
-import { dur, shortDate } from './utils/helpers';
+import { useLiveProbes } from './hooks/useLiveProbes.js';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
 import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
@@ -38,6 +38,7 @@ export default function App() {
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
+  const liveProbes = useLiveProbes();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
@@ -51,7 +52,7 @@ export default function App() {
 
   useEffect(() => {
     const d = load();
-    if (d) { setCooks(d.cooks || []); setActiveCooks(d.activeCooks || (d.aid ? [d.aid] : [])); setDismissed(d.dis || {}); }
+    if (d) { setCooks(d.cooks || []); setActiveCooks(d.activeCooks || (d.aid ? [d.aid] : [])); setDismissed(d.dis || {}); } // eslint-disable-line react-hooks/set-state-in-effect
     setLoaded(true);
   }, []);
 
@@ -70,7 +71,7 @@ export default function App() {
       const cut = cuts[0];
       const g = G[cut];
       const pref = prefs.cutPrefs?.[cut];
-      setForm(f => ({ ...f, cut,
+      setForm(f => ({ ...f, cut, // eslint-disable-line react-hooks/set-state-in-effect
         smokerTarget: pref?.pit ?? g?.pit ?? 225,
         probes: f.probes.map(p => ({ ...p, target: pref?.pull ?? g?.pull ?? 165 }))
       }));
@@ -80,15 +81,15 @@ export default function App() {
   useEffect(() => {
     const g = G[form.cut];
     const pref = prefs.cutPrefs?.[form.cut];
-    if (g) setForm(f => ({ ...f,
+    if (g) setForm(f => ({ ...f, // eslint-disable-line react-hooks/set-state-in-effect
       smokerTarget: pref?.pit ?? g.pit ?? 225,
       probes: f.probes.map(p => ({ ...p, target: pref?.pull ?? g.pull ?? 165 }))
     }));
   }, [form.cut]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (activeCook) setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' });
-  }, [activeId]);
+    if (activeCook) setEntry({ temps: activeCook.probes.map(() => ''), smokerTemp: '' }); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [activeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getStalls = cook => {
     if (!cook) return {};
@@ -476,7 +477,7 @@ export default function App() {
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
-              allActiveCooks={allActiveCooks} tick={tick}
+              allActiveCooks={allActiveCooks} liveProbes={liveProbes}
               onGoActive={(cookId) => {
                 if (cookId) {
                   const idx = activeCooks.indexOf(cookId);
@@ -536,6 +537,7 @@ export default function App() {
         mqttError={mqttProvider.error}
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
+        liveProbes={liveProbes}
       />
 
       {/* Bottom nav (mobile) */}

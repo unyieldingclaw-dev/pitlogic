@@ -20,6 +20,7 @@ lineage: initial
 Full completed-items history archived in `progress-archive.md`.
 
 ### Recent Milestones
+- **2026-06-29**: Live probe UI pipeline complete (feature branch) — `globalStore.ts` singleton, `useLiveProbes` hook, Dashboard "Live Readings" card, SettingsSheet probe list; ThermoWorksAdapter payload parser fixed for real gateway format (`sensors[]`, `/devices/+/events`, probeId `{deviceId}-s{sensorId}`); 169 → 171 tests
 - **2026-05-28**: ThermoWorks MQTT adapter complete — `ThermoWorksAdapter`, `useThermoWorksProvider`, "Live Device" UI; 146 → 169 tests across 16 files
 - **2026-05-27**: CSV parser extracted to `src/utils/csvTemperatureParser.js` (9 tests); inline `thin()`/`parseCSV()` removed from `App.jsx`
 - **2026-05-26**: PitLogic rebrand + telemetry architecture merged to main; Claude Code infrastructure (hooks, agents, commands, CI, standards) merged to main; 137 → 146 tests
@@ -33,11 +34,15 @@ Full completed-items history archived in `progress-archive.md`.
 - [x] Implementation plan — `docs/superpowers/plans/2026-05-27-thermoworks-mqtt-adapter.md`
 - [x] `ThermoWorksAdapter` — ThermaConnect MQTT implementation with full test coverage (16 tests)
 - [x] `useThermoWorksProvider` hook — lifecycle orchestration + normalizer → eventBus wiring (7 tests)
-- [x] "Live Device" section in `SettingsSheet.jsx` — broker URL, credentials, connect/disconnect, status indicator
-- [x] Hook wired into `App.jsx` — `mqttStatus`, `mqttError`, `onMqttConnect`, `onMqttDisconnect` props to SettingsSheet
+- [x] "Live Device" section in `SettingsSheet.jsx` — broker URL, credentials, connect/disconnect, status indicator, probe list
+- [x] Hook wired into `App.jsx` — `mqttStatus`, `mqttError`, `onMqttConnect`, `onMqttDisconnect`, `liveProbes` props
 - [x] `mqtt` npm dependency added
+- [x] `globalStore.ts` singleton + `useLiveProbes` hook — TelemetryStore → React bridge
+- [x] Dashboard "Live Readings" card — appears when `liveProbes.size > 0`
+- [x] `transformPayload` fixed for real gateway format (`sensors[]`, `/devices/+/events`)
+- [ ] Merge `claude/thermoworks-integration-dou7k5` → main
 - [ ] Verify HiveMQ Cloud ACL topic isolation before first live use
-- [ ] End-to-end test with real RFX Gateway + HiveMQ Cloud broker
+- [ ] End-to-end smoke test with real RFX Gateway + HiveMQ Cloud broker
 
 ### iOS Alarm
 - [ ] **iOS alarm options** — silent switch bypasses all browser audio/notifications on iOS; investigate native PWA push notifications or other iOS-specific workaround when ready

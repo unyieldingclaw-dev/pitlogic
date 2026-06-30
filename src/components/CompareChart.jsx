@@ -115,9 +115,9 @@ export default function CompareChart({ cooks, cut }) {
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    setSelectedIds(eligible.slice(0, 3).map(c => c.id));
+    setSelectedIds(eligible.slice(0, 3).map(c => c.id)); // eslint-disable-line react-hooks/set-state-in-effect
     setProbeIndex(0);
-  }, [cut]); // eligible changes reference every render; cut is the semantic trigger
+  }, [cut]); // eslint-disable-line react-hooks/exhaustive-deps -- eligible re-creates every render; cut is the semantic trigger
 
   const selectedCooks = selectedIds
     .map(id => eligible.find(c => c.id === id))

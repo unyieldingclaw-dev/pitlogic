@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Trash2, Share2, Star, BarChart2, FileText } from 'lucide-react';
 import ShareButton from './ShareCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import TempChart, { buildChartData, analyzeProbe } from './TempChart';
+import TempChart, { analyzeProbe } from './TempChart';
 import { PROBE_COLORS, dur, shortDate } from '../utils/helpers';
 import { G } from '../data/cuts';
 
@@ -17,8 +17,8 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
   const detailCook = cooks.find(c => c.id === detailId);
 
   useEffect(() => {
-    if (detailCook) { setEditNotes(detailCook.notes || ''); setEditRating(detailCook.rating || 0); }
-  }, [detailId]);
+    if (detailCook) { setEditNotes(detailCook.notes || ''); setEditRating(detailCook.rating || 0); } // eslint-disable-line react-hooks/set-state-in-effect
+  }, [detailId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!detailCook) return (
     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text2)' }}>Select a cook from History.</div>

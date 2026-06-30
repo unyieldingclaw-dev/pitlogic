@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, AlertTriangle, CheckCircle, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { Flame, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { MEATS } from '../data/meats';
 import { G } from '../data/cuts';
 import { PELLETS } from '../data/pellets';
@@ -17,7 +17,7 @@ export default function ActiveTab({
   view, form, setForm,
   cooks, activeCook, entry, setEntry,
   stalls, wrapAlert, coAlert, confirmEnd, setConfirmEnd,
-  onStart, onEnd, onLog, onCSV, onGoGuide, tick,
+  onStart, onEnd, onLog, onCSV, onGoGuide,
   allActiveCooks, activeCookIdx, setActiveCookIdx, onAddCook, onSprayEvent,
   onUpdateSmokerAlarm,
   prefs, setCutPref,

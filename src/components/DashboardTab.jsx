@@ -1,5 +1,5 @@
-import { Flame, Clock, Star, ChevronRight, Plus } from 'lucide-react';
-import { dur, shortDate, PROBE_COLORS } from '../utils/helpers';
+import { Flame, ChevronRight } from 'lucide-react';
+import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
 
 function StatPill({ label, value }) {
   return (
@@ -29,7 +29,7 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeId, activeCook, allActiveCooks, tick, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, onGoActive, onNewCook, onSelectCook }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
@@ -84,6 +84,32 @@ export default function DashboardTab({ cooks, activeId, activeCook, allActiveCoo
         </button>
       ))}
       {activeCooks.length > 0 && <div style={{ marginBottom: '0.5rem' }} />}
+
+      {/* Live MQTT readings */}
+      {liveProbes?.size > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid rgba(16,185,129,0.25)',
+          borderRadius: 14, padding: '1.25rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)',
+              display: 'inline-block', boxShadow: '0 0 6px var(--green)' }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>Live Readings</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[...liveProbes.values()].map(probe => (
+              <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
+                border: `1px solid ${probeStatusBorderColor(probe.status)}` }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2, fontFamily: 'var(--mono)' }}>
+                  {probe.label}
+                </div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 18,
+                  color: probeStatusColor(probe.status) }}>
+                  {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick start */}
       {activeCooks.length === 0 && (

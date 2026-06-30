@@ -1,19 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const KEY = 'pitlogic-recipes-v1';
 
 const loadRecipes = () => {
   try { const d = localStorage.getItem(KEY); return d ? JSON.parse(d) : []; }
-  catch(e) { return []; }
+  catch { return []; }
 };
 const persistRecipes = data => {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {}
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* storage unavailable */ }
 };
 
 export function useRecipes() {
-  const [recipes, setRecipes] = useState([]);
-
-  useEffect(() => { setRecipes(loadRecipes()); }, []);
+  const [recipes, setRecipes] = useState(() => loadRecipes());
 
   const save = newRecipes => { setRecipes(newRecipes); persistRecipes(newRecipes); };
 
