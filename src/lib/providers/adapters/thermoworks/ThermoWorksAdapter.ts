@@ -49,8 +49,10 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
   if (!Array.isArray(p.sensors)) return [];
   // 1e10 is the seconds/milliseconds epoch boundary (~2001-09 in ms, ~year 5138 in s) —
   // gateways are expected to send ms epoch; anything below this is rejected as malformed
-  // rather than silently misinterpreted as seconds.
-  if (!Number.isInteger(p.ts) || (p.ts as number) < 1e10) return [];
+  // rather than silently misinterpreted as seconds. Upper bound (+60 s) blocks spoofed
+  // far-future timestamps that would keep a probe permanently "active" and never stale.
+  const now = Date.now();
+  if (!Number.isInteger(p.ts) || (p.ts as number) < 1e10 || (p.ts as number) > now + 60_000) return [];
 
   const deviceId = typeof p.deviceId === 'string' ? p.deviceId : topicDeviceId;
   const ts = p.ts as number;

@@ -7,7 +7,7 @@ function makePayload(sensors: unknown[], overrides: Record<string, unknown> = {}
   return Buffer.from(JSON.stringify({
     gatewayId: 'T142B2FD392FC',
     deviceId: 'M123456789012',
-    ts: 2_000_000_000_000,
+    ts: Date.now(),
     sensors,
     ...overrides,
   }));
@@ -15,12 +15,13 @@ function makePayload(sensors: unknown[], overrides: Record<string, unknown> = {}
 
 describe('transformPayload', () => {
   it('emits one event per sensor in a single-sensor payload', () => {
-    const payload = makePayload([{ sensorId: '1', value: 225.4, units: 'F' }]);
+    const ts = Date.now();
+    const payload = makePayload([{ sensorId: '1', value: 225.4, units: 'F' }], { ts });
     const events = transformPayload(TOPIC, payload);
     expect(events).toHaveLength(1);
     expect(events[0]).toEqual({
       probeId: 'M123456789012-s1',
-      capturedAt: 2_000_000_000_000,
+      capturedAt: ts,
       temperature: 225.4,
       unit: 'F',
       source: 'live',
@@ -51,6 +52,18 @@ describe('transformPayload', () => {
     expect(events[0].temperature).toBe(26.5);
   });
 
+  it('discards payload with ts more than 60 s in the future (far-future spoof guard)', () => {
+    const futureTs = Date.now() + 120_000;
+    const payload = makePayload([{ sensorId: '1', value: 200.0, units: 'F' }], { ts: futureTs });
+    expect(transformPayload(TOPIC, payload)).toHaveLength(0);
+  });
+
+  it('accepts payload with ts within 60 s clock skew tolerance', () => {
+    const nearFutureTs = Date.now() + 30_000;
+    const payload = makePayload([{ sensorId: '1', value: 200.0, units: 'F' }], { ts: nearFutureTs });
+    expect(transformPayload(TOPIC, payload)).toHaveLength(1);
+  });
+
   it('discards payload with ts < 1e10 (seconds-epoch detection)', () => {
     const payload = makePayload([{ sensorId: '1', value: 200.0, units: 'F' }], { ts: 1_716_825_600 });
     expect(transformPayload(TOPIC, payload)).toHaveLength(0);
@@ -71,7 +84,7 @@ describe('transformPayload', () => {
   });
 
   it('returns empty array when payload has no sensors array (e.g. gateway state message)', () => {
-    const payload = Buffer.from(JSON.stringify({ gatewayId: 'T142B2FD392FC', deviceId: 'M123456789012', ts: 2_000_000_000_000 }));
+    const payload = Buffer.from(JSON.stringify({ gatewayId: 'T142B2FD392FC', deviceId: 'M123456789012', ts: Date.now() }));
     expect(transformPayload(TOPIC, payload)).toHaveLength(0);
   });
 
@@ -83,7 +96,7 @@ describe('transformPayload', () => {
   it('falls back to topic device ID when payload deviceId is absent', () => {
     const payload = Buffer.from(JSON.stringify({
       gatewayId: 'T142B2FD392FC',
-      ts: 2_000_000_000_000,
+      ts: Date.now(),
       sensors: [{ sensorId: '1', value: 100.0, units: 'F' }],
     }));
     const events = transformPayload(TOPIC, payload);
@@ -187,7 +200,7 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
       Buffer.from(JSON.stringify({
         gatewayId: 'T_gateway',
         deviceId: 'M123',
-        ts: 2_000_000_000_000,
+        ts: Date.now(),
         sensors: [{ sensorId: '1', value: 200, units: 'F' }],
       })),
     );
@@ -204,7 +217,7 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
       Buffer.from(JSON.stringify({
         gatewayId: 'T142B2FD392FC',
         deviceId: 'M123456789012',
-        ts: 2_000_000_000_000,
+        ts: Date.now(),
         sensors: [
           { sensorId: '1', value: 225.4, units: 'F' },
           { sensorId: '2', value: 165.0, units: 'F' },
