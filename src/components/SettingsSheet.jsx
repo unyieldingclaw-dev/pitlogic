@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
 import { probeStatusColor } from '../utils/helpers';
@@ -10,7 +10,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, liveProbes }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -292,6 +292,46 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               ))}
             </div>
           )}
+        </div>
+
+        {/* Replay CSV */}
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+            Replay CSV
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Load a ThermoWorks temperature CSV to display it in the Live Readings card.
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', fontSize: 13, cursor: 'pointer',
+              border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text2)',
+              background: 'transparent' }}>
+              <Upload size={14} /> Choose CSV
+              <input
+                type="file"
+                accept=".csv,.txt"
+                aria-label="Choose CSV file to replay"
+                style={{ display: 'none' }}
+                onChange={e => { if (e.target.files?.[0]) { onCsvReplay(e.target.files[0]); e.target.value = ''; } }}
+              />
+            </label>
+            {csvStatus === 'done' && (
+              <button type="button" onClick={onCsvReset}
+                aria-label="Clear replayed CSV data"
+                style={{ fontSize: 13, padding: '6px 14px', border: '1px solid var(--border)',
+                  borderRadius: 8, background: 'transparent', color: 'var(--text3)', cursor: 'pointer' }}>
+                Clear
+              </button>
+            )}
+            <span style={{ fontSize: 12,
+              color: csvStatus === 'done' ? 'var(--green)' : csvStatus === 'error' ? 'var(--red)' : 'var(--text3)' }}
+              role="status" aria-live="polite">
+              {csvStatus === 'replaying' && '○ Loading…'}
+              {csvStatus === 'done' && '● Loaded'}
+              {csvStatus === 'error' && `✕ ${csvError ?? 'Parse failed'}`}
+            </span>
+          </div>
         </div>
 
         {/* Export */}

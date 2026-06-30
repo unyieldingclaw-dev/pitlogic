@@ -5,6 +5,7 @@ import { save, load } from './hooks/useStorage.js';
 import { useRecipes } from './hooks/useRecipes.js';
 import { usePrefs } from './hooks/usePrefs';
 import { useThermoWorksProvider } from './hooks/useThermoWorksProvider.js';
+import { useCsvProvider } from './hooks/useCsvProvider.js';
 import { useLiveProbes } from './hooks/useLiveProbes.js';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
@@ -38,6 +39,7 @@ export default function App() {
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
+  const csvProvider = useCsvProvider();
   const liveProbes = useLiveProbes();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
@@ -537,6 +539,10 @@ export default function App() {
         mqttError={mqttProvider.error}
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
+        csvStatus={csvProvider.status}
+        csvError={csvProvider.error}
+        onCsvReplay={csvProvider.replay}
+        onCsvReset={csvProvider.reset}
         liveProbes={liveProbes}
       />
 
