@@ -153,14 +153,14 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     });
   });
 
-  it('connect() creates client and subscribes to /devices/+/events', async () => {
+  it('connect() creates client and subscribes to both /probes/+/events and /devices/+/events', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await adapter.connect();
     expect(mockConnectAsync).toHaveBeenCalledWith(VALID_CONFIG.brokerUrl, {
       username: VALID_CONFIG.username,
       password: VALID_CONFIG.password,
     });
-    expect(mockSubscribeAsync).toHaveBeenCalledWith('/devices/+/events');
+    expect(mockSubscribeAsync).toHaveBeenCalledWith(['/probes/+/events', '/devices/+/events']);
   });
 
   it('connect() is idempotent — second call does not create a second client', async () => {
@@ -245,5 +245,24 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     // Give async _onReconnect a tick
     await Promise.resolve();
     expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 1);
+    expect(mockSubscribeAsync).toHaveBeenLastCalledWith(['/probes/+/events', '/devices/+/events']);
+  });
+
+  it('emits event for probe topic /probes/+/events (real gateway topic)', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const received: unknown[] = [];
+    adapter.subscribe(e => received.push(e));
+    await adapter.connect();
+    simulateMessage(
+      '/probes/M100280635/events',
+      Buffer.from(JSON.stringify({
+        gatewayId: 'T142B2FD392FC',
+        deviceId: 'M100280635',
+        ts: Date.now(),
+        sensors: [{ sensorId: '1', value: 195.0, units: 'F' }],
+      })),
+    );
+    expect(received).toHaveLength(1);
+    expect(received[0]).toMatchObject({ probeId: 'M100280635-s1', temperature: 195.0 });
   });
 });

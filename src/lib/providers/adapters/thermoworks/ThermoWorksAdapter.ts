@@ -26,12 +26,12 @@ export interface ThermoWorksConfig {
  * Transforms a raw ThermaConnect RFX MQTT message into zero or more RawProviderEvents.
  * Pure function — exported for unit testing without a mock broker.
  *
- * Real gateway payload (topic: /devices/{deviceId}/events):
+ * Real gateway payload (topic: /probes/{deviceId}/events or /devices/{deviceId}/events):
  *   { gatewayId, deviceId, ts (ms epoch), sensors: [{ sensorId, value, units }] }
- * Gateway state topics (/devices/{id}/state) carry no sensors array and are silently ignored.
+ * State topics (/devices/{id}/state) carry no sensors array and are silently ignored.
  */
 export function transformPayload(topic: string, rawPayload: Buffer | string): RawProviderEvent[] {
-  const match = topic.match(/^\/devices\/([^/]+)\/events$/);
+  const match = topic.match(/^\/(?:probes|devices)\/([^/]+)\/events$/);
   if (!match) return [];
   const topicDeviceId = match[1];
 
@@ -92,7 +92,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
       password: this._config.password,
     });
     this._client = client;
-    await client.subscribeAsync('/devices/+/events');
+    await client.subscribeAsync(['/probes/+/events', '/devices/+/events']);
     this._registerMessageHandler();
     client.on('connect', (connack: IConnackPacket) => { void this._onReconnect(connack); });
   }
@@ -120,7 +120,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
 
   private async _onReconnect(connack: IConnackPacket): Promise<void> {
     if (connack.sessionPresent || !this._client) return;
-    await this._client.subscribeAsync('/devices/+/events');
+    await this._client.subscribeAsync(['/probes/+/events', '/devices/+/events']);
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
