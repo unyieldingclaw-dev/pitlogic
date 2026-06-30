@@ -19,7 +19,7 @@ lineage: initial
 
 ThermoWorks end-to-end pipeline — complete on feature branch, ready to merge and smoke-test with real hardware.
 
-**Branch**: `claude/thermoworks-integration-dou7k5` — pushed, not yet merged to main.
+**Branch**: `claude/thermoworks-integration-dou7k5` — merged to main 2026-06-30 (PR #6). GitHub Pages auto-deploying.
 
 ## What's Working
 
@@ -77,10 +77,9 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Merge `claude/thermoworks-integration-dou7k5` → main** so GitHub Pages deploys the live pipeline
-2. **End-to-end smoke test** with real RFX Gateway — open deployed app, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
-3. **Verify HiveMQ Cloud ACL** topic isolation before first live use (see Broker Setup Reference in plan)
-4. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
+1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`)
+2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
+3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
 
