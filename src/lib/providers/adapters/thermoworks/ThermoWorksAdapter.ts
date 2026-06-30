@@ -23,17 +23,19 @@ export interface ThermoWorksConfig {
 }
 
 /**
- * Transforms a raw ThermaConnect RFX MQTT message into zero or more RawProviderEvents.
+ * Transforms a raw ThermaConnect MQTT message into zero or more RawProviderEvents.
  * Pure function — exported for unit testing without a mock broker.
  *
- * Real gateway payload (topic: /probes/{deviceId}/events or /devices/{deviceId}/events):
- *   { gatewayId, deviceId, ts (ms epoch), sensors: [{ sensorId, value, units }] }
- * State topics (/devices/{id}/state) carry no sensors array and are silently ignored.
+ * ThermaConnect telemetry format (topic: /probes/{probeId}/events or /devices/{deviceId}/events):
+ *   { gatewayId?, channels: [{ number, ts (ms epoch), readings: [{ value, type }] }] }
+ * Only readings with type === 'T' (temperature) produce events. Type 'H' (humidity) and
+ * others are silently ignored. Battery/firmware messages have no channels array and are
+ * discarded. Timestamp validation is per-channel — bad-ts channels are skipped individually.
  */
 export function transformPayload(topic: string, rawPayload: Buffer | string): RawProviderEvent[] {
   const match = topic.match(/^\/(?:probes|devices)\/([^/]+)\/events$/);
   if (!match) return [];
-  const topicDeviceId = match[1];
+  const topicProbeId = match[1];
 
   let parsed: unknown;
   try {
@@ -46,30 +48,31 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
 
   if (typeof parsed !== 'object' || parsed === null) return [];
   const p = parsed as Record<string, unknown>;
-  if (!Array.isArray(p.sensors)) return [];
-  // 1e10 is the seconds/milliseconds epoch boundary (~2001-09 in ms, ~year 5138 in s) —
-  // gateways are expected to send ms epoch; anything below this is rejected as malformed
-  // rather than silently misinterpreted as seconds. Upper bound (+60 s) blocks spoofed
-  // far-future timestamps that would keep a probe permanently "active" and never stale.
-  const now = Date.now();
-  if (!Number.isInteger(p.ts) || (p.ts as number) < 1e10 || (p.ts as number) > now + 60_000) return [];
+  if (!Array.isArray(p.channels)) return [];
 
-  const deviceId = typeof p.deviceId === 'string' ? p.deviceId : topicDeviceId;
-  const ts = p.ts as number;
+  const now = Date.now();
   const events: RawProviderEvent[] = [];
 
-  for (const sensor of p.sensors as Record<string, unknown>[]) {
-    if (typeof sensor.sensorId !== 'string' && typeof sensor.sensorId !== 'number') continue;
-    if (typeof sensor.value !== 'number') continue;
-    events.push({
-      // probeId format `{deviceId}-s{sensorId}` disambiguates multiple sensors on one
-      // gateway device — mirrors how the RFX Gateway itself labels per-channel probes.
-      probeId: `${deviceId}-s${sensor.sensorId}`,
-      capturedAt: ts,
-      temperature: sensor.value,
-      unit: sensor.units === 'C' ? 'C' : 'F',
-      source: 'live',
-    });
+  for (const channel of p.channels as Record<string, unknown>[]) {
+    // Per-channel timestamp: must be ms-epoch integer. 1e10 boundary rejects seconds-epoch
+    // values (~2001 in ms). Upper bound (+60 s) blocks far-future spoofed timestamps.
+    const ts = channel.ts;
+    if (!Number.isInteger(ts) || (ts as number) < 1e10 || (ts as number) > now + 60_000) continue;
+    if (!Array.isArray(channel.readings)) continue;
+    const channelNumber = channel.number;
+    if (channelNumber === undefined || channelNumber === null) continue;
+
+    for (const reading of channel.readings as Record<string, unknown>[]) {
+      if (reading.type !== 'T') continue;
+      if (typeof reading.value !== 'number') continue;
+      events.push({
+        probeId: `${topicProbeId}-ch${channelNumber}`,
+        capturedAt: ts as number,
+        temperature: reading.value,
+        unit: 'F',
+        source: 'live',
+      });
+    }
   }
   return events;
 }
