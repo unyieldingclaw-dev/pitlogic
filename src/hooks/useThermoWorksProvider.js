@@ -1,7 +1,7 @@
 // This hook is the sole bridge between the provider boundary and the telemetry pipeline.
 // It is the only non-lib file permitted to import from src/lib/providers/ and
 // src/lib/telemetry/eventBus/ — see ADR-001 and the design spec.
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ThermoWorksAdapter } from '../lib/providers/adapters/thermoworks/ThermoWorksAdapter.js';
 import { normalizeProviderEvent } from '../lib/telemetry/normalization/normalize.js';
 import { globalEventBus } from '../lib/telemetry/eventBus/EventBus.js';
@@ -20,7 +20,9 @@ function loadConfig() {
 export function useThermoWorksProvider() {
   const [status, setStatus] = useState('disconnected');
   const [error, setError] = useState(null);
-  const sessionRef = useRef(null); // { adapter, unsub }
+  // Device meta (state/battery/firmware) stays in hook-local state — must NOT flow through globalEventBus.
+  const [deviceState, setDeviceState] = useState(() => new Map());
+  const sessionRef = useRef(null); // { adapter, unsub, unsubMeta }
 
   const connect = useCallback(async () => {
     const config = loadConfig();
@@ -42,8 +44,20 @@ export function useThermoWorksProvider() {
         const normalized = normalizeProviderEvent(rawEvent, adapter.id);
         globalEventBus.publish(normalized);
       });
+      const unsubMeta = adapter.subscribeDeviceMeta(event => {
+        setDeviceState(prev => {
+          const map = new Map(prev);
+          if (event.type === 'state') {
+            map.set(event.deviceId, event);
+          } else {
+            const existing = map.get(event.deviceId);
+            if (existing) map.set(event.deviceId, { ...existing, [event.type]: event[event.type] });
+          }
+          return map;
+        });
+      });
       await adapter.connect();
-      sessionRef.current = { adapter, unsub };
+      sessionRef.current = { adapter, unsub, unsubMeta };
       setStatus('connected');
     } catch (err) {
       setStatus('error');
@@ -53,13 +67,34 @@ export function useThermoWorksProvider() {
 
   const disconnect = useCallback(async () => {
     if (!sessionRef.current) return;
-    const { adapter, unsub } = sessionRef.current;
+    const { adapter, unsub, unsubMeta } = sessionRef.current;
     unsub();
+    unsubMeta();
     await adapter.disconnect();
     sessionRef.current = null;
     setStatus('disconnected');
     setError(null);
+    setDeviceState(new Map());
   }, []);
+
+  const publishDeviceConfig = useCallback(async (deviceId, config) => {
+    if (!sessionRef.current) throw new Error('[thermoworks] publishDeviceConfig: not connected');
+    await sessionRef.current.adapter.publishDeviceConfig(deviceId, config);
+  }, []);
+
+  // Derived per-probe lookup so display components don't need to parse the probeId format.
+  const channelMeta = useMemo(() => {
+    const cm = new Map();
+    for (const device of deviceState.values()) {
+      for (const ch of (device.channels ?? [])) {
+        cm.set(`${device.deviceId}-ch${ch.number}`, {
+          ...ch,
+          label: ch.label || `Ch ${ch.number}`,
+        });
+      }
+    }
+    return cm;
+  }, [deviceState]);
 
   useEffect(() => {
     // Clean up adapter on unmount — prevents event delivery to unmounted components
@@ -67,11 +102,12 @@ export function useThermoWorksProvider() {
       const session = sessionRef.current;
       if (session) {
         session.unsub();
+        session.unsubMeta();
         void session.adapter.disconnect();
         sessionRef.current = null;
       }
     };
   }, []);
 
-  return { status, error, connect, disconnect };
+  return { status, error, connect, disconnect, deviceState, channelMeta, publishDeviceConfig };
 }

@@ -99,7 +99,7 @@ All 22 operations from the testing agent flow plan are complete:
 | `src/App.jsx` | Root — all state, nav, wiring; imports `useLiveProbes`, passes `liveProbes` to DashboardTab + SettingsSheet |
 | `src/hooks/useLiveProbes.js` | Subscribes to globalStore, manages stale check, returns `Map<probeId, ProbeState>` |
 | `src/lib/telemetry/store/globalStore.ts` | Singleton: `TelemetryStore` wired to `globalEventBus` — the domain boundary crossing point |
-| `src/lib/providers/adapters/thermoworks/ThermoWorksAdapter.ts` | Real gateway format: `/devices/+/events`, `sensors[]` array, probeId `{deviceId}-s{sensorId}` |
+| `src/lib/providers/adapters/thermoworks/ThermoWorksAdapter.ts` | ThermaConnect MQTT adapter: topics `/probes/+/events`, `/devices/+/events`, `/devices/+/state`; `channels[]` array; probeId `{topicId}-ch{channelNumber}` |
 | `src/hooks/useStorage.js` | localStorage `pitlogic-v5` (cooks, activeCooks, dis) |
 | `src/hooks/useRecipes.js` | localStorage `pitlogic-recipes-v1` |
 | `src/hooks/useProbeAlert.js` | Browser notification when probe hits target temp |

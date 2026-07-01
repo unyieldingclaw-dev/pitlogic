@@ -4,9 +4,10 @@ import { renderHook, act } from '@testing-library/react';
 // vi.hoisted() runs before vi.mock() which runs before top-level imports.
 // These mock fns are defined here so they can be referenced inside the vi.mock() factories below.
 // Modifying vi.hoisted() or vi.mock() blocks requires keeping them in sync — they are intentionally coupled.
-const { mockConnect, mockSubscribe, mockDisconnect, mockPublish, mockNormalize } = vi.hoisted(() => ({
+const { mockConnect, mockSubscribe, mockSubscribeDeviceMeta, mockDisconnect, mockPublish, mockNormalize } = vi.hoisted(() => ({
   mockConnect: vi.fn().mockResolvedValue(undefined),
   mockSubscribe: vi.fn().mockReturnValue(() => {}),
+  mockSubscribeDeviceMeta: vi.fn().mockReturnValue(() => {}),
   mockDisconnect: vi.fn().mockResolvedValue(undefined),
   mockPublish: vi.fn(),
   mockNormalize: vi.fn().mockReturnValue({ type: 'probe:reading', reading: {} }),
@@ -18,6 +19,7 @@ vi.mock('../../lib/providers/adapters/thermoworks/ThermoWorksAdapter.js', () => 
       this.id = 'thermoworks';
       this.connect = mockConnect;
       this.subscribe = mockSubscribe;
+      this.subscribeDeviceMeta = mockSubscribeDeviceMeta;
       this.disconnect = mockDisconnect;
     }
   };
@@ -57,6 +59,7 @@ describe('useThermoWorksProvider', () => {
     lsMock._clear();
     mockConnect.mockResolvedValue(undefined);
     mockSubscribe.mockReturnValue(() => {});
+    mockSubscribeDeviceMeta.mockReturnValue(() => {});
     mockDisconnect.mockResolvedValue(undefined);
   });
 

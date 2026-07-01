@@ -479,7 +479,7 @@ export default function App() {
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
-              allActiveCooks={allActiveCooks} liveProbes={liveProbes}
+              allActiveCooks={allActiveCooks} liveProbes={liveProbes} channelMeta={mqttProvider.channelMeta}
               onGoActive={(cookId) => {
                 if (cookId) {
                   const idx = activeCooks.indexOf(cookId);
@@ -539,6 +539,7 @@ export default function App() {
         mqttError={mqttProvider.error}
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
+        deviceState={mqttProvider.deviceState}
         csvStatus={csvProvider.status}
         csvError={csvProvider.error}
         onCsvReplay={csvProvider.replay}

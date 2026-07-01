@@ -1,6 +1,13 @@
 import { Flame, ChevronRight } from 'lucide-react';
 import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
 
+// Last-resort label when no device state label is available.
+// "M180280635-ch2" → "Ch 2",  "M180280635-s3" → "Ch 3"
+function shortProbeLabel(probeId) {
+  const m = /-(?:ch|s)?(\d+)$/.exec(probeId);
+  return m ? `Ch ${m[1]}` : probeId;
+}
+
 function StatPill({ label, value }) {
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)',
@@ -29,7 +36,7 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, channelMeta, onGoActive, onNewCook, onSelectCook }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
@@ -95,18 +102,32 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>Live Readings</span>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[...liveProbes.values()].map(probe => (
-              <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
-                border: `1px solid ${probeStatusBorderColor(probe.status)}` }}>
-                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2, fontFamily: 'var(--mono)' }}>
-                  {probe.label}
+            {[...liveProbes.values()].map(probe => {
+              const chMeta = channelMeta?.get(probe.probeId);
+              // chMeta?.label: user-defined name from device state (e.g. "Brisket Flat")
+              // shortProbeLabel: friendly fallback when no state message has arrived yet
+              const label = chMeta?.label || shortProbeLabel(probe.probeId);
+              const isAlarming = chMeta?.highAlarming || chMeta?.lowAlarming;
+              return (
+                <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
+                  border: `1px solid ${isAlarming ? 'rgba(239,68,68,0.5)' : probeStatusBorderColor(probe.status)}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{label}</span>
+                    {isAlarming && (
+                      <span role="status" aria-label={chMeta.highAlarming ? 'High alarm' : 'Low alarm'}
+                        style={{ fontSize: 9, background: 'rgba(239,68,68,0.2)', color: 'var(--red)',
+                          borderRadius: 4, padding: '1px 4px', fontWeight: 600, letterSpacing: '0.04em' }}>
+                        {chMeta.highAlarming ? 'HIGH' : 'LOW'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 18,
+                    color: isAlarming ? 'var(--red)' : probeStatusColor(probe.status) }}>
+                    {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
+                  </div>
                 </div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 18,
-                  color: probeStatusColor(probe.status) }}>
-                  {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
