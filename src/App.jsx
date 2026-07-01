@@ -479,7 +479,7 @@ export default function App() {
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
-              allActiveCooks={allActiveCooks} liveProbes={liveProbes} deviceState={mqttProvider.deviceState}
+              allActiveCooks={allActiveCooks} liveProbes={liveProbes} channelMeta={mqttProvider.channelMeta}
               onGoActive={(cookId) => {
                 if (cookId) {
                   const idx = activeCooks.indexOf(cookId);

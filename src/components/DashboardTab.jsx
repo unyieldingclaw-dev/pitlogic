@@ -29,18 +29,7 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-// ProbeId format: {topicId}-ch{channelNumber}
-function getChannelMeta(probeId, deviceState) {
-  if (!deviceState?.size) return null;
-  const idx = probeId.lastIndexOf('-ch');
-  if (idx === -1) return null;
-  const device = deviceState.get(probeId.slice(0, idx));
-  if (!device) return null;
-  const chNum = probeId.slice(idx + 3);
-  return device.channels?.find(ch => String(ch.number) === chNum) ?? null;
-}
-
-export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, deviceState, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, channelMeta, onGoActive, onNewCook, onSelectCook }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
@@ -107,7 +96,7 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[...liveProbes.values()].map(probe => {
-              const chMeta = getChannelMeta(probe.probeId, deviceState);
+              const chMeta = channelMeta?.get(probe.probeId);
               const label = chMeta?.label || probe.label;
               const isAlarming = chMeta?.highAlarming || chMeta?.lowAlarming;
               return (

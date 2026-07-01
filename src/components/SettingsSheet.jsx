@@ -322,37 +322,40 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
             <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
               <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
                 letterSpacing: '0.08em', marginBottom: 8 }}>Device Health</div>
-              {[...deviceState.values()].map(device => (
-                <div key={device.deviceId} style={{ marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
-                      {device.deviceId}
-                    </span>
-                    <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--text3)' }}>
-                      {device.battery != null && (
-                        <span style={{ color: device.battery < 20 ? 'var(--red)' : 'var(--text3)' }}>
-                          Bat {device.battery}%
-                        </span>
-                      )}
-                      {device.wifiStrength != null && (
-                        <span>WiFi {device.wifiStrength}</span>
-                      )}
-                      {device.firmware && (
-                        <span>v{device.firmware}</span>
-                      )}
+              {[...deviceState.values()].map(device => {
+                const alarmingChannels = device.channels?.filter(ch => ch.highAlarming || ch.lowAlarming) ?? [];
+                return (
+                  <div key={device.deviceId} style={{ marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
+                        {device.deviceId}
+                      </span>
+                      <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--text3)' }}>
+                        {device.battery != null && (
+                          <span style={{ color: device.battery < 20 ? 'var(--red)' : 'var(--text3)' }}>
+                            Bat {device.battery}%
+                          </span>
+                        )}
+                        {device.wifiStrength != null && (
+                          <span>WiFi {device.wifiStrength}</span>
+                        )}
+                        {device.firmware && (
+                          <span>v{device.firmware}</span>
+                        )}
+                      </div>
                     </div>
+                    {alarmingChannels.length > 0 && (
+                      <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>
+                        {alarmingChannels.map(ch => (
+                          <span key={String(ch.number)}>
+                            {ch.label || `Ch ${ch.number}`}: {ch.highAlarming ? 'HIGH' : 'LOW'}{' '}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {device.channels?.some(ch => ch.highAlarming || ch.lowAlarming) && (
-                    <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>
-                      {device.channels.filter(ch => ch.highAlarming || ch.lowAlarming).map(ch => (
-                        <span key={String(ch.number)}>
-                          {ch.label || `Ch ${ch.number}`}: {ch.highAlarming ? 'HIGH' : 'LOW'}{' '}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

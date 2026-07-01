@@ -1,7 +1,7 @@
 // This hook is the sole bridge between the provider boundary and the telemetry pipeline.
 // It is the only non-lib file permitted to import from src/lib/providers/ and
 // src/lib/telemetry/eventBus/ — see ADR-001 and the design spec.
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ThermoWorksAdapter } from '../lib/providers/adapters/thermoworks/ThermoWorksAdapter.js';
 import { normalizeProviderEvent } from '../lib/telemetry/normalization/normalize.js';
 import { globalEventBus } from '../lib/telemetry/eventBus/EventBus.js';
@@ -49,12 +49,9 @@ export function useThermoWorksProvider() {
           const map = new Map(prev);
           if (event.type === 'state') {
             map.set(event.deviceId, event);
-          } else if (event.type === 'battery') {
+          } else {
             const existing = map.get(event.deviceId);
-            if (existing) map.set(event.deviceId, { ...existing, battery: event.battery });
-          } else if (event.type === 'firmware') {
-            const existing = map.get(event.deviceId);
-            if (existing) map.set(event.deviceId, { ...existing, firmware: event.firmware });
+            if (existing) map.set(event.deviceId, { ...existing, [event.type]: event[event.type] });
           }
           return map;
         });
@@ -85,6 +82,17 @@ export function useThermoWorksProvider() {
     await sessionRef.current.adapter.publishDeviceConfig(deviceId, config);
   }, []);
 
+  // Derived per-probe lookup so display components don't need to parse the probeId format.
+  const channelMeta = useMemo(() => {
+    const cm = new Map();
+    for (const device of deviceState.values()) {
+      for (const ch of (device.channels ?? [])) {
+        cm.set(`${device.deviceId}-ch${ch.number}`, ch);
+      }
+    }
+    return cm;
+  }, [deviceState]);
+
   useEffect(() => {
     // Clean up adapter on unmount — prevents event delivery to unmounted components
     return () => {
@@ -98,5 +106,5 @@ export function useThermoWorksProvider() {
     };
   }, []);
 
-  return { status, error, connect, disconnect, deviceState, publishDeviceConfig };
+  return { status, error, connect, disconnect, deviceState, channelMeta, publishDeviceConfig };
 }
