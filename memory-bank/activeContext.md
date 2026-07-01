@@ -13,13 +13,13 @@ lineage: initial
 
 # Active Context - Current State
 
-**Last Updated**: 2026-06-29
+**Last Updated**: 2026-07-01
 
 ## Current Focus
 
-ThermoWorks end-to-end pipeline — complete on feature branch, ready to merge and smoke-test with real hardware.
+Post-merge cleanup — PR #8 (channel labels + device health + unit toggle) squash-merged to main 2026-07-01. GitHub Pages auto-deploying. Next priorities: HiveMQ ACL verification and CSV import UI.
 
-**Branch**: `claude/thermoworks-integration-dou7k5` — merged to main 2026-06-30 (PR #6). GitHub Pages auto-deploying.
+**Branch**: `main` — all ThermoWorks work merged (PR #6 2026-06-30, PR #8 2026-07-01).
 
 ## What's Working
 
@@ -35,7 +35,8 @@ ThermoWorks end-to-end pipeline — complete on feature branch, ready to merge a
 - PitLogic branding throughout — no RFX visible in UI
 - Migration system: first-run key rename `rfx-* → pitlogic-*`, idempotent
 - Telemetry architecture: domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
-- **Live probe pipeline (feature branch)**: MQTT → ThermoWorksAdapter → useThermoWorksProvider → globalEventBus → globalStore (TelemetryStore) → useLiveProbes → DashboardTab "Live Readings" card + SettingsSheet probe list
+- **Live probe pipeline (main)**: MQTT → ThermoWorksAdapter → useThermoWorksProvider → globalEventBus → globalStore (TelemetryStore) → useLiveProbes → DashboardTab "Live Readings" card + SettingsSheet probe list
+- **Channel labels (PR #8, 2026-07-01)**: `subscribeDeviceMeta` → `/devices/+/state` → `channelMeta` Map with `Ch N` fallback; `shortProbeLabel()` last-resort in DashboardTab; unit toggle (°F/°C) in SettingsSheet; Non-TLS `role=alert` warning; `publishDeviceConfig` deviceId injection guard; Device Health panel; 211 tests passing
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
@@ -78,7 +79,7 @@ All 22 operations from the testing agent flow plan are complete:
 ## Immediate Next Steps
 
 1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`)
-2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
+2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm labels appear in "Live Readings" card (should show "Ch 1", "Ch 2", etc. or user-defined names from device state)
 3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues

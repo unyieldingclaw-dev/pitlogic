@@ -20,6 +20,7 @@ lineage: initial
 Full completed-items history archived in `progress-archive.md`.
 
 ### Recent Milestones
+- **2026-07-01**: Channel label fixes merged to main (PR #8) — `subscribeDeviceMeta`, `/devices/+/state` parsing, `channelMeta` with `Ch N` fallback, `shortProbeLabel()` last-resort, unit toggle (°F/°C), Non-TLS `role=alert`, `publishDeviceConfig` injection guard, Device Health panel; 183 → 211 tests; Playwright smoke suite 11/11
 - **2026-06-30**: `useCsvProvider` hook + Settings "Replay CSV" card — CSV file → CsvProvider → telemetry pipeline → Live Readings card; 171 → 183 tests
 - **2026-06-30**: ThermoWorks integration merged to main (PR #6) — full live probe UI pipeline deployed to GitHub Pages; 43 pre-existing lint errors resolved (0 errors, 0 warnings); 171 tests passing
 - **2026-06-29**: Live probe UI pipeline complete (feature branch) — `globalStore.ts` singleton, `useLiveProbes` hook, Dashboard "Live Readings" card, SettingsSheet probe list; ThermoWorksAdapter payload parser fixed for real gateway format (`sensors[]`, `/devices/+/events`, probeId `{deviceId}-s{sensorId}`); 169 → 171 tests
@@ -43,6 +44,7 @@ Full completed-items history archived in `progress-archive.md`.
 - [x] Dashboard "Live Readings" card — appears when `liveProbes.size > 0`
 - [x] `transformPayload` fixed for real gateway format (`sensors[]`, `/devices/+/events`)
 - [x] Merge `claude/thermoworks-integration-dou7k5` → main (PR #6, merged 2026-06-30)
+- [x] Channel label fixes + device health + unit toggle (PR #8, merged 2026-07-01)
 - [ ] Verify HiveMQ Cloud ACL topic isolation before first live use
 - [ ] End-to-end smoke test with real RFX Gateway + HiveMQ Cloud broker
 
@@ -55,7 +57,7 @@ Full completed-items history archived in `progress-archive.md`.
 
 ## 📊 Test Coverage
 
-- **Total tests**: 169 passing (16 test files) as of 2026-05-28
+- **Total tests**: 211 passing (18 test files) as of 2026-07-01
 - `analytics.test.js` — analytics functions, edge cases
 - `dataPortability.test.js` — export/import round-trip + merge logic
 - `planToEatParser.test.js` — CSV parsing edge cases
