@@ -223,6 +223,8 @@ export class ThermoWorksAdapter implements TemperatureProvider {
    */
   async publishDeviceConfig(deviceId: string, config: Record<string, unknown>): Promise<void> {
     if (!this._client) throw new Error('[thermoworks] publishDeviceConfig: not connected');
+    // Validate deviceId to prevent topic injection via broker-supplied device identifiers.
+    if (!/^[\w-]+$/.test(deviceId)) throw new Error(`[thermoworks] publishDeviceConfig: invalid deviceId "${deviceId}"`);
     await this._client.publishAsync(
       `/devices/${deviceId}/config`,
       JSON.stringify(config),
