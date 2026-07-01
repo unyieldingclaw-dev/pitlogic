@@ -87,7 +87,10 @@ export function useThermoWorksProvider() {
     const cm = new Map();
     for (const device of deviceState.values()) {
       for (const ch of (device.channels ?? [])) {
-        cm.set(`${device.deviceId}-ch${ch.number}`, ch);
+        cm.set(`${device.deviceId}-ch${ch.number}`, {
+          ...ch,
+          label: ch.label || `Ch ${ch.number}`,
+        });
       }
     }
     return cm;

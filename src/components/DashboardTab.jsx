@@ -1,6 +1,13 @@
 import { Flame, ChevronRight } from 'lucide-react';
 import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
 
+// Last-resort label when no device state label is available.
+// "M180280635-ch2" → "Ch 2",  "M180280635-s3" → "Ch 3"
+function shortProbeLabel(probeId) {
+  const m = /-(?:ch|s)?(\d+)$/.exec(probeId);
+  return m ? `Ch ${m[1]}` : probeId;
+}
+
 function StatPill({ label, value }) {
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)',
@@ -97,7 +104,9 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[...liveProbes.values()].map(probe => {
               const chMeta = channelMeta?.get(probe.probeId);
-              const label = chMeta?.label || probe.label;
+              // chMeta?.label: user-defined name from device state (e.g. "Brisket Flat")
+              // shortProbeLabel: friendly fallback when no state message has arrived yet
+              const label = chMeta?.label || shortProbeLabel(probe.probeId);
               const isAlarming = chMeta?.highAlarming || chMeta?.lowAlarming;
               return (
                 <div key={probe.probeId} style={{ background: 'var(--surface-raised)', borderRadius: 8, padding: '6px 12px',
