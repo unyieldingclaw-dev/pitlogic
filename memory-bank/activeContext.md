@@ -13,13 +13,33 @@ lineage: initial
 
 # Active Context - Current State
 
-**Last Updated**: 2026-07-01
+**Last Updated**: 2026-07-02
 
 ## Current Focus
 
-Post-merge cleanup — PR #8 (channel labels + device health + unit toggle) squash-merged to main 2026-07-01. GitHub Pages auto-deploying. Next priorities: HiveMQ ACL verification and CSV import UI.
+Post-merge cleanup — PR #8 (channel labels + device health + unit toggle) squash-merged to main 2026-07-01. GitHub Pages auto-deploying. CSV import UI confirmed already complete (see below). Only remaining blocker: HiveMQ Cloud ACL topic isolation — in progress, see "HiveMQ ACL Investigation" below.
 
 **Branch**: `main` — all ThermoWorks work merged (PR #6 2026-06-30, PR #8 2026-07-01).
+
+## HiveMQ ACL Investigation (2026-07-02, in progress)
+
+Cluster: "Free #1" (HiveMQ Cloud **Free tier**), org "UnyieldingClaw". Two credentials exist: `pitlogic-browser` (declared permission `SUBSCRIBE_ONLY`), `rfxgateway` (declared permission `PUBLISH_ONLY`). No per-device (per-topic) isolation configured yet as of session start.
+
+**App's actual topic shape** (`src/lib/providers/adapters/thermoworks/ThermoWorksAdapter.ts`):
+- Subscribe: `/probes/+/events`, `/devices/+/events`, `/devices/+/state`
+- Publish: `/devices/{deviceId}/config` (via `publishDeviceConfig` — not currently wired to any UI, dead code path today)
+
+**Findings so far:**
+- Access Management → Authorization → Permissions form has only 4 fields: Name, Description, Permission Type, Topic Filter. **No credential/client-ID selector.**
+- Per HiveMQ docs: a created permission isn't bound to anything by itself — it becomes selectable *during credential creation*. Credentials are assigned a single permission, or a **role** that bundles multiple permissions (roles likely gated to Starter+ tier, unconfirmed — same pattern as Client Certificate/JWT which explicitly say "available in Cloud Starter and higher tier plans").
+- Free/PAYG tier: **one topic filter per permission** (confirmed via HiveMQ blog).
+- Existing credentials (`pitlogic-browser`, `rfxgateway`) have **no visible Edit action** — only a delete (trash) icon. Clicking the credential name did nothing. Likely means permission-at-creation-time is immutable after the fact on Free tier.
+- 6 narrow custom permissions were created (`browser-probe-events`, `browser-device-events`, `browser-device-state` → SUBSCRIBE_ONLY; `gateway-probe-events`, `gateway-device-events`, `gateway-device-state` → PUBLISH_ONLY), each scoped to one of the app's real topics. **These are not yet attached to the two credentials** — likely still inert since credentials predate them and can't be edited.
+- Three pre-existing default permissions also present: "Subscribe Only" / "Publish Only" / "Publish and Subscribe", all on topic `#` (HiveMQ's built-in defaults, not user-created).
+
+**Working theory / next step:** Since Free tier gives one topic filter per permission and (probably) no role-bundling, the credentials need to be **deleted and recreated**, this time picking the permission at creation time. Because 3 separate topic filters can't be attached to one credential without roles, the practical compromise is a single filter `/+/+/+` (matches all 3 real topic shapes — `/probes/{id}/events`, `/devices/{id}/events`, `/devices/{id}/state` — since all are exactly 3 segments) instead of the current default `#` (unbounded depth, matches `$SYS` diagnostics too). Not yet executed — user was about to check the credential-creation form's Permission dropdown to confirm custom permissions appear there before proceeding.
+
+**Resume point:** Check whether "Add Credentials" → Permission field lists the 6 custom permissions (confirms attach-at-creation theory) or only the 3 built-in defaults (would mean custom permissions are decorative-only on Free tier and the `/+/+/+` single-filter approach must be applied by editing/recreating the *permission* the credential already defaults to, if that's even possible — needs verification). Ambient/pit probe needs no separate rule — it shares the gateway's existing topic pattern via the `+` wildcard on channel number.
 
 ## What's Working
 
