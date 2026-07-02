@@ -168,3 +168,22 @@ Never write code before the design is approved.
 Never commit without running tests.
 Never merge with [CRITICAL] or [HIGH] security findings.
 ```
+
+## Context Management
+
+### When to Hand Off
+Trigger a handoff when context reaches 40% or the user types "Handoff":
+1. Stop all work immediately
+2. Write `handoff.md` to the project root (format: accomplishments, files changed, service state, commands to resume, pending tasks)
+3. Respond only: "Handoff ready at `handoff.md`. Start a new conversation."
+4. Do not continue
+
+On next session: read `handoff.md` first, merge into Memory Bank, delete it, then continue.
+
+### Token Budget
+
+| Signal | Action |
+|--------|--------|
+| Auto-compact fires (40%) | PreCompact hook warns; resume from memory-bank/ after compaction |
+| User types "Handoff" | Write handoff.md immediately; stop |
+| Context > 65% | Warn user; suggest handoff before continuing large tasks |

@@ -45,6 +45,14 @@ These rules apply to **all languages**.
 | WHY comments for non-obvious logic | ✅ `// Use UTC to avoid timezone bugs in scheduling` |
 | No commented-out code | ❌ `// oldFunction()` |
 | Document breaking changes | ✅ `// BREAKING: Changed from sync to async` |
+| Rationale must trace to observable behavior, documented constraint, or explicit project guidance | ❌ `// Using Set here for significant performance gains` ✅ `// Set prevents duplicate hook registration — settings loader may merge repeated entries on reload` |
+| No speculative performance or optimization claims | ❌ `// Parallelized for performance` ✅ `// Parallelized because the upstream API enforces a 5s per-call timeout; sequential execution exceeds dashboard SLA` |
+| Do not document rationale you cannot support with observable behavior, documented constraints, or explicit project guidance — this covers historical intent, optimization claims, and architectural explanations equally | ❌ `// Legacy compatibility` (unsupported — no linked ticket, no observable constraint) ✅ [omit the comment rather than invent a reason] |
+
+> **AI-assisted development amplifies the risk of plausible but unsupported rationale** —
+> invented optimization claims, speculative architectural history, and authoritative-sounding
+> explanations are indistinguishable from accurate ones without verification. When in doubt,
+> omit the comment rather than write one you cannot support.
 
 ```python
 # ❌ BAD - Obvious comment

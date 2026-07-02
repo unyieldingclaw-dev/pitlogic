@@ -179,6 +179,28 @@ Copy the tier tables from this document into your rules file (`.cursor/rules/sec
 - **CONFIRM**: file deletions, amend/rebase, skip-hooks flag, destructive SQL, auth/CI config changes
 - **WARN**: large changes (>5 files or >200 lines), new files, missing tests, skipping verification
 
+## Contract Scope Hard-Block Mode
+
+By default, the `check-contract` hook WARNs when a write targets a file outside the active task contract but does not block it (exit 0). For stricter enforcement, set:
+
+```
+PMB_CONTRACT_HARD_BLOCK=1
+```
+
+When this environment variable is set, any out-of-scope write is **blocked** (hook exits 2). Claude Code interprets a non-zero exit from a PreToolUse hook as a hard block — the write tool call is cancelled and the message is shown to the user.
+
+**How to enable:** Add `PMB_CONTRACT_HARD_BLOCK=1` to the `env` block in `.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "PMB_CONTRACT_HARD_BLOCK": "1"
+  }
+}
+```
+
+**When to use:** Enable in high-stakes sessions (schema migrations, security fixes, compliance changes) where accidental scope creep would be costly. Disable for exploratory sessions where broad changes are expected.
+
 ## Complementary Tools
 
 These guardrails are **guidance**. For hard enforcement, use:
