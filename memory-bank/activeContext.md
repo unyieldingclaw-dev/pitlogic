@@ -78,9 +78,10 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`)
-2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm labels appear in "Live Readings" card (should show "Ch 1", "Ch 2", etc. or user-defined names from device state)
-3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
+1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`) — requires HiveMQ dashboard access, user action
+2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm labels appear in "Live Readings" card (should show "Ch 1", "Ch 2", etc. or user-defined names from device state) — requires hardware, user action
+
+CSV import UI is done (commit `35c5ea4`, 2026-06-30): `useCsvProvider` hook bridges `CsvProvider` → normalizer → `globalEventBus`; "Replay CSV" section live in SettingsSheet with file picker, status, error display. Verified 2026-07-02: 211/211 tests passing.
 
 ## Open Issues
 
