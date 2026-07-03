@@ -4,7 +4,7 @@ review-cycle: 30d
 retention: rolling-3-months
 staleness-threshold: 30
 tags: [progress, completed, planned]
-last-reviewed: 2026-05-26
+last-reviewed: 2026-07-03
 compaction_generation: 0
 source_type: human
 confidence: high
@@ -13,13 +13,14 @@ lineage: initial
 
 # Progress Tracker
 
-**Last Updated**: 2026-05-26
+**Last Updated**: 2026-07-03
 
 ## ✅ Completed Features
 
 Full completed-items history archived in `progress-archive.md`.
 
 ### Recent Milestones
+- **2026-07-03 (PRs #9, #10)**: Live Device config copy/paste (cross-device transfer), ThermoWorks channel labels, settings sheet no longer closes on backdrop click; 183 → 218 tests
 - **2026-06-30**: `useCsvProvider` hook + Settings "Replay CSV" card — CSV file → CsvProvider → telemetry pipeline → Live Readings card; 171 → 183 tests
 - **2026-06-30**: ThermoWorks integration merged to main (PR #6) — full live probe UI pipeline deployed to GitHub Pages; 43 pre-existing lint errors resolved (0 errors, 0 warnings); 171 tests passing
 - **2026-06-29**: Live probe UI pipeline complete (feature branch) — `globalStore.ts` singleton, `useLiveProbes` hook, Dashboard "Live Readings" card, SettingsSheet probe list; ThermoWorksAdapter payload parser fixed for real gateway format (`sensors[]`, `/devices/+/events`, probeId `{deviceId}-s{sensorId}`); 169 → 171 tests
@@ -51,11 +52,11 @@ Full completed-items history archived in `progress-archive.md`.
 
 ## 🐛 Known Bugs (Low Priority)
 
-- CSP eval error in dev server from `vite.config.js` configureServer approach
+- (none currently — CSP eval error fixed via `server.headers` config in `vite.config.js`)
 
 ## 📊 Test Coverage
 
-- **Total tests**: 169 passing (16 test files) as of 2026-05-28
+- **Total tests**: 218 passing (19 test files) as of 2026-07-03
 - `analytics.test.js` — analytics functions, edge cases
 - `dataPortability.test.js` — export/import round-trip + merge logic
 - `planToEatParser.test.js` — CSV parsing edge cases
@@ -72,3 +73,6 @@ Full completed-items history archived in `progress-archive.md`.
 - `csvTemperatureParser.test.js` — 9 cases: empty input, header-only, probe temps, smoker column, time as minutes, skip non-numeric, thinning, empty pData, case-insensitive headers
 - `ThermoWorksAdapter.test.ts` — 16 cases: transformPayload (8: single channel, multi-channel, non-T type, seconds-epoch, non-integer ts, malformed JSON, no channels, unknown topic) + lifecycle (8: connect/subscribe, idempotent connect, exactly-one message listener, disconnect+reconnect, no handler after disconnect, multi-channel emit, reconnect sessionPresent=true, reconnect sessionPresent=false)
 - `useThermoWorksProvider.test.js` — 7 cases: initial state, connect success, missing config error, adapter throw, disconnect, unmount cleanup, event pipeline wiring
+- `useCsvProvider.test.js` — CSV replay lifecycle: load, play/pause, event pipeline wiring, unmount cleanup
+- `useLiveProbes.test.js` — globalStore subscription, stale-check lifecycle, `Map<probeId, ProbeState>` shape
+- `SettingsSheet.test.jsx` — Live Device config copy/paste (clipboard write, paste-and-apply, overwrite confirmation), channel label rendering

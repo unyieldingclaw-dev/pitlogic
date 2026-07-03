@@ -4,7 +4,7 @@ review-cycle: 90d
 retention: permanent
 staleness-threshold: 90
 tags: [tech-stack, environment]
-last-reviewed: 2026-05-26
+last-reviewed: 2026-07-03
 compaction_generation: 0
 source_type: human
 confidence: high
@@ -97,7 +97,7 @@ src/lib/
 
 ```powershell
 npm run dev          # dev server at http://localhost:5173/pitlogic/
-npm test -- --run    # run all tests once (171 passing as of 2026-06-29)
+npm test -- --run    # run all tests once (218 passing, 19 files, as of 2026-07-03)
 npm run test:watch   # watch mode
 npm run test:coverage # coverage report
 npm run build        # production build

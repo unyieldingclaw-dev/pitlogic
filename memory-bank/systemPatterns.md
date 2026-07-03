@@ -4,7 +4,7 @@ review-cycle: 90d
 retention: permanent
 staleness-threshold: 90
 tags: [architecture, patterns]
-last-reviewed: 2026-05-26
+last-reviewed: 2026-07-03
 compaction_generation: 0
 source_type: human
 confidence: high
