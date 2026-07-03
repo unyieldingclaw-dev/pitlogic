@@ -42,6 +42,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [pasteError, setPasteError] = useState(null);
+  const [pasteConfirming, setPasteConfirming] = useState(false);
 
   const handleMqttSave = () => {
     localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(mqttConfig));
@@ -74,6 +75,12 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
       setPasteError(`Missing or invalid "${missingField}" field`);
       return;
     }
+    const hasExistingConfig = Boolean(mqttConfig.brokerUrl || mqttConfig.username || mqttConfig.password);
+    if (hasExistingConfig && !pasteConfirming) {
+      setPasteError(null);
+      setPasteConfirming(true);
+      return;
+    }
     const next = {
       brokerUrl: parsed.brokerUrl,
       username: parsed.username,
@@ -85,6 +92,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     setPasteError(null);
     setPasteText('');
     setPasteOpen(false);
+    setPasteConfirming(false);
     if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
     setMqttSaved(true);
     mqttSavedTimerRef.current = setTimeout(() => setMqttSaved(false), 2000);
@@ -244,7 +252,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
           <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
             Connect to a ThermoWorks RFX Gateway via your MQTT broker.{' '}
             <span style={{ color: 'var(--amber)', fontSize: 12 }}>
-              Browser compromise = MQTT credential compromise. Personal use only.
+              Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.
             </span>
           </div>
 
@@ -333,7 +341,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               {mqttCopyState === 'copied' ? 'Copied ✓' : mqttCopyState === 'error' ? 'Copy failed' : 'Copy config'}
             </button>
             <button type="button" className="btn-ghost"
-              onClick={() => { setPasteOpen(o => !o); setPasteError(null); }}
+              onClick={() => { setPasteOpen(o => !o); setPasteError(null); setPasteConfirming(false); }}
               aria-expanded={pasteOpen}
               aria-label="Paste Live Device config copied from another device"
               style={{ fontSize: 13, padding: '6px 14px' }}>
@@ -366,7 +374,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
             <div className="fadein" style={{ marginTop: 10 }}>
               <textarea
                 value={pasteText}
-                onChange={e => setPasteText(e.target.value)}
+                onChange={e => { setPasteText(e.target.value); setPasteConfirming(false); }}
                 placeholder="Paste config copied from another device here"
                 rows={3}
                 aria-label="Pasted Live Device config JSON"
@@ -377,13 +385,18 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               {pasteError && (
                 <div role="alert" style={{ fontSize: 12, color: 'var(--red)', marginTop: 4 }}>{pasteError}</div>
               )}
+              {pasteConfirming && (
+                <div role="alert" style={{ fontSize: 12, color: 'var(--amber)', marginTop: 4 }}>
+                  This will overwrite your current Live Device config. Click Confirm overwrite to proceed.
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <button type="button" className="btn-primary" onClick={handleMqttPasteApply}
                   style={{ fontSize: 13, padding: '6px 14px' }}>
-                  Apply &amp; Save
+                  {pasteConfirming ? 'Confirm overwrite' : 'Apply & Save'}
                 </button>
                 <button type="button" className="btn-ghost"
-                  onClick={() => { setPasteOpen(false); setPasteText(''); setPasteError(null); }}
+                  onClick={() => { setPasteOpen(false); setPasteText(''); setPasteError(null); setPasteConfirming(false); }}
                   style={{ fontSize: 13, padding: '6px 14px' }}>
                   Cancel
                 </button>
