@@ -10,6 +10,13 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+function missingMqttConfigField(parsed) {
+  if (typeof parsed?.brokerUrl !== 'string') return 'brokerUrl';
+  if (typeof parsed?.username !== 'string') return 'username';
+  if (typeof parsed?.password !== 'string') return 'password';
+  return null;
+}
+
 export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes, deviceState }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
@@ -30,6 +37,11 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
   });
   const [mqttSaved, setMqttSaved] = useState(false);
   const mqttSavedTimerRef = useRef(null);
+  const [mqttCopyState, setMqttCopyState] = useState('idle'); // idle | copied | error
+  const mqttCopyTimerRef = useRef(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteError, setPasteError] = useState(null);
 
   const handleMqttSave = () => {
     localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(mqttConfig));
@@ -38,10 +50,51 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
     mqttSavedTimerRef.current = setTimeout(() => setMqttSaved(false), 2000);
   };
 
+  const handleMqttCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(mqttConfig));
+      setMqttCopyState('copied');
+    } catch {
+      setMqttCopyState('error');
+    }
+    if (mqttCopyTimerRef.current) clearTimeout(mqttCopyTimerRef.current);
+    mqttCopyTimerRef.current = setTimeout(() => setMqttCopyState('idle'), 2000);
+  };
+
+  const handleMqttPasteApply = () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(pasteText);
+    } catch {
+      setPasteError('Invalid JSON');
+      return;
+    }
+    const missingField = missingMqttConfigField(parsed);
+    if (missingField) {
+      setPasteError(`Missing or invalid "${missingField}" field`);
+      return;
+    }
+    const next = {
+      brokerUrl: parsed.brokerUrl,
+      username: parsed.username,
+      password: parsed.password,
+      unit: parsed.unit === 'C' ? 'C' : 'F',
+    };
+    setMqttConfig(next);
+    localStorage.setItem('pitlogic-mqtt-v1', JSON.stringify(next));
+    setPasteError(null);
+    setPasteText('');
+    setPasteOpen(false);
+    if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
+    setMqttSaved(true);
+    mqttSavedTimerRef.current = setTimeout(() => setMqttSaved(false), 2000);
+  };
+
   useEffect(() => {
     return () => {
-      // Cancel pending "Saved ✓" flash timer to avoid setState after unmount
+      // Cancel pending "Saved ✓" / "Copied ✓" flash timers to avoid setState after unmount
       if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
+      if (mqttCopyTimerRef.current) clearTimeout(mqttCopyTimerRef.current);
     };
   }, []);
 
@@ -274,6 +327,18 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               style={{ fontSize: 13, padding: '6px 14px' }}>
               {mqttSaved ? 'Saved ✓' : 'Save'}
             </button>
+            <button type="button" className="btn-ghost" onClick={handleMqttCopy}
+              aria-label="Copy Live Device config to clipboard, to paste on another device"
+              style={{ fontSize: 13, padding: '6px 14px' }}>
+              {mqttCopyState === 'copied' ? 'Copied ✓' : mqttCopyState === 'error' ? 'Copy failed' : 'Copy config'}
+            </button>
+            <button type="button" className="btn-ghost"
+              onClick={() => { setPasteOpen(o => !o); setPasteError(null); }}
+              aria-expanded={pasteOpen}
+              aria-label="Paste Live Device config copied from another device"
+              style={{ fontSize: 13, padding: '6px 14px' }}>
+              Paste config
+            </button>
             {mqttStatus === 'connected' ? (
               <button type="button" className="btn-ghost" onClick={onMqttDisconnect}
                 aria-label="Disconnect from MQTT broker"
@@ -297,6 +362,34 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               {mqttStatus === 'error' && `✕ ${mqttError ?? 'Error'}`}
             </span>
           </div>
+          {pasteOpen && (
+            <div className="fadein" style={{ marginTop: 10 }}>
+              <textarea
+                value={pasteText}
+                onChange={e => setPasteText(e.target.value)}
+                placeholder="Paste config copied from another device here"
+                rows={3}
+                aria-label="Pasted Live Device config JSON"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                  fontSize: 12, fontFamily: 'var(--mono)', resize: 'vertical' }}
+              />
+              {pasteError && (
+                <div role="alert" style={{ fontSize: 12, color: 'var(--red)', marginTop: 4 }}>{pasteError}</div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button type="button" className="btn-primary" onClick={handleMqttPasteApply}
+                  style={{ fontSize: 13, padding: '6px 14px' }}>
+                  Apply &amp; Save
+                </button>
+                <button type="button" className="btn-ghost"
+                  onClick={() => { setPasteOpen(false); setPasteText(''); setPasteError(null); }}
+                  style={{ fontSize: 13, padding: '6px 14px' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
           {liveProbes?.size > 0 && (
             <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
               <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
