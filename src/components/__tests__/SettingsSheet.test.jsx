@@ -106,6 +106,28 @@ describe('SettingsSheet — Live Device config copy/paste', () => {
     expect(screen.getByRole('button', { name: 'Saved ✓' })).toBeTruthy();
   });
 
+  it('requires a second confirmation click before overwriting an existing config', () => {
+    render(<SettingsSheet {...baseProps()} />);
+    fillMqttFields();
+
+    fireEvent.click(screen.getByRole('button', { name: /paste live device config/i }));
+    fireEvent.change(screen.getByLabelText('Pasted Live Device config JSON'), {
+      target: {
+        value: JSON.stringify({ brokerUrl: 'wss://new-device:8884/mqtt', username: 'new', password: 'newpw' }),
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /apply & save/i }));
+    // First click only warns — nothing applied yet
+    expect(screen.getByRole('alert').textContent).toContain('overwrite');
+    expect(screen.getByLabelText('Broker URL').value).toBe('wss://cluster.hivemq.cloud:8884/mqtt');
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm overwrite/i }));
+    expect(screen.getByLabelText('Broker URL').value).toBe('wss://new-device:8884/mqtt');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).username).toBe('new');
+  });
+
   it('rejects invalid JSON without touching saved config', () => {
     render(<SettingsSheet {...baseProps()} />);
     fillMqttFields();
