@@ -10,6 +10,13 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+function missingMqttConfigField(parsed) {
+  if (typeof parsed?.brokerUrl !== 'string') return 'brokerUrl';
+  if (typeof parsed?.username !== 'string') return 'username';
+  if (typeof parsed?.password !== 'string') return 'password';
+  return null;
+}
+
 export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes, deviceState }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
@@ -62,8 +69,9 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
       setPasteError('Invalid JSON');
       return;
     }
-    if (typeof parsed?.brokerUrl !== 'string' || typeof parsed?.username !== 'string' || typeof parsed?.password !== 'string') {
-      setPasteError('Missing brokerUrl, username, or password');
+    const missingField = missingMqttConfigField(parsed);
+    if (missingField) {
+      setPasteError(`Missing or invalid "${missingField}" field`);
       return;
     }
     const next = {
