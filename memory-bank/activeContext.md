@@ -4,7 +4,7 @@ review-cycle: 7d
 retention: rolling-3-months
 staleness-threshold: 7
 tags: [current-focus, active]
-last-reviewed: 2026-05-26
+last-reviewed: 2026-07-03
 compaction_generation: 0
 source_type: human
 confidence: high
@@ -13,17 +13,17 @@ lineage: initial
 
 # Active Context - Current State
 
-**Last Updated**: 2026-06-29
+**Last Updated**: 2026-07-03
 
 ## Current Focus
 
-ThermoWorks end-to-end pipeline — complete on feature branch, ready to merge and smoke-test with real hardware.
+ThermoWorks live probe pipeline is merged to main and deployed. Recent work has layered on top of it: CSV replay (PR #7), copy/paste Live Device config for cross-device transfer, ThermoWorks channel labels, and a settings-sheet backdrop-click fix (PRs #9, #10).
 
-**Branch**: `claude/thermoworks-integration-dou7k5` — merged to main 2026-06-30 (PR #6). GitHub Pages auto-deploying.
+**Branch**: `main` — all feature branches above are merged. GitHub Pages auto-deploying.
 
 ## What's Working
 
-- 171 tests passing — production build clean
+- 218 tests passing (19 files) — production build clean
 - GitHub Pages deployed and auto-deploying on push to main
 - PWA installable on mobile
 - Full data export/import (JSON backup with merge/replace modes)
@@ -35,7 +35,10 @@ ThermoWorks end-to-end pipeline — complete on feature branch, ready to merge a
 - PitLogic branding throughout — no RFX visible in UI
 - Migration system: first-run key rename `rfx-* → pitlogic-*`, idempotent
 - Telemetry architecture: domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
-- **Live probe pipeline (feature branch)**: MQTT → ThermoWorksAdapter → useThermoWorksProvider → globalEventBus → globalStore (TelemetryStore) → useLiveProbes → DashboardTab "Live Readings" card + SettingsSheet probe list
+- **Live probe pipeline**: MQTT → ThermoWorksAdapter → useThermoWorksProvider → globalEventBus → globalStore (TelemetryStore) → useLiveProbes → DashboardTab "Live Readings" card + SettingsSheet probe list
+- **CSV replay pipeline**: CSV file → `useCsvProvider` → `CsvProvider` → telemetry pipeline → Live Readings card (Settings "Replay CSV" card)
+- **Live Device config copy/paste**: SettingsSheet — copy current MQTT config to clipboard, paste-and-apply with overwrite confirmation, for cross-device transfer
+- **ThermoWorks channel labels**: per-channel high/low alarm labels rendered from `device.channels[]` in SettingsSheet
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
@@ -79,11 +82,9 @@ All 22 operations from the testing agent flow plan are complete:
 
 1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`)
 2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
-3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
 
-- CSP eval error in dev server: `vite.config.js` configureServer approach (low priority)
 - iOS silent switch bypasses all browser audio/notifications — investigate PWA push notifications
 
 ## Environment Status
