@@ -55,6 +55,23 @@ interface NormalizationRejectedEvent {
   timestamp: number;
 }
 
+interface GatewayStateEvent {
+  type: 'gateway:state';
+  gatewayId: string;
+  wifiStrength: number | null;
+  battery: string | null;
+  firmware: string | null;
+  units: 'F' | 'C';
+  timestamp: number;
+}
+
+interface ProbeBatteryEvent {
+  type: 'probe:battery';
+  probeId: string;
+  battery: number;
+  timestamp: number;
+}
+
 export type NormalizedTelemetryEvent =
   | ProviderConnectedEvent
   | ProviderDisconnectedEvent
@@ -64,4 +81,6 @@ export type NormalizedTelemetryEvent =
   | SessionStartedEvent
   | SessionEndedEvent
   | ProbeErrorEvent
-  | NormalizationRejectedEvent;
+  | NormalizationRejectedEvent
+  | GatewayStateEvent
+  | ProbeBatteryEvent;

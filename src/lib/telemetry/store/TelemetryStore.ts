@@ -60,6 +60,7 @@ export class TelemetryStore {
       status: 'active',
       lastReading: reading,
       targetTemp: existing?.targetTemp ?? null,
+      battery: existing?.battery ?? null,
     };
     this.probes.set(reading.probeId, probe);
     this.notify();
@@ -74,6 +75,7 @@ export class TelemetryStore {
       status: 'disconnected',
       lastReading: existing?.lastReading ?? null,
       targetTemp: existing?.targetTemp ?? null,
+      battery: existing?.battery ?? null,
     };
     this.probes.set(probeId, probe);
     this.notify();
