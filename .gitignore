@@ -33,3 +33,4 @@ handoff.md
 .claude/worktrees/
 .agents/
 src/dev/
+.pmb-delegation-depth

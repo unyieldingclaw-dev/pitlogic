@@ -18,6 +18,9 @@ Never say "Done!" without evidence that changes work.
 
 ### DO
 - Add WHY comments for non-obvious logic
+- Comment the WHY, not the WHAT
+- Do not invent rationale, optimization claims, or historical intent not supported by observable behavior, documentation, or explicit project guidance
+- Treat dead-code identification as advisory unless non-use can be proven deterministically
 - Document breaking changes
 - Explain trade-offs and constraints
 - Note workarounds and their reasons
@@ -41,9 +44,6 @@ Never say "Done!" without evidence that changes work.
 - Make small, incremental changes
 - Each function should do one thing well
 - Keep files focused - split if >500 lines
-- Every change must touch only files required by the task — no opportunistic cleanup or unrelated refactoring
-- Every new abstraction (helper function, hook, utility) must be called from at least 2 places; if called from only 1, inline it instead
-- No TODO, FIXME, HACK, or XXX comment may be committed without a linked GitHub issue number (e.g., `// TODO #123: ...`)
 
 ## Error Handling
 

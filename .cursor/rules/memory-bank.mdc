@@ -7,15 +7,6 @@ alwaysApply: true
 At the start of every conversation (and after any context compaction), silently read ALL files in `memory-bank/` to restore full project context.
 Never ask the user to repeat constraints, decisions, or context already documented there.
 
-## Testable Rules
-
-These rules are always active and verifiable:
-
-1. **Session start**: Read ALL `memory-bank/` files before responding to any request — not after
-2. **Post-compaction**: After any "context was compacted" summary appears, re-read ALL `memory-bank/` files immediately before continuing
-3. **Never contradict**: No suggestion or action may contradict a constraint in `memory-bank/projectbrief.md`
-4. **Always follow**: All code patterns must conform to `memory-bank/systemPatterns.md` — no exceptions
-
 ## Memory Bank Files (Read First, Always)
 
 **Core Context** (read these first):
