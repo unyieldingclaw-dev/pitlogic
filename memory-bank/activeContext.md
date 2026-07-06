@@ -35,6 +35,7 @@ ThermoWorks MQTT adapter — fully implemented, reviewed, and pushed to main. 16
 - PitLogic branding throughout — no RFX visible in UI
 - Migration system: first-run key rename `rfx-* → pitlogic-*`, idempotent
 - Telemetry architecture: domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
+- Device Health panel in Settings: per-gateway wifi/battery/firmware and per-probe battery, sourced from `TelemetryStore` via `useTelemetryStore()`; hidden entirely when no gateway is known
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
