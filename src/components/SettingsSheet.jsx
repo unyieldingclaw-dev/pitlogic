@@ -293,8 +293,9 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                 {gw.probes.length > 0 && (
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {gw.probes.map(p => (
-                      <li key={p.probeId} style={{ fontSize: 12, color: p.battery <= 20 ? 'var(--red)' : 'var(--text3)', fontFamily: 'var(--mono)' }}>
-                        {p.probeId}: {p.battery}%
+                      <li key={p.probeId} style={{ fontSize: 12, color: p.battery <= 20 ? 'var(--red)' : 'var(--text3)',
+                        fontWeight: p.battery <= 20 ? 600 : 400, fontFamily: 'var(--mono)' }}>
+                        {p.probeId}: {p.battery}%{p.battery <= 20 ? ' (Low)' : ''}
                       </li>
                     ))}
                   </ul>
