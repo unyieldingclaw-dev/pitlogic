@@ -251,13 +251,35 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore);
   });
 
-  it('reconnect with sessionPresent=false resubscribes once', async () => {
+  it('connect() also subscribes to /devices/+/state', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    expect(mockSubscribeAsync).toHaveBeenCalledWith('/devices/+/state');
+  });
+
+  it('reconnect with sessionPresent=false resubscribes to both topics', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await adapter.connect();
     const callsBefore = mockSubscribeAsync.mock.calls.length;
     simulateReconnect(false);
-    // Give async _onReconnect a tick
     await Promise.resolve();
-    expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 1);
+    expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 2);
+  });
+
+  it('caches gateway units from a device-state message and applies them to subsequent probe readings', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const received: unknown[] = [];
+    adapter.subscribe(e => received.push(e));
+    await adapter.connect();
+    simulateMessage('/devices/M123456789012/state', Buffer.from(JSON.stringify({ units: 'C' })));
+    simulateMessage(
+      '/probes/M123456789012/events',
+      Buffer.from(JSON.stringify({
+        gatewayId: 'M123456789012',
+        channels: [{ number: 1, ts: 2_000_000_000_000, readings: [{ value: 100.0, type: 'T' }] }],
+      })),
+    );
+    const readingEvent = received.find(e => (e as Record<string, unknown>).temperature !== undefined);
+    expect(readingEvent).toMatchObject({ unit: 'C' });
   });
 });

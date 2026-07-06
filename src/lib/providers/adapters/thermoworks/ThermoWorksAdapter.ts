@@ -103,6 +103,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   private _client: MqttClient | null = null;
   private _messageHandlerRegistered = false;
   private readonly _handlers = new Set<(event: RawProviderEvent) => void>();
+  private readonly _gatewayUnits = new Map<string, 'F' | 'C'>();
 
   constructor(config: ThermoWorksConfig) {
     this._config = config;
@@ -116,6 +117,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     });
     this._client = client;
     await client.subscribeAsync('/probes/+/events');
+    await client.subscribeAsync('/devices/+/state');
     this._registerMessageHandler();
     client.on('connect', (connack: IConnackPacket) => { void this._onReconnect(connack); });
   }
@@ -144,11 +146,18 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   private async _onReconnect(connack: IConnackPacket): Promise<void> {
     if (connack.sessionPresent || !this._client) return;
     await this._client.subscribeAsync('/probes/+/events');
+    await this._client.subscribeAsync('/devices/+/state');
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
-    const events = transformPayload(topic, payload);
+    const events = transformPayload(topic, payload, {
+      now: Date.now(),
+      getUnitsForGateway: (gatewayId) => this._gatewayUnits.get(gatewayId) ?? 'F',
+    });
     for (const event of events) {
+      if (typeof event.gatewayId === 'string' && typeof event.units === 'string') {
+        this._gatewayUnits.set(event.gatewayId, event.units as 'F' | 'C');
+      }
       for (const handler of this._handlers) {
         try { handler(event); } catch { /* isolate handler failures — user code must not block other handlers */ }
       }
