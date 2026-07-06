@@ -9,7 +9,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, gatewayHealth = [] }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -268,6 +268,41 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
             </span>
           </div>
         </div>
+
+        {/* Device Health */}
+        {gatewayHealth.length > 0 && (
+          <div className="card" style={{ marginBottom: '1rem' }}>
+            <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+              Device Health
+            </div>
+            {gatewayHealth.map(gw => (
+              <div key={gw.gatewayId} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--text2)', marginBottom: 4 }}>
+                  {gw.gatewayId}
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: 'var(--text2)', marginBottom: 6 }}>
+                  {gw.wifiStrength != null && <span>Wi-Fi {gw.wifiStrength}%</span>}
+                  {gw.battery != null && <span>Battery {gw.battery}</span>}
+                  {gw.firmware != null && <span>Firmware {gw.firmware}</span>}
+                </div>
+                {gw.unitMismatch && (
+                  <div style={{ fontSize: 12, color: 'var(--amber)', marginBottom: 6 }}>
+                    This device is reporting Celsius readings, but PitLogic displays °F. Values shown may not match what you expect.
+                  </div>
+                )}
+                {gw.probes.length > 0 && (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {gw.probes.map(p => (
+                      <li key={p.probeId} style={{ fontSize: 12, color: p.battery <= 20 ? 'var(--red)' : 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                        {p.probeId}: {p.battery}%
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Export */}
         <div className="card" style={{ marginBottom: '1rem' }}>

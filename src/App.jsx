@@ -5,6 +5,7 @@ import { save, load, replaceAll as storageReplaceAll } from './hooks/useStorage.
 import { useRecipes } from './hooks/useRecipes.js';
 import { usePrefs } from './hooks/usePrefs';
 import { useThermoWorksProvider } from './hooks/useThermoWorksProvider.js';
+import { useTelemetryStore } from './hooks/useTelemetryStore.js';
 import { dur, shortDate } from './utils/helpers';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
@@ -38,6 +39,7 @@ export default function App() {
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
+  const { probes: telemetryProbes, gatewayState } = useTelemetryStore();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
   const [entry, setEntry]           = useState({ temps: [''], smokerTemp: '' });
 
@@ -295,6 +297,14 @@ export default function App() {
     { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
   ];
 
+  const gatewayHealth = Array.from(gatewayState.values()).map(gw => ({
+    ...gw,
+    unitMismatch: gw.units === 'C',
+    probes: Array.from(telemetryProbes.values())
+      .filter(p => p.probeId.startsWith(gw.gatewayId) && p.battery !== null)
+      .map(p => ({ probeId: p.probeId, battery: p.battery })),
+  }));
+
   return (
     <div id="root">
       {/* Background flame */}
@@ -536,6 +546,7 @@ export default function App() {
         mqttError={mqttProvider.error}
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
+        gatewayHealth={gatewayHealth}
       />
 
       {/* Bottom nav (mobile) */}
