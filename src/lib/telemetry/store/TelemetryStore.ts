@@ -1,5 +1,6 @@
 import type { NormalizedTelemetryEvent } from '../domain/TelemetryEvents.js';
 import type { ProbeState } from '../domain/ProbeSemantics.js';
+import type { GatewayState } from '../domain/GatewayState.js';
 import type { ActiveReading } from '../domain/TelemetryModels.js';
 import type { IEventBus } from '../eventBus/types.js';
 import { STALE_THRESHOLD_MS } from './StoreTypes.js';
@@ -13,6 +14,7 @@ type StateListener = (probes: ReadonlyMap<string, ProbeState>) => void;
  */
 export class TelemetryStore {
   private readonly probes = new Map<string, ProbeState>();
+  private readonly gatewayStateMap = new Map<string, GatewayState>();
   private readonly listeners = new Set<StateListener>();
   private staleCheckInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -22,6 +24,10 @@ export class TelemetryStore {
 
   getProbes(): ReadonlyMap<string, ProbeState> {
     return this.probes;
+  }
+
+  getGatewayState(): ReadonlyMap<string, GatewayState> {
+    return this.gatewayStateMap;
   }
 
   subscribe(listener: StateListener): () => void {
@@ -48,6 +54,10 @@ export class TelemetryStore {
       this.applyActiveReading(event.reading);
     } else if (event.type === 'probe:disconnected') {
       this.applyDisconnect(event.reading.probeId);
+    } else if (event.type === 'gateway:state') {
+      this.applyGatewayState(event);
+    } else if (event.type === 'probe:battery') {
+      this.applyProbeBattery(event.probeId, event.battery);
     }
   }
 
@@ -76,6 +86,34 @@ export class TelemetryStore {
       lastReading: existing?.lastReading ?? null,
       targetTemp: existing?.targetTemp ?? null,
       battery: existing?.battery ?? null,
+    };
+    this.probes.set(probeId, probe);
+    this.notify();
+  }
+
+  private applyGatewayState(event: Extract<NormalizedTelemetryEvent, { type: 'gateway:state' }>): void {
+    const existing = this.gatewayStateMap.get(event.gatewayId);
+    const state: GatewayState = {
+      gatewayId: event.gatewayId,
+      wifiStrength: event.wifiStrength ?? existing?.wifiStrength ?? null,
+      battery: event.battery ?? existing?.battery ?? null,
+      firmware: event.firmware ?? existing?.firmware ?? null,
+      units: event.units,
+    };
+    this.gatewayStateMap.set(event.gatewayId, state);
+    this.notify();
+  }
+
+  private applyProbeBattery(probeId: string, battery: number): void {
+    const existing = this.probes.get(probeId);
+    const probe: ProbeState = {
+      probeId,
+      label: existing?.label ?? probeId,
+      occupancy: existing?.occupancy ?? 'occupied',
+      status: existing?.status ?? 'disconnected',
+      lastReading: existing?.lastReading ?? null,
+      targetTemp: existing?.targetTemp ?? null,
+      battery,
     };
     this.probes.set(probeId, probe);
     this.notify();

@@ -88,4 +88,44 @@ describe('TelemetryStore', () => {
 
     expect(calls).toHaveLength(1);
   });
+
+  it('registers gateway state on gateway:state', () => {
+    const { bus, store } = makeStore();
+    bus.publish({
+      type: 'gateway:state', gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', timestamp: Date.now(),
+    });
+    const gw = store.getGatewayState().get('gw1');
+    expect(gw).toEqual({ gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F' });
+  });
+
+  it('merges partial gateway:state updates onto the existing entry', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'gateway:state', gatewayId: 'gw1', wifiStrength: 88, battery: null, firmware: null, units: 'F', timestamp: Date.now() });
+    bus.publish({ type: 'gateway:state', gatewayId: 'gw1', wifiStrength: null, battery: 'C', firmware: null, units: 'F', timestamp: Date.now() });
+    expect(store.getGatewayState().get('gw1')).toEqual({ gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: null, units: 'F' });
+  });
+
+  it('sets battery on the matching probe when probe:battery arrives', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200) });
+    bus.publish({ type: 'probe:battery', probeId: 'p1', battery: 15, timestamp: Date.now() });
+    expect(store.getProbes().get('p1')?.battery).toBe(15);
+  });
+
+  it('creates a probe entry from probe:battery alone if the probe is unknown', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'probe:battery', probeId: 'new-probe', battery: 15, timestamp: Date.now() });
+    const probe = store.getProbes().get('new-probe');
+    expect(probe?.battery).toBe(15);
+    expect(probe?.status).toBe('disconnected');
+  });
+
+  it('notifies listeners on gateway:state and probe:battery', () => {
+    const { bus, store } = makeStore();
+    const calls: number[] = [];
+    store.subscribe(() => calls.push(1));
+    bus.publish({ type: 'gateway:state', gatewayId: 'gw1', wifiStrength: 1, battery: null, firmware: null, units: 'F', timestamp: Date.now() });
+    bus.publish({ type: 'probe:battery', probeId: 'p1', battery: 15, timestamp: Date.now() });
+    expect(calls).toHaveLength(2);
+  });
 });
