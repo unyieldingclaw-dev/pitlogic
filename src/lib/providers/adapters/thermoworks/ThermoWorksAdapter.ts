@@ -22,14 +22,22 @@ export interface ThermoWorksConfig {
   password: string;
 }
 
+export interface TransformOptions {
+  now?: number;
+  getUnitsForGateway?: (gatewayId: string) => 'F' | 'C';
+}
+
 /**
  * Transforms a raw ThermaConnect RFX MQTT message into zero or more RawProviderEvents.
  * Pure function — exported for unit testing without a mock broker.
  */
-export function transformPayload(topic: string, rawPayload: Buffer | string): RawProviderEvent[] {
-  const match = topic.match(/^\/probes\/([^/]+)\/events$/);
-  if (!match) return [];
-  const probeTopicId = match[1];
+export function transformPayload(topic: string, rawPayload: Buffer | string, opts: TransformOptions = {}): RawProviderEvent[] {
+  const now = opts.now ?? Date.now();
+  const getUnits = opts.getUnitsForGateway ?? (() => 'F' as const);
+
+  const deviceStateMatch = topic.match(/^\/devices\/([^/]+)\/state$/);
+  const probeEventsMatch = topic.match(/^\/probes\/([^/]+)\/events$/);
+  if (!deviceStateMatch && !probeEventsMatch) return [];
 
   let parsed: unknown;
   try {
@@ -40,17 +48,38 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
     return [];
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !Array.isArray((parsed as Record<string, unknown>).channels)
-  ) {
+  if (typeof parsed !== 'object' || parsed === null) {
+    console.warn('[thermoworks] unexpected payload structure', { topic });
+    return [];
+  }
+  const body = parsed as Record<string, unknown>;
+
+  if (deviceStateMatch) {
+    const gatewayId = deviceStateMatch[1];
+    const event: RawProviderEvent = { gatewayId, capturedAt: now };
+    if (typeof body.wifi_strength === 'number') event.wifiStrength = body.wifi_strength;
+    if (typeof body.battery === 'string') event.battery = body.battery;
+    if (typeof body.firmware === 'string') event.firmware = body.firmware;
+    if (body.units === 'F' || body.units === 'C') event.units = body.units;
+    return [event];
+  }
+
+  const probeTopicId = probeEventsMatch![1]!;
+
+  if (!Array.isArray(body.channels)) {
+    if (typeof body.battery === 'number') {
+      // WHY ch1: RFX probes are single-channel devices (see RFX Probe Information in the
+      // SDK docs) — the battery sub-payload has no per-channel breakdown, so it applies to
+      // the probe's sole channel.
+      return [{ probeId: `${probeTopicId}-ch1`, capturedAt: now, battery: body.battery }];
+    }
     console.warn('[thermoworks] unexpected payload structure', { topic });
     return [];
   }
 
+  const gatewayUnits = getUnits(probeTopicId);
   const events: RawProviderEvent[] = [];
-  for (const channel of (parsed as { channels: unknown[] }).channels) {
+  for (const channel of body.channels as unknown[]) {
     const ch = channel as Record<string, unknown>;
     if (!Number.isInteger(ch.ts) || (ch.ts as number) < 1e10) continue;
     if (!Array.isArray(ch.readings)) continue;
@@ -60,7 +89,7 @@ export function transformPayload(topic: string, rawPayload: Buffer | string): Ra
         probeId: `${probeTopicId}-ch${ch.number}`,
         capturedAt: ch.ts as number,
         temperature: reading.value as number,
-        unit: 'F',
+        unit: gatewayUnits,
         source: 'live',
       });
     }

@@ -70,6 +70,57 @@ describe('transformPayload', () => {
     ]);
     expect(transformPayload('/something/else', payload)).toHaveLength(0);
   });
+
+  it('emits a gateway:state-shaped raw event for a device state topic', () => {
+    const payload = Buffer.from(JSON.stringify({
+      wifi_strength: 88, battery: 'C', firmware: 'v2.45', units: 'F',
+    }));
+    const events = transformPayload('/devices/M123456789012/state', payload, { now: 5_000 });
+    expect(events).toEqual([
+      { gatewayId: 'M123456789012', capturedAt: 5_000, wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F' },
+    ]);
+  });
+
+  it('gateway:state raw event omits fields absent from the payload', () => {
+    const payload = Buffer.from(JSON.stringify({ wifi_strength: 50 }));
+    const events = transformPayload('/devices/M123456789012/state', payload, { now: 5_000 });
+    expect(events).toEqual([
+      { gatewayId: 'M123456789012', capturedAt: 5_000, wifiStrength: 50 },
+    ]);
+  });
+
+  it('emits a probe-battery raw event when a probe payload has battery but no channels', () => {
+    const payload = Buffer.from(JSON.stringify({ gatewayId: 'M123456789012', battery: 42 }));
+    const events = transformPayload('/probes/M123456789012/events', payload, { now: 5_000 });
+    expect(events).toEqual([
+      { probeId: 'M123456789012-ch1', capturedAt: 5_000, battery: 42 },
+    ]);
+  });
+
+  it('still returns empty array for a probe payload with neither channels nor battery', () => {
+    const payload = Buffer.from(JSON.stringify({ gatewayId: 'M123456789012', firmware: '1.1.10' }));
+    expect(transformPayload('/probes/M123456789012/events', payload)).toHaveLength(0);
+  });
+
+  it('injects gateway units into channel readings via getUnitsForGateway', () => {
+    const payload = Buffer.from(JSON.stringify({
+      gatewayId: 'M123456789012',
+      channels: [{ number: 1, ts: 2_000_000_000_000, readings: [{ value: 100.0, type: 'T' }] }],
+    }));
+    const events = transformPayload('/probes/M123456789012/events', payload, {
+      getUnitsForGateway: () => 'C',
+    });
+    expect(events[0]).toMatchObject({ unit: 'C' });
+  });
+
+  it('defaults to F units when getUnitsForGateway is not provided', () => {
+    const payload = Buffer.from(JSON.stringify({
+      gatewayId: 'M123456789012',
+      channels: [{ number: 1, ts: 2_000_000_000_000, readings: [{ value: 100.0, type: 'T' }] }],
+    }));
+    const events = transformPayload('/probes/M123456789012/events', payload);
+    expect(events[0]).toMatchObject({ unit: 'F' });
+  });
 });
 
 // Hoisted mock values — must be defined before vi.mock() runs
