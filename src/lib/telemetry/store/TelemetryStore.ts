@@ -98,6 +98,7 @@ export class TelemetryStore {
       wifiStrength: event.wifiStrength ?? existing?.wifiStrength ?? null,
       battery: event.battery ?? existing?.battery ?? null,
       firmware: event.firmware ?? existing?.firmware ?? null,
+      // no null-fallback: every gateway:state payload carries a resolved unit, unlike the sensor fields above
       units: event.units,
     };
     this.gatewayStateMap.set(event.gatewayId, state);
@@ -110,6 +111,7 @@ export class TelemetryStore {
       probeId,
       label: existing?.label ?? probeId,
       occupancy: existing?.occupancy ?? 'occupied',
+      // preserve current connectivity status — a battery ping isn't a connectivity signal
       status: existing?.status ?? 'disconnected',
       lastReading: existing?.lastReading ?? null,
       targetTemp: existing?.targetTemp ?? null,
