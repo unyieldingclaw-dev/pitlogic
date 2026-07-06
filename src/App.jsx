@@ -9,6 +9,7 @@ import { useTelemetryStore } from './hooks/useTelemetryStore.js';
 import { dur, shortDate } from './utils/helpers';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
+import { computeGatewayHealth } from './utils/deviceHealth.js';
 import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
@@ -297,13 +298,7 @@ export default function App() {
     { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
   ];
 
-  const gatewayHealth = Array.from(gatewayState.values()).map(gw => ({
-    ...gw,
-    unitMismatch: gw.units === 'C',
-    probes: Array.from(telemetryProbes.values())
-      .filter(p => p.probeId.startsWith(gw.gatewayId) && p.battery !== null)
-      .map(p => ({ probeId: p.probeId, battery: p.battery })),
-  }));
+  const gatewayHealth = computeGatewayHealth(gatewayState, telemetryProbes);
 
   return (
     <div id="root">
