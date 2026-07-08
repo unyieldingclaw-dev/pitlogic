@@ -100,6 +100,7 @@ export class TelemetryStore {
       firmware: event.firmware ?? existing?.firmware ?? null,
       // no null-fallback: every gateway:state payload carries a resolved unit, unlike the sensor fields above
       units: event.units,
+      editableConfig: existing?.editableConfig ?? null,
     };
     this.gatewayStateMap.set(event.gatewayId, state);
     this.notify();

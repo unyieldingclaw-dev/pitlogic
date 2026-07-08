@@ -72,6 +72,14 @@ interface ProbeBatteryEvent {
   timestamp: number;
 }
 
+interface GatewayConfigEvent {
+  type: 'gateway:config';
+  gatewayId: string;
+  /** Full, unvalidated vendor DeviceConfig JSON — never exposed to the UI. Only TelemetryStore narrows this. */
+  raw: Record<string, unknown>;
+  timestamp: number;
+}
+
 export type NormalizedTelemetryEvent =
   | ProviderConnectedEvent
   | ProviderDisconnectedEvent
@@ -83,4 +91,5 @@ export type NormalizedTelemetryEvent =
   | ProbeErrorEvent
   | NormalizationRejectedEvent
   | GatewayStateEvent
-  | ProbeBatteryEvent;
+  | ProbeBatteryEvent
+  | GatewayConfigEvent;

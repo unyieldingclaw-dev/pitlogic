@@ -95,14 +95,14 @@ describe('TelemetryStore', () => {
       type: 'gateway:state', gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', timestamp: Date.now(),
     });
     const gw = store.getGatewayState().get('gw1');
-    expect(gw).toEqual({ gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F' });
+    expect(gw).toEqual({ gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', editableConfig: null });
   });
 
   it('merges partial gateway:state updates onto the existing entry', () => {
     const { bus, store } = makeStore();
     bus.publish({ type: 'gateway:state', gatewayId: 'gw1', wifiStrength: 88, battery: null, firmware: null, units: 'F', timestamp: Date.now() });
     bus.publish({ type: 'gateway:state', gatewayId: 'gw1', wifiStrength: null, battery: 'C', firmware: null, units: 'F', timestamp: Date.now() });
-    expect(store.getGatewayState().get('gw1')).toEqual({ gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: null, units: 'F' });
+    expect(store.getGatewayState().get('gw1')).toEqual({ gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: null, units: 'F', editableConfig: null });
   });
 
   it('sets battery on the matching probe when probe:battery arrives', () => {
