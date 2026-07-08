@@ -1,6 +1,6 @@
 import type { NormalizedTelemetryEvent } from '../domain/TelemetryEvents.js';
 import type { ProbeState } from '../domain/ProbeSemantics.js';
-import type { GatewayState } from '../domain/GatewayState.js';
+import type { GatewayState, EditableDeviceConfig } from '../domain/GatewayState.js';
 import type { ActiveReading } from '../domain/TelemetryModels.js';
 import type { IEventBus } from '../eventBus/types.js';
 import { STALE_THRESHOLD_MS } from './StoreTypes.js';
@@ -58,6 +58,8 @@ export class TelemetryStore {
       this.applyGatewayState(event);
     } else if (event.type === 'probe:battery') {
       this.applyProbeBattery(event.probeId, event.battery);
+    } else if (event.type === 'gateway:config') {
+      this.applyGatewayConfig(event);
     }
   }
 
@@ -122,6 +124,20 @@ export class TelemetryStore {
     this.notify();
   }
 
+  private applyGatewayConfig(event: Extract<NormalizedTelemetryEvent, { type: 'gateway:config' }>): void {
+    const existing = this.gatewayStateMap.get(event.gatewayId);
+    const state: GatewayState = existing ?? {
+      gatewayId: event.gatewayId,
+      wifiStrength: null,
+      battery: null,
+      firmware: null,
+      units: 'F',
+      editableConfig: null,
+    };
+    this.gatewayStateMap.set(event.gatewayId, { ...state, editableConfig: extractEditableConfig(event.raw) });
+    this.notify();
+  }
+
   private recomputeStale(): void {
     const now = Date.now();
     let changed = false;
@@ -142,4 +158,30 @@ export class TelemetryStore {
       try { listener(this.probes); } catch { /* isolate */ }
     }
   }
+}
+
+function extractEditableConfig(raw: Record<string, unknown>): EditableDeviceConfig {
+  const channels = Array.isArray(raw.channels) ? (raw.channels as Record<string, unknown>[]) : [];
+  const channelLabels: Record<number, string> = {};
+  const alarms: Record<number, { high?: number; low?: number }> = {};
+
+  for (const ch of channels) {
+    const num = ch.number;
+    if (typeof num !== 'number') continue;
+    if (typeof ch.label === 'string') channelLabels[num] = ch.label;
+
+    const alarmHigh = ch.alarmHigh as Record<string, unknown> | undefined;
+    const alarmLow = ch.alarmLow as Record<string, unknown> | undefined;
+    const entry: { high?: number; low?: number } = {};
+    if (alarmHigh && typeof alarmHigh.value === 'number') entry.high = alarmHigh.value;
+    if (alarmLow && typeof alarmLow.value === 'number') entry.low = alarmLow.value;
+    if (entry.high !== undefined || entry.low !== undefined) alarms[num] = entry;
+  }
+
+  return {
+    channelLabels,
+    alarms,
+    transmitIntervalInSeconds: typeof raw.transmitIntervalInSeconds === 'number' ? raw.transmitIntervalInSeconds : null,
+    recordingIntervalInSeconds: typeof raw.recordingIntervalInSeconds === 'number' ? raw.recordingIntervalInSeconds : null,
+  };
 }

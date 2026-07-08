@@ -128,4 +128,61 @@ describe('TelemetryStore', () => {
     bus.publish({ type: 'probe:battery', probeId: 'p1', battery: 15, timestamp: Date.now() });
     expect(calls).toHaveLength(2);
   });
+
+  it('extracts editableConfig from a gateway:config event', () => {
+    const { bus, store } = makeStore();
+    const raw = {
+      transmitIntervalInSeconds: 60,
+      recordingIntervalInSeconds: 30,
+      channels: [
+        { number: 1, label: 'Brisket', alarmHigh: { value: 200 }, alarmLow: { value: 50 } },
+        { number: 2, label: 'Ribs' },
+      ],
+    };
+    bus.publish({ type: 'gateway:config', gatewayId: 'gw1', raw, timestamp: Date.now() });
+    expect(store.getGatewayState().get('gw1')?.editableConfig).toEqual({
+      channelLabels: { 1: 'Brisket', 2: 'Ribs' },
+      alarms: { 1: { high: 200, low: 50 } },
+      transmitIntervalInSeconds: 60,
+      recordingIntervalInSeconds: 30,
+    });
+  });
+
+  it('applying gateway:config to an unknown gateway creates a gateway entry with null sensor fields', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'gateway:config', gatewayId: 'gw1', raw: { channels: [] }, timestamp: Date.now() });
+    const gw = store.getGatewayState().get('gw1');
+    expect(gw?.wifiStrength).toBeNull();
+    expect(gw?.battery).toBeNull();
+    expect(gw?.firmware).toBeNull();
+    expect(gw?.units).toBe('F');
+  });
+
+  it('preserves existing sensor fields when a gateway:config event arrives for a known gateway', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'gateway:state', gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', timestamp: Date.now() });
+    bus.publish({ type: 'gateway:config', gatewayId: 'gw1', raw: { channels: [] }, timestamp: Date.now() });
+    const gw = store.getGatewayState().get('gw1');
+    expect(gw?.wifiStrength).toBe(88);
+    expect(gw?.battery).toBe('C');
+  });
+
+  it('handles a config with no channels array (empty editableConfig)', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'gateway:config', gatewayId: 'gw1', raw: {}, timestamp: Date.now() });
+    expect(store.getGatewayState().get('gw1')?.editableConfig).toEqual({
+      channelLabels: {},
+      alarms: {},
+      transmitIntervalInSeconds: null,
+      recordingIntervalInSeconds: null,
+    });
+  });
+
+  it('notifies listeners on gateway:config', () => {
+    const { bus, store } = makeStore();
+    const calls: number[] = [];
+    store.subscribe(() => calls.push(1));
+    bus.publish({ type: 'gateway:config', gatewayId: 'gw1', raw: {}, timestamp: Date.now() });
+    expect(calls).toHaveLength(1);
+  });
 });
