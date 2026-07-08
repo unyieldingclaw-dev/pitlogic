@@ -167,7 +167,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
       if (typeof event.gatewayId === 'string' && typeof event.units === 'string') {
         this._gatewayUnits.set(event.gatewayId, event.units as 'F' | 'C');
       }
-      if (typeof event.gatewayId === 'string' && event.raw !== undefined && typeof event.raw === 'object' && event.raw !== null) {
+      if (typeof event.gatewayId === 'string' && typeof event.raw === 'object' && event.raw !== null) {
         this._configCache.set(event.gatewayId, event.raw as Record<string, unknown>);
       }
       for (const handler of this._handlers) {
