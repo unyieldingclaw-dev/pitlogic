@@ -4,6 +4,7 @@ import type { TelemetryTimestamp } from '../domain/TimestampSemantics.js';
 import {
   RawActiveReadingSchema,
   RawDisconnectedReadingSchema,
+  RawGatewayConfigSchema,
   RawGatewayStateSchema,
   RawProbeBatterySchema,
 } from './schemas.js';
@@ -45,6 +46,12 @@ export function normalizeProviderEvent(
       timestamp: makeTimestamp(a.capturedAt),
     };
     return { type: 'probe:reading', reading };
+  }
+
+  const gatewayConfigResult = RawGatewayConfigSchema.safeParse(raw);
+  if (gatewayConfigResult.success) {
+    const g = gatewayConfigResult.data;
+    return { type: 'gateway:config', gatewayId: g.gatewayId, raw: g.raw, timestamp: g.capturedAt };
   }
 
   const gatewayStateResult = RawGatewayStateSchema.safeParse(raw);

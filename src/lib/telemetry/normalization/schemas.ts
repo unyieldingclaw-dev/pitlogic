@@ -63,3 +63,9 @@ export const RawProbeBatterySchema = z.object({
   capturedAt: z.number().int().positive(),
   battery: z.number(),
 });
+
+export const RawGatewayConfigSchema = z.object({
+  gatewayId: z.string().min(1),
+  capturedAt: z.number().int().positive(),
+  raw: z.record(z.string(), z.unknown()),
+});

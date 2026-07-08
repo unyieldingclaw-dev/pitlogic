@@ -106,3 +106,29 @@ describe('normalizeProviderEvent — probe battery', () => {
     });
   });
 });
+
+describe('normalizeProviderEvent — gateway config', () => {
+  it('normalizes a gateway-config raw event, preserving the raw vendor JSON untouched', () => {
+    const rawConfig = { label: 'My Device', firmware: 'v2.45', channels: [{ number: 1, label: 'Brisket' }] };
+    const raw = { gatewayId: 'M123456789012', capturedAt: 2_000_000_000_000, raw: rawConfig };
+    const result = normalizeProviderEvent(raw, 'thermoworks');
+    expect(result).toEqual({
+      type: 'gateway:config',
+      gatewayId: 'M123456789012',
+      raw: rawConfig,
+      timestamp: 2_000_000_000_000,
+    });
+  });
+
+  it('does not let a gateway-config event get misrouted as gateway:state', () => {
+    const raw = { gatewayId: 'M123456789012', capturedAt: 2_000_000_000_000, raw: { label: 'My Device' } };
+    const result = normalizeProviderEvent(raw, 'thermoworks');
+    expect(result.type).toBe('gateway:config');
+  });
+
+  it('a genuine gateway-state event (no raw field) still normalizes as gateway:state, not gateway:config', () => {
+    const raw = { gatewayId: 'M123456789012', capturedAt: 2_000_000_000_000, wifiStrength: 88, units: 'F' };
+    const result = normalizeProviderEvent(raw, 'thermoworks');
+    expect(result.type).toBe('gateway:state');
+  });
+});
