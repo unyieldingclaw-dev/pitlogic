@@ -137,7 +137,7 @@ describe('transformPayload', () => {
 });
 
 // Hoisted mock values — must be defined before vi.mock() runs
-const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockClientOn, simulateMessage, simulateReconnect, clearListeners } =
+const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockPublishAsync, mockClientOn, simulateMessage, simulateReconnect, clearListeners } =
   vi.hoisted(() => {
     const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
     const mockClient = {
@@ -146,11 +146,13 @@ const { mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockClientOn, simula
       }),
       subscribeAsync: vi.fn().mockResolvedValue(undefined),
       endAsync: vi.fn().mockResolvedValue(undefined),
+      publishAsync: vi.fn().mockResolvedValue(undefined),
     };
     return {
       mockConnectAsync: vi.fn().mockResolvedValue(mockClient),
       mockSubscribeAsync: mockClient.subscribeAsync,
       mockEndAsync: mockClient.endAsync,
+      mockPublishAsync: mockClient.publishAsync,
       mockClientOn: mockClient.on,
       simulateMessage: (topic: string, payload: Buffer) => {
         (listeners['message'] ?? []).forEach(cb => cb(topic, payload));
@@ -181,6 +183,7 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
       on: mockClientOn,
       subscribeAsync: mockSubscribeAsync,
       endAsync: mockEndAsync,
+      publishAsync: mockPublishAsync,
     });
   });
 
@@ -312,5 +315,47 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     );
     const readingEvent = received.find(e => (e as Record<string, unknown>).temperature !== undefined);
     expect(readingEvent).toMatchObject({ unit: 'C' });
+  });
+
+  it('publishConfig merges edits onto the cached baseline and publishes a retained message', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    simulateMessage(
+      '/devices/M123456789012/config',
+      Buffer.from(JSON.stringify({ label: 'My Device', channels: [{ number: 1, label: 'Old Label' }] })),
+    );
+    await adapter.publishConfig('M123456789012', { channelLabels: { 1: 'Brisket' } });
+    expect(mockPublishAsync).toHaveBeenCalledWith(
+      '/devices/M123456789012/config',
+      JSON.stringify({ label: 'My Device', channels: [{ number: 1, label: 'Brisket' }] }),
+      { retain: true, qos: 1 },
+    );
+  });
+
+  it('publishConfig uses fallbackBaseline when no config has been cached yet', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    await adapter.publishConfig('M999', { channelLabels: { 1: 'Ribs' } }, { label: 'Fallback Device', channels: [] });
+    expect(mockPublishAsync).toHaveBeenCalledWith(
+      '/devices/M999/config',
+      JSON.stringify({ label: 'Fallback Device', channels: [{ number: 1, label: 'Ribs' }] }),
+      { retain: true, qos: 1 },
+    );
+  });
+
+  it('publishConfig starts from an empty object when there is no cache and no fallback', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    await adapter.publishConfig('M999', { channelLabels: { 1: 'Ribs' } });
+    expect(mockPublishAsync).toHaveBeenCalledWith(
+      '/devices/M999/config',
+      JSON.stringify({ channels: [{ number: 1, label: 'Ribs' }] }),
+      { retain: true, qos: 1 },
+    );
+  });
+
+  it('publishConfig rejects when not connected', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await expect(adapter.publishConfig('M999', {})).rejects.toThrow(/not connected/i);
   });
 });

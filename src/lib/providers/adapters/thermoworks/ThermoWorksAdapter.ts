@@ -15,6 +15,7 @@ import mqtt from 'mqtt';
 import type { IConnackPacket, MqttClient } from 'mqtt';
 import type { TemperatureProvider } from '../../core/TemperatureProvider.js';
 import type { RawProviderEvent } from '../../core/ProviderTypes.js';
+import { mergeDeviceConfig, type ConfigEdits, type DeviceConfigJson } from './deviceConfigMerge.js';
 
 export interface ThermoWorksConfig {
   brokerUrl: string;
@@ -141,6 +142,13 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     this._client = null;
     this._messageHandlerRegistered = false;
     this._handlers.clear();
+  }
+
+  async publishConfig(gatewayId: string, edits: ConfigEdits, fallbackBaseline?: DeviceConfigJson): Promise<void> {
+    if (!this._client) throw new Error('Cannot publish config: not connected');
+    const baseline = this._configCache.get(gatewayId) ?? fallbackBaseline ?? {};
+    const merged = mergeDeviceConfig(baseline, edits);
+    await this._client.publishAsync(`/devices/${gatewayId}/config`, JSON.stringify(merged), { retain: true, qos: 1 });
   }
 
   private _registerMessageHandler(): void {
