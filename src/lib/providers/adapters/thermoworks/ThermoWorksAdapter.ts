@@ -36,8 +36,9 @@ export function transformPayload(topic: string, rawPayload: Buffer | string, opt
   const getUnits = opts.getUnitsForGateway ?? (() => 'F' as const);
 
   const deviceStateMatch = topic.match(/^\/devices\/([^/]+)\/state$/);
+  const deviceConfigMatch = topic.match(/^\/devices\/([^/]+)\/config$/);
   const probeEventsMatch = topic.match(/^\/probes\/([^/]+)\/events$/);
-  if (!deviceStateMatch && !probeEventsMatch) return [];
+  if (!deviceStateMatch && !deviceConfigMatch && !probeEventsMatch) return [];
 
   let parsed: unknown;
   try {
@@ -62,6 +63,11 @@ export function transformPayload(topic: string, rawPayload: Buffer | string, opt
     if (typeof body.firmware === 'string') event.firmware = body.firmware;
     if (body.units === 'F' || body.units === 'C') event.units = body.units;
     return [event];
+  }
+
+  if (deviceConfigMatch) {
+    const gatewayId = deviceConfigMatch[1];
+    return [{ gatewayId, capturedAt: now, raw: body }];
   }
 
   const probeTopicId = probeEventsMatch![1]!;

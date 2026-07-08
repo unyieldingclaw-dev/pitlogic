@@ -121,6 +121,19 @@ describe('transformPayload', () => {
     const events = transformPayload('/probes/M123456789012/events', payload);
     expect(events[0]).toMatchObject({ unit: 'F' });
   });
+
+  it('wraps a device config topic payload as a raw gateway-config event', () => {
+    const configBody = { label: 'My Device', firmware: 'v2.45', channels: [{ number: 1, label: 'Brisket' }] };
+    const payload = Buffer.from(JSON.stringify(configBody));
+    const events = transformPayload('/devices/M123456789012/config', payload, { now: 5_000 });
+    expect(events).toEqual([
+      { gatewayId: 'M123456789012', capturedAt: 5_000, raw: configBody },
+    ]);
+  });
+
+  it('returns empty array for malformed JSON on the config topic', () => {
+    expect(transformPayload('/devices/M123456789012/config', Buffer.from('not json'))).toHaveLength(0);
+  });
 });
 
 // Hoisted mock values — must be defined before vi.mock() runs
