@@ -110,6 +110,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   private _messageHandlerRegistered = false;
   private readonly _handlers = new Set<(event: RawProviderEvent) => void>();
   private readonly _gatewayUnits = new Map<string, 'F' | 'C'>();
+  private readonly _configCache = new Map<string, Record<string, unknown>>();
 
   constructor(config: ThermoWorksConfig) {
     this._config = config;
@@ -124,6 +125,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     this._client = client;
     await client.subscribeAsync('/probes/+/events');
     await client.subscribeAsync('/devices/+/state');
+    await client.subscribeAsync('/devices/+/config');
     this._registerMessageHandler();
     client.on('connect', (connack: IConnackPacket) => { void this._onReconnect(connack); });
   }
@@ -153,6 +155,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     if (connack.sessionPresent || !this._client) return;
     await this._client.subscribeAsync('/probes/+/events');
     await this._client.subscribeAsync('/devices/+/state');
+    await this._client.subscribeAsync('/devices/+/config');
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
@@ -163,6 +166,9 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     for (const event of events) {
       if (typeof event.gatewayId === 'string' && typeof event.units === 'string') {
         this._gatewayUnits.set(event.gatewayId, event.units as 'F' | 'C');
+      }
+      if (typeof event.gatewayId === 'string' && event.raw !== undefined && typeof event.raw === 'object' && event.raw !== null) {
+        this._configCache.set(event.gatewayId, event.raw as Record<string, unknown>);
       }
       for (const handler of this._handlers) {
         try { handler(event); } catch { /* isolate handler failures — user code must not block other handlers */ }

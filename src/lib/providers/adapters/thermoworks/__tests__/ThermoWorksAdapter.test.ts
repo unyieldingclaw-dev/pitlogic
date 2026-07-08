@@ -270,13 +270,31 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     expect(mockSubscribeAsync).toHaveBeenCalledWith('/devices/+/state');
   });
 
-  it('reconnect with sessionPresent=false resubscribes to both topics', async () => {
+  it('connect() also subscribes to /devices/+/config', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    expect(mockSubscribeAsync).toHaveBeenCalledWith('/devices/+/config');
+  });
+
+  it('reconnect with sessionPresent=false resubscribes to all three topics', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await adapter.connect();
     const callsBefore = mockSubscribeAsync.mock.calls.length;
     simulateReconnect(false);
     await Promise.resolve();
-    expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 2);
+    await Promise.resolve();
+    expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 3);
+  });
+
+  it('caches the full raw config from a device-config message', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const received: unknown[] = [];
+    adapter.subscribe(e => received.push(e));
+    await adapter.connect();
+    const configBody = { label: 'My Device', channels: [{ number: 1, label: 'Brisket' }] };
+    simulateMessage('/devices/M123456789012/config', Buffer.from(JSON.stringify(configBody)));
+    expect(received).toHaveLength(1);
+    expect(received[0]).toEqual({ gatewayId: 'M123456789012', capturedAt: expect.any(Number), raw: configBody });
   });
 
   it('caches gateway units from a device-state message and applies them to subsequent probe readings', async () => {
