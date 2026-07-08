@@ -126,15 +126,15 @@ export class TelemetryStore {
 
   private applyGatewayConfig(event: Extract<NormalizedTelemetryEvent, { type: 'gateway:config' }>): void {
     const existing = this.gatewayStateMap.get(event.gatewayId);
-    const state: GatewayState = existing ?? {
+    const state: GatewayState = {
       gatewayId: event.gatewayId,
-      wifiStrength: null,
-      battery: null,
-      firmware: null,
-      units: 'F',
-      editableConfig: null,
+      wifiStrength: existing?.wifiStrength ?? null,
+      battery: existing?.battery ?? null,
+      firmware: existing?.firmware ?? null,
+      units: existing?.units ?? 'F',
+      editableConfig: extractEditableConfig(event.raw),
     };
-    this.gatewayStateMap.set(event.gatewayId, { ...state, editableConfig: extractEditableConfig(event.raw) });
+    this.gatewayStateMap.set(event.gatewayId, state);
     this.notify();
   }
 
