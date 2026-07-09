@@ -309,7 +309,11 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
         {/* Device Settings */}
         {gatewayHealth.map(gw => (
           <DeviceSettingsCard
-            key={gw.gatewayId}
+            // Re-key on the config content, not just gatewayId: DeviceSettingsCard's form state
+            // is initialized once at mount, so a retained config update arriving while Settings
+            // stays open (e.g. the device echoing back the user's own save) would otherwise never
+            // reach the form. Remounting on genuine content change re-syncs the displayed baseline.
+            key={`${gw.gatewayId}:${JSON.stringify(gw.editableConfig)}`}
             gw={gw}
             hasConfigBaseline={onHasConfigBaseline}
             onUpdateDeviceConfig={onUpdateDeviceConfig}

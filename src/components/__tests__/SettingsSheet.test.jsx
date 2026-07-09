@@ -66,4 +66,19 @@ describe('SettingsSheet — Device Settings panel', () => {
     render(<SettingsSheet {...baseProps} gatewayHealth={[]} onHasConfigBaseline={() => true} onUpdateDeviceConfig={vi.fn()} />);
     expect(screen.queryByText(/device settings/i)).toBeNull();
   });
+
+  it('re-syncs the form when a new retained config arrives for an already-rendered gateway', () => {
+    const gw = gatewayId => ({
+      gatewayId, wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', unitMismatch: false, probes: [],
+    });
+    const { rerender } = render(<SettingsSheet {...baseProps} gatewayHealth={[
+      { ...gw('gw1'), editableConfig: { channelLabels: { 1: 'Brisket' }, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null } },
+    ]} onHasConfigBaseline={() => true} onUpdateDeviceConfig={vi.fn()} />);
+    expect(screen.getByLabelText(/channel 1 label/i).value).toBe('Brisket');
+
+    rerender(<SettingsSheet {...baseProps} gatewayHealth={[
+      { ...gw('gw1'), editableConfig: { channelLabels: { 1: 'Ribs' }, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null } },
+    ]} onHasConfigBaseline={() => true} onUpdateDeviceConfig={vi.fn()} />);
+    expect(screen.getByLabelText(/channel 1 label/i).value).toBe('Ribs');
+  });
 });
