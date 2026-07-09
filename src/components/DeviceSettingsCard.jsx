@@ -22,6 +22,14 @@ function buildInitialFormState(editableConfig) {
   };
 }
 
+// Number('') is 0, not NaN — callers must skip blank strings before calling this.
+// A non-numeric committed value (stray "-"/"."/paste, unenforced in jsdom) must not
+// silently become NaN (which JSON.stringify serializes to null) in the MQTT payload.
+function parseNumberOrUndefined(str) {
+  const n = Number(str);
+  return Number.isNaN(n) ? undefined : n;
+}
+
 function buildEdits(formState) {
   const channelLabels = {};
   const alarms = {};
@@ -32,15 +40,19 @@ function buildEdits(formState) {
     const high = formState.alarms[num].high.trim();
     const low = formState.alarms[num].low.trim();
     const entry = {};
-    if (high !== '') entry.high = Number(high);
-    if (low !== '') entry.low = Number(low);
+    const highNum = high !== '' ? parseNumberOrUndefined(high) : undefined;
+    const lowNum = low !== '' ? parseNumberOrUndefined(low) : undefined;
+    if (highNum !== undefined) entry.high = highNum;
+    if (lowNum !== undefined) entry.low = lowNum;
     if (Object.keys(entry).length > 0) alarms[num] = entry;
   }
   const edits = { channelLabels, alarms };
   const transmit = formState.transmitIntervalInSeconds.trim();
   const recording = formState.recordingIntervalInSeconds.trim();
-  if (transmit !== '') edits.transmitIntervalInSeconds = Number(transmit);
-  if (recording !== '') edits.recordingIntervalInSeconds = Number(recording);
+  const transmitNum = transmit !== '' ? parseNumberOrUndefined(transmit) : undefined;
+  const recordingNum = recording !== '' ? parseNumberOrUndefined(recording) : undefined;
+  if (transmitNum !== undefined) edits.transmitIntervalInSeconds = transmitNum;
+  if (recordingNum !== undefined) edits.recordingIntervalInSeconds = recordingNum;
   return edits;
 }
 

@@ -60,4 +60,20 @@ describe('DeviceSettingsCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(await screen.findByText(/mqtt disconnected/i)).toBeTruthy();
   });
+
+  it('omits a non-numeric alarm value from the edits instead of sending NaN', async () => {
+    const onUpdateDeviceConfig = vi.fn().mockResolvedValue(undefined);
+    render(<DeviceSettingsCard gw={baseGw} hasConfigBaseline={() => true} onUpdateDeviceConfig={onUpdateDeviceConfig} />);
+
+    fireEvent.change(screen.getByLabelText(/channel 1 high alarm/i), { target: { value: '-' } });
+    fireEvent.change(screen.getByLabelText(/transmit interval/i), { target: { value: '-' } });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await vi.waitFor(() => {
+      expect(onUpdateDeviceConfig).toHaveBeenCalledWith('gw1', {
+        channelLabels: {},
+        alarms: {},
+      });
+    });
+  });
 });
