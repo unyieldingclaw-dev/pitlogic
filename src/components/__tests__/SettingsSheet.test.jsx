@@ -17,6 +17,8 @@ const baseProps = {
   onMqttConnect: vi.fn(),
   onMqttDisconnect: vi.fn(),
   gatewayHealth: [],
+  onHasConfigBaseline: () => false,
+  onUpdateDeviceConfig: vi.fn(),
 };
 
 describe('SettingsSheet — Device Health panel', () => {
@@ -47,5 +49,21 @@ describe('SettingsSheet — Device Health panel', () => {
   it('renders nothing device-health-related when gatewayHealth is empty', () => {
     render(<SettingsSheet {...baseProps} gatewayHealth={[]} />);
     expect(screen.queryByText(/Device Health/i)).toBeNull();
+  });
+});
+
+describe('SettingsSheet — Device Settings panel', () => {
+  it('renders a DeviceSettingsCard for each gateway with editableConfig data', () => {
+    render(<SettingsSheet {...baseProps} gatewayHealth={[
+      { gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', unitMismatch: false,
+        editableConfig: { channelLabels: {}, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null },
+        probes: [] },
+    ]} onHasConfigBaseline={() => true} onUpdateDeviceConfig={vi.fn()} />);
+    expect(screen.getByText(/^device settings$/i)).toBeTruthy();
+  });
+
+  it('renders nothing device-settings-related when gatewayHealth is empty', () => {
+    render(<SettingsSheet {...baseProps} gatewayHealth={[]} onHasConfigBaseline={() => true} onUpdateDeviceConfig={vi.fn()} />);
+    expect(screen.queryByText(/device settings/i)).toBeNull();
   });
 });

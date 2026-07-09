@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
+import DeviceSettingsCard from './DeviceSettingsCard';
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -9,7 +10,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, gatewayHealth = [] }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, gatewayHealth = [], onHasConfigBaseline, onUpdateDeviceConfig }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -304,6 +305,16 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
             ))}
           </div>
         )}
+
+        {/* Device Settings */}
+        {gatewayHealth.map(gw => (
+          <DeviceSettingsCard
+            key={gw.gatewayId}
+            gw={gw}
+            hasConfigBaseline={onHasConfigBaseline}
+            onUpdateDeviceConfig={onUpdateDeviceConfig}
+          />
+        ))}
 
         {/* Export */}
         <div className="card" style={{ marginBottom: '1rem' }}>
