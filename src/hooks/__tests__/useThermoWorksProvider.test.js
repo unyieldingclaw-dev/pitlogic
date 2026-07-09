@@ -204,4 +204,27 @@ describe('useThermoWorksProvider — config cache and updates', () => {
     const { result } = renderHook(() => useThermoWorksProvider());
     await expect(result.current.updateDeviceConfig('gw1', {})).rejects.toThrow(/not connected/i);
   });
+
+  it('hasConfigBaseline resets to false after disconnect, so a later reconnect falls back to the cache again', async () => {
+    lsMock.getItem.mockImplementation(key => {
+      if (key === 'pitlogic-mqtt-v1') return VALID_CONFIG;
+      if (key === 'pitlogic-thermoworks-config-cache-v1') return JSON.stringify({ gw1: { label: 'Cached Device' } });
+      return null;
+    });
+    let capturedHandler;
+    mockSubscribe.mockImplementation(handler => { capturedHandler = handler; return () => {}; });
+    mockNormalize.mockReturnValue({ type: 'gateway:config', gatewayId: 'gw1', raw: { label: 'My Device' }, timestamp: 1 });
+
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => { capturedHandler({}); });
+    expect(result.current.hasConfigBaseline('gw1')).toBe(true);
+
+    await act(async () => { await result.current.disconnect(); });
+    expect(result.current.hasConfigBaseline('gw1')).toBe(false);
+
+    await act(async () => { await result.current.connect(); });
+    await act(async () => { await result.current.updateDeviceConfig('gw1', { channelLabels: { 1: 'Brisket' } }); });
+    expect(mockPublishConfig).toHaveBeenCalledWith('gw1', { channelLabels: { 1: 'Brisket' } }, { label: 'Cached Device' });
+  });
 });

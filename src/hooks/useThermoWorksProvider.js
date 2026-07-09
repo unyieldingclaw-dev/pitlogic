@@ -83,6 +83,7 @@ export function useThermoWorksProvider() {
     unsub();
     await adapter.disconnect();
     sessionRef.current = null;
+    seenConfigRef.current.clear(); // "seen this session" — a new session starts with no baselines seen
     setStatus('disconnected');
     setError(null);
   }, []);
@@ -103,6 +104,7 @@ export function useThermoWorksProvider() {
         session.unsub();
         void session.adapter.disconnect();
         sessionRef.current = null;
+        seenConfigRef.current.clear();
       }
     };
   }, []);
