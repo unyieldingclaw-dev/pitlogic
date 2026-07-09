@@ -542,6 +542,8 @@ export default function App() {
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
         gatewayHealth={gatewayHealth}
+        onHasConfigBaseline={mqttProvider.hasConfigBaseline}
+        onUpdateDeviceConfig={mqttProvider.updateDeviceConfig}
       />
 
       {/* Bottom nav (mobile) */}
