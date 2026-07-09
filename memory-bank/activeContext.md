@@ -36,6 +36,7 @@ ThermoWorks MQTT adapter — fully implemented, reviewed, and pushed to main. 16
 - Migration system: first-run key rename `rfx-* → pitlogic-*`, idempotent
 - Telemetry architecture: domain types, normalizer, EventBus, TelemetryStore, SessionStore, providers
 - Device Health panel in Settings: per-gateway wifi/battery/firmware and per-probe battery, sourced from `TelemetryStore` via `useTelemetryStore()`; hidden entirely when no gateway is known
+- Bidirectional device config: `ThermoWorksAdapter` subscribes to `/devices/+/config`, caches the full retained baseline per gateway, and exposes `publishConfig(gatewayId, edits, fallbackBaseline?)` which merges edits onto that baseline and republishes the complete object (retained) — never a partial config, which the RFX SDK would otherwise silently wipe. Settings now has a "Device Settings"/"Initialize Configuration" card per gateway (`DeviceSettingsCard.jsx`) for editing channel labels, alarm thresholds, and transmit/recording intervals
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
