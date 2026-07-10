@@ -81,7 +81,6 @@ All 22 operations from the testing agent flow plan are complete:
 
 1. **End-to-end test** with a real RFX Gateway + HiveMQ Cloud broker (manual — requires hardware)
 2. **Verify HiveMQ Cloud ACL** topic isolation before first live use (see Broker Setup Reference in plan)
-3. **Wire CSV import UI** through `CsvProvider` (`parseCsvReadings` utility extracted to `src/utils/csvTemperatureParser.js`; App.jsx wired; CsvProvider bridge not yet built)
 
 ## Open Issues
 
