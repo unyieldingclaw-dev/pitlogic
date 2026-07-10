@@ -182,6 +182,16 @@ export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, 
               <Share2 size={14} /> Print / Save as PDF
             </button>
           </div>
+          {/* Import CSV */}
+          <div className="card">
+            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: '.5rem' }}>Import CSV</div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: '.75rem' }}>Import readings from a ThermoWorks CSV export into this cook.</div>
+            <label htmlFor="detail-csv-import" className="btn" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}>
+              ↑ Import CSV
+              <input id="detail-csv-import" aria-label="Import CSV" type="file" accept=".csv,.txt" multiple style={{ display: 'none' }} onChange={e => onCSV(e, detailCook.id)} />
+            </label>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>ThermoWorks CSV export auto-detected</div>
+          </div>
         </div>
       )}
 
