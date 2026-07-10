@@ -477,7 +477,7 @@ export default function App() {
           {isDetail && (
             <DetailView cooks={cooks} detailId={detailId}
               onBack={() => { setView('history'); setTab('history'); }}
-              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} />
+              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} onCSV={handleCSV} />
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}

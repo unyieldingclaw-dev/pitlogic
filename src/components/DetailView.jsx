@@ -6,7 +6,7 @@ import TempChart, { buildChartData, analyzeProbe } from './TempChart';
 import { PROBE_COLORS, dur, shortDate } from '../utils/helpers';
 import { G } from '../data/cuts';
 
-export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, flash }) {
+export default function DetailView({ cooks, detailId, onBack, onDelete, onSave, flash, onCSV }) {
   const [subTab, setSubTab]       = useState('overview');
   const [compareId, setCompareId] = useState('');
   const [editNotes, setEditNotes] = useState('');
