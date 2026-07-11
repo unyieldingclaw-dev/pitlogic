@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { encodeText } from '../ThermoWorksBleProvisioner.js';
 
 function textToDataView(text: string): DataView {
   const bytes = new TextEncoder().encode(text);
@@ -108,5 +109,74 @@ describe('ThermoWorksBleProvisioner — connect', () => {
     const provisioner = new ThermoWorksBleProvisioner();
     await provisioner.connect();
     expect(mockGattConnect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ThermoWorksBleProvisioner — scanWifiNetworks', () => {
+  let mockRequestDevice: ReturnType<typeof vi.fn>;
+  let commandsChar: ReturnType<typeof makeMockCharacteristic>;
+  let changeListener: ((event: { target: { value: DataView } }) => void) | undefined;
+
+  beforeEach(() => {
+    commandsChar = makeMockCharacteristic();
+    commandsChar.addEventListener.mockImplementation((_type: string, listener: typeof changeListener) => {
+      changeListener = listener;
+    });
+
+    const wifiIotService = { getCharacteristic: vi.fn(async (uuid: string) => {
+      if (uuid === '00010874-6865-726d-6f77-6f726b730d0a') return commandsChar;
+      throw new Error(`unexpected characteristic ${uuid}`);
+    }) };
+    const deviceInfoService = { getCharacteristic: vi.fn(async () => makeMockCharacteristic(textToDataView('x'))) };
+    const batteryService = { getCharacteristic: vi.fn(async () => makeMockCharacteristic(byteToDataView(50))) };
+
+    const server = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      getPrimaryService: vi.fn(async (uuid: number | string) => {
+        if (uuid === 0x180a) return deviceInfoService;
+        if (uuid === 0x180f) return batteryService;
+        return wifiIotService;
+      }),
+    };
+    mockRequestDevice = vi.fn().mockResolvedValue({ name: 'NODE', gatt: { connect: vi.fn().mockResolvedValue(server) } });
+    vi.stubGlobal('navigator', { bluetooth: { requestDevice: mockRequestDevice } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('writes SCAN to the Commands characteristic and collects notified networks', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await provisioner.connect();
+
+    const found: { authMode: string; rssi: number; ssid: string }[] = [];
+
+    // The device notifies scan results asynchronously after receiving the SCAN
+    // command. Firing from writeValue's mock guarantees the listener is already
+    // registered (addEventListener runs before writeValue in the implementation),
+    // avoiding a race on microtask ordering.
+    commandsChar.writeValue.mockImplementation(async () => {
+      changeListener?.({ target: { value: textToDataView('WPA2,-45,HomeNetwork') } });
+      changeListener?.({ target: { value: textToDataView('OPEN,-70,CoffeeShop') } });
+    });
+
+    await provisioner.scanWifiNetworks(n => found.push(n), 0);
+
+    expect(commandsChar.writeValue).toHaveBeenCalledWith(encodeText('SCAN'));
+    expect(found).toEqual([
+      { authMode: 'WPA2', rssi: -45, ssid: 'HomeNetwork' },
+      { authMode: 'OPEN', rssi: -70, ssid: 'CoffeeShop' },
+    ]);
+  });
+
+  it('removes the notification listener after the scan window closes', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await provisioner.connect();
+    await provisioner.scanWifiNetworks(() => {}, 0);
+    expect(commandsChar.removeEventListener).toHaveBeenCalledTimes(1);
   });
 });

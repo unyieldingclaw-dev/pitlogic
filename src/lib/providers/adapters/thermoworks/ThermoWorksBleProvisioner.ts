@@ -59,6 +59,12 @@ export interface DeviceInfo {
   battery: number;
 }
 
+export interface WifiNetwork {
+  authMode: string;
+  rssi: number;
+  ssid: string;
+}
+
 export class ThermoWorksBleProvisioner {
   private server: BluetoothRemoteGATTServer | null = null;
   private wifiIotService: BluetoothRemoteGATTService | null = null;
@@ -100,6 +106,27 @@ export class ThermoWorksBleProvisioner {
       firmware: decodeText(firmwareValue),
       battery: batteryValue.getUint8(0),
     };
+  }
+
+  async scanWifiNetworks(onNetwork: (network: WifiNetwork) => void, scanDurationMs = 5000): Promise<void> {
+    if (!this.wifiIotService) throw new Error('Not connected');
+    const commandsChar = await this.wifiIotService.getCharacteristic(CHAR_COMMANDS);
+
+    const handleNotification = (event: BluetoothCharacteristicChangedEvent) => {
+      if (!event.target.value) return;
+      const raw = decodeText(event.target.value);
+      const [authMode, rssiStr, ssid] = raw.split(',');
+      if (!ssid) return;
+      onNetwork({ authMode: authMode ?? '', rssi: Number(rssiStr), ssid });
+    };
+
+    await commandsChar.startNotifications();
+    commandsChar.addEventListener('characteristicvaluechanged', handleNotification);
+
+    await commandsChar.writeValue(encodeText('SCAN'));
+    await new Promise(resolve => setTimeout(resolve, scanDurationMs));
+
+    commandsChar.removeEventListener('characteristicvaluechanged', handleNotification);
   }
 
   disconnect(): void {
