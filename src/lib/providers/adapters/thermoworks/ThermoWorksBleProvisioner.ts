@@ -65,6 +65,33 @@ export interface WifiNetwork {
   ssid: string;
 }
 
+export interface ProvisioningFields {
+  wifiSsid: string;
+  wifiPassword: string;
+  mqttBrokerUrl: string;
+  mqttBrokerPort: string;
+  mqttUsername: string;
+  mqttPassword: string;
+}
+
+export type ProvisioningStatusEvent =
+  | { type: 'wifi'; connected: boolean }
+  | { type: 'wifi-error'; code: number; message: string }
+  | { type: 'mqtt'; connected: boolean }
+  | { type: 'mqtt-error'; code: number; message: string };
+
+const WIFI_ERROR_MESSAGES: Record<number, string> = {
+  12298: 'WiFi network not found',
+  12299: 'WiFi password rejected',
+  12300: 'Connection timed out',
+};
+
+const MQTT_ERROR_MESSAGES: Record<number, string> = {
+  1: 'Broker unreachable',
+  2: 'Broker refused connection',
+  3: 'Subscription failed',
+};
+
 export class ThermoWorksBleProvisioner {
   private server: BluetoothRemoteGATTServer | null = null;
   private wifiIotService: BluetoothRemoteGATTService | null = null;
@@ -127,6 +154,77 @@ export class ThermoWorksBleProvisioner {
     await new Promise(resolve => setTimeout(resolve, scanDurationMs));
 
     commandsChar.removeEventListener('characteristicvaluechanged', handleNotification);
+  }
+
+  async provision(fields: ProvisioningFields, onStatus: (event: ProvisioningStatusEvent) => void): Promise<void> {
+    if (!this.wifiIotService) throw new Error('Not connected');
+    const svc = this.wifiIotService;
+
+    const [
+      ssidChar, wifiPasswordChar, urlChar, portChar, usernameChar, mqttPasswordChar,
+      caCertChar, clientCertChar, clientKeyChar, commandsChar,
+      wifiStatusChar, wifiErrorChar, mqttStatusChar, mqttErrorChar,
+    ] = await Promise.all([
+      svc.getCharacteristic(CHAR_WIFI_SSID),
+      svc.getCharacteristic(CHAR_WIFI_PASSWORD),
+      svc.getCharacteristic(CHAR_MQTT_URL),
+      svc.getCharacteristic(CHAR_MQTT_PORT),
+      svc.getCharacteristic(CHAR_MQTT_USERNAME),
+      svc.getCharacteristic(CHAR_MQTT_PASSWORD),
+      svc.getCharacteristic(CHAR_MQTT_CA_CERT),
+      svc.getCharacteristic(CHAR_MQTT_CLIENT_CERT),
+      svc.getCharacteristic(CHAR_MQTT_CLIENT_KEY),
+      svc.getCharacteristic(CHAR_COMMANDS),
+      svc.getCharacteristic(CHAR_WIFI_STATUS),
+      svc.getCharacteristic(CHAR_WIFI_ERROR),
+      svc.getCharacteristic(CHAR_MQTT_STATUS),
+      svc.getCharacteristic(CHAR_MQTT_ERROR),
+    ]);
+
+    // Always send every field, including empty certs — a partial write leaves stale
+    // values from a previous provisioning attempt on the device.
+    await ssidChar.writeValue(encodeText(fields.wifiSsid));
+    await wifiPasswordChar.writeValue(encodeText(fields.wifiPassword));
+    await urlChar.writeValue(encodeText(fields.mqttBrokerUrl));
+    await portChar.writeValue(encodeText(fields.mqttBrokerPort));
+    await usernameChar.writeValue(encodeText(fields.mqttUsername));
+    await mqttPasswordChar.writeValue(encodeText(fields.mqttPassword));
+    await caCertChar.writeValue(encodeText(''));
+    await clientCertChar.writeValue(encodeText(''));
+    await clientKeyChar.writeValue(encodeText(''));
+
+    const handleWifiStatus = (event: BluetoothCharacteristicChangedEvent) => {
+      if (!event.target.value) return;
+      onStatus({ type: 'wifi', connected: decodeText(event.target.value) === '1' });
+    };
+    const handleWifiError = (event: BluetoothCharacteristicChangedEvent) => {
+      if (!event.target.value) return;
+      const code = Number(decodeText(event.target.value));
+      if (code === 0) return;
+      onStatus({ type: 'wifi-error', code, message: WIFI_ERROR_MESSAGES[code] ?? `Unknown error ${code}` });
+    };
+    const handleMqttStatus = (event: BluetoothCharacteristicChangedEvent) => {
+      if (!event.target.value) return;
+      onStatus({ type: 'mqtt', connected: decodeText(event.target.value) === '1' });
+    };
+    const handleMqttError = (event: BluetoothCharacteristicChangedEvent) => {
+      if (!event.target.value) return;
+      const code = Number(decodeText(event.target.value));
+      if (code === 0) return;
+      onStatus({ type: 'mqtt-error', code, message: MQTT_ERROR_MESSAGES[code] ?? `Unknown error ${code}` });
+    };
+
+    // Subscribe before triggering the connection attempt, so no early notification is missed.
+    await wifiStatusChar.startNotifications();
+    wifiStatusChar.addEventListener('characteristicvaluechanged', handleWifiStatus);
+    await wifiErrorChar.startNotifications();
+    wifiErrorChar.addEventListener('characteristicvaluechanged', handleWifiError);
+    await mqttStatusChar.startNotifications();
+    mqttStatusChar.addEventListener('characteristicvaluechanged', handleMqttStatus);
+    await mqttErrorChar.startNotifications();
+    mqttErrorChar.addEventListener('characteristicvaluechanged', handleMqttError);
+
+    await commandsChar.writeValue(encodeText('CONNECT_START'));
   }
 
   disconnect(): void {

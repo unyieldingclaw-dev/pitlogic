@@ -180,3 +180,147 @@ describe('ThermoWorksBleProvisioner — scanWifiNetworks', () => {
     expect(commandsChar.removeEventListener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('ThermoWorksBleProvisioner — provision', () => {
+  let mockRequestDevice: ReturnType<typeof vi.fn>;
+  let chars: Record<string, ReturnType<typeof makeMockCharacteristic>>;
+  let listeners: Record<string, (event: { target: { value: DataView } }) => void>;
+
+  const WIFI_IOT_CHAR_UUIDS = [
+    '00010174-6865-726d-6f77-6f726b730d0a', // ssid
+    '00010274-6865-726d-6f77-6f726b730d0a', // wifi password
+    '00010d74-6865-726d-6f77-6f726b730d0a', // mqtt url
+    '00010e74-6865-726d-6f77-6f726b730d0a', // mqtt port
+    '00010f74-6865-726d-6f77-6f726b730d0a', // mqtt username
+    '00011074-6865-726d-6f77-6f726b730d0a', // mqtt password
+    '00011174-6865-726d-6f77-6f726b730d0a', // ca cert
+    '00011274-6865-726d-6f77-6f726b730d0a', // client cert
+    '00011374-6865-726d-6f77-6f726b730d0a', // client key
+    '00010874-6865-726d-6f77-6f726b730d0a', // commands
+    '00010474-6865-726d-6f77-6f726b730d0a', // wifi status
+    '00010574-6865-726d-6f77-6f726b730d0a', // wifi error
+    '00010674-6865-726d-6f77-6f726b730d0a', // mqtt status
+    '00010774-6865-726d-6f77-6f726b730d0a', // mqtt error
+  ];
+
+  beforeEach(() => {
+    chars = {};
+    listeners = {};
+    for (const uuid of WIFI_IOT_CHAR_UUIDS) {
+      const c = makeMockCharacteristic();
+      c.addEventListener.mockImplementation((_type: string, listener: typeof listeners[string]) => {
+        listeners[uuid] = listener;
+      });
+      chars[uuid] = c;
+    }
+
+    const wifiIotService = { getCharacteristic: vi.fn(async (uuid: string) => {
+      const c = chars[uuid];
+      if (!c) throw new Error(`unexpected characteristic ${uuid}`);
+      return c;
+    }) };
+    const deviceInfoService = { getCharacteristic: vi.fn(async () => makeMockCharacteristic(textToDataView('x'))) };
+    const batteryService = { getCharacteristic: vi.fn(async () => makeMockCharacteristic(byteToDataView(50))) };
+
+    const server = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      getPrimaryService: vi.fn(async (uuid: number | string) => {
+        if (uuid === 0x180a) return deviceInfoService;
+        if (uuid === 0x180f) return batteryService;
+        return wifiIotService;
+      }),
+    };
+    mockRequestDevice = vi.fn().mockResolvedValue({ name: 'NODE', gatt: { connect: vi.fn().mockResolvedValue(server) } });
+    vi.stubGlobal('navigator', { bluetooth: { requestDevice: mockRequestDevice } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const FIELDS = {
+    wifiSsid: 'HomeNetwork',
+    wifiPassword: 'hunter2',
+    mqttBrokerUrl: 'mqtts://broker.example.com',
+    mqttBrokerPort: '8883',
+    mqttUsername: 'pitlogic',
+    mqttPassword: 'secret',
+  };
+
+  it('writes every field, including empty-string certs, before writing CONNECT_START', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await provisioner.connect();
+    await provisioner.provision(FIELDS, () => {});
+
+    expect(chars['00010174-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('HomeNetwork'));
+    expect(chars['00010274-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('hunter2'));
+    expect(chars['00010d74-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('mqtts://broker.example.com'));
+    expect(chars['00010e74-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('8883'));
+    expect(chars['00010f74-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('pitlogic'));
+    expect(chars['00011074-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('secret'));
+    expect(chars['00011174-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText(''));
+    expect(chars['00011274-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText(''));
+    expect(chars['00011374-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText(''));
+    expect(chars['00010874-6865-726d-6f77-6f726b730d0a'].writeValue).toHaveBeenCalledWith(encodeText('CONNECT_START'));
+  });
+
+  it('subscribes to status/error notifications before writing CONNECT_START', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await provisioner.connect();
+
+    const commandsWriteOrder: string[] = [];
+    chars['00010474-6865-726d-6f77-6f726b730d0a'].startNotifications.mockImplementation(async () => {
+      commandsWriteOrder.push('wifi-status-subscribed');
+    });
+    chars['00010874-6865-726d-6f77-6f726b730d0a'].writeValue.mockImplementation(async () => {
+      commandsWriteOrder.push('connect-start-written');
+    });
+
+    await provisioner.provision(FIELDS, () => {});
+    expect(commandsWriteOrder).toEqual(['wifi-status-subscribed', 'connect-start-written']);
+  });
+
+  it('reports wifi and mqtt connection status as they arrive', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await provisioner.connect();
+
+    const events: unknown[] = [];
+    await provisioner.provision(FIELDS, e => events.push(e));
+
+    listeners['00010474-6865-726d-6f77-6f726b730d0a']({ target: { value: textToDataView('1') } });
+    listeners['00010674-6865-726d-6f77-6f726b730d0a']({ target: { value: textToDataView('1') } });
+
+    expect(events).toEqual([
+      { type: 'wifi', connected: true },
+      { type: 'mqtt', connected: true },
+    ]);
+  });
+
+  it('maps known wifi/mqtt error codes to human-readable messages, ignoring code 0', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await provisioner.connect();
+
+    const events: unknown[] = [];
+    await provisioner.provision(FIELDS, e => events.push(e));
+
+    listeners['00010574-6865-726d-6f77-6f726b730d0a']({ target: { value: textToDataView('0') } });
+    listeners['00010574-6865-726d-6f77-6f726b730d0a']({ target: { value: textToDataView('12299') } });
+    listeners['00010774-6865-726d-6f77-6f726b730d0a']({ target: { value: textToDataView('2') } });
+
+    expect(events).toEqual([
+      { type: 'wifi-error', code: 12299, message: 'WiFi password rejected' },
+      { type: 'mqtt-error', code: 2, message: 'Broker refused connection' },
+    ]);
+  });
+
+  it('throws when provision is called before connect', async () => {
+    const { ThermoWorksBleProvisioner } = await import('../ThermoWorksBleProvisioner.js');
+    const provisioner = new ThermoWorksBleProvisioner();
+    await expect(provisioner.provision(FIELDS, () => {})).rejects.toThrow(/not connected/i);
+  });
+});
