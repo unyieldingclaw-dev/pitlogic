@@ -38,14 +38,18 @@ const inputStyle = {
 };
 const labelStyle = { display: 'block', fontSize: 12, color: 'var(--text3)', marginBottom: 4 };
 
+const initialForm = () => ({ wifiSsid: '', wifiPassword: '', ...deriveMqttFieldsFromStoredConfig() });
+
 export default function BleProvisioningWizard({ open, onClose }) {
   const [phase, setPhase] = useState('idle'); // idle | connecting | form | provisioning | success | error
   const provisioner = useBleProvisioning();
   const [deviceInfo, setDeviceInfo] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [networks, setNetworks] = useState([]);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState('');
   const [statusLog, setStatusLog] = useState([]);
-  const [form, setForm] = useState({ wifiSsid: '', wifiPassword: '', ...deriveMqttFieldsFromStoredConfig() });
+  const [form, setForm] = useState(initialForm);
 
   if (!open) return null;
 
@@ -55,7 +59,7 @@ export default function BleProvisioningWizard({ open, onClose }) {
     try {
       const info = await provisioner.connect();
       setDeviceInfo(info);
-      setForm({ wifiSsid: '', wifiPassword: '', ...deriveMqttFieldsFromStoredConfig() });
+      setForm(initialForm());
       setPhase('form');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to connect to device.');
@@ -64,10 +68,19 @@ export default function BleProvisioningWizard({ open, onClose }) {
   };
 
   const handleScanNetworks = async () => {
+    if (scanning) return; // guard against a second scan racing the first on CHAR_COMMANDS
+    setScanning(true);
+    setScanError('');
     setNetworks([]);
-    await provisioner.scanWifiNetworks(network => {
-      setNetworks(prev => [...prev, network]);
-    });
+    try {
+      await provisioner.scanWifiNetworks(network => {
+        setNetworks(prev => [...prev, network]);
+      });
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : 'Failed to scan for networks.');
+    } finally {
+      setScanning(false);
+    }
   };
 
   const handleProvision = async () => {
@@ -86,6 +99,16 @@ export default function BleProvisioningWizard({ open, onClose }) {
 
   const handleClose = () => {
     provisioner.disconnect();
+    // Reset so a stale phase (e.g. mid-provisioning or success) can't resurface against
+    // a now-disconnected provisioner if this wizard stays mounted and reopens later.
+    setPhase('idle');
+    setDeviceInfo(null);
+    setErrorMessage('');
+    setNetworks([]);
+    setScanning(false);
+    setScanError('');
+    setStatusLog([]);
+    setForm(initialForm());
     onClose();
   };
 
@@ -137,54 +160,59 @@ export default function BleProvisioningWizard({ open, onClose }) {
               Connected to {deviceInfo.model} · Serial {deviceInfo.serial} · Firmware {deviceInfo.firmware} · Battery {deviceInfo.battery}%
             </div>
 
-            <div style={{ marginBottom: 10 }}>
-              <label htmlFor="ble-wifi-ssid" style={labelStyle}>WiFi SSID</label>
-              <input id="ble-wifi-ssid" type="text" style={inputStyle}
-                value={form.wifiSsid} onChange={e => setForm(f => ({ ...f, wifiSsid: e.target.value }))} />
-              <button type="button" className="btn-ghost" onClick={handleScanNetworks}
-                style={{ fontSize: 12, padding: '4px 10px', marginTop: 6 }}>
-                Scan for networks
-              </button>
-              {networks.length > 0 && (
-                <select aria-label="Discovered networks" style={{ ...inputStyle, marginTop: 6 }}
-                  onChange={e => setForm(f => ({ ...f, wifiSsid: e.target.value }))} defaultValue="">
-                  <option value="" disabled>Select a network…</option>
-                  {networks.map(n => (
-                    <option key={n.ssid} value={n.ssid}>{n.ssid} ({n.rssi} dBm, {n.authMode})</option>
-                  ))}
-                </select>
-              )}
-            </div>
+            <fieldset disabled={phase === 'provisioning'} style={{ border: 'none', padding: 0, margin: 0 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label htmlFor="ble-wifi-ssid" style={labelStyle}>WiFi SSID</label>
+                <input id="ble-wifi-ssid" type="text" style={inputStyle}
+                  value={form.wifiSsid} onChange={e => setForm(f => ({ ...f, wifiSsid: e.target.value }))} />
+                <button type="button" className="btn-ghost" onClick={handleScanNetworks} disabled={scanning}
+                  style={{ fontSize: 12, padding: '4px 10px', marginTop: 6 }}>
+                  {scanning ? 'Scanning…' : 'Scan for networks'}
+                </button>
+                {scanError && (
+                  <div role="alert" style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{scanError}</div>
+                )}
+                {networks.length > 0 && (
+                  <select aria-label="Discovered networks" style={{ ...inputStyle, marginTop: 6 }}
+                    onChange={e => setForm(f => ({ ...f, wifiSsid: e.target.value }))} defaultValue="">
+                    <option value="" disabled>Select a network…</option>
+                    {networks.map((n, i) => (
+                      <option key={`${n.ssid}-${i}`} value={n.ssid}>{n.ssid} ({n.rssi} dBm, {n.authMode})</option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
-            <div style={{ marginBottom: 10 }}>
-              <label htmlFor="ble-wifi-password" style={labelStyle}>WiFi Password</label>
-              <input id="ble-wifi-password" type="password" style={inputStyle}
-                value={form.wifiPassword} onChange={e => setForm(f => ({ ...f, wifiPassword: e.target.value }))} />
-            </div>
+              <div style={{ marginBottom: 10 }}>
+                <label htmlFor="ble-wifi-password" style={labelStyle}>WiFi Password</label>
+                <input id="ble-wifi-password" type="password" style={inputStyle}
+                  value={form.wifiPassword} onChange={e => setForm(f => ({ ...f, wifiPassword: e.target.value }))} />
+              </div>
 
-            <div style={{ marginBottom: 10 }}>
-              <label htmlFor="ble-mqtt-url" style={labelStyle}>MQTT Broker URL</label>
-              <input id="ble-mqtt-url" type="text" style={inputStyle}
-                value={form.mqttBrokerUrl} onChange={e => setForm(f => ({ ...f, mqttBrokerUrl: e.target.value }))} />
-            </div>
+              <div style={{ marginBottom: 10 }}>
+                <label htmlFor="ble-mqtt-url" style={labelStyle}>MQTT Broker URL</label>
+                <input id="ble-mqtt-url" type="text" style={inputStyle}
+                  value={form.mqttBrokerUrl} onChange={e => setForm(f => ({ ...f, mqttBrokerUrl: e.target.value }))} />
+              </div>
 
-            <div style={{ marginBottom: 10 }}>
-              <label htmlFor="ble-mqtt-port" style={labelStyle}>MQTT Broker Port</label>
-              <input id="ble-mqtt-port" type="text" style={inputStyle}
-                value={form.mqttBrokerPort} onChange={e => setForm(f => ({ ...f, mqttBrokerPort: e.target.value }))} />
-            </div>
+              <div style={{ marginBottom: 10 }}>
+                <label htmlFor="ble-mqtt-port" style={labelStyle}>MQTT Broker Port</label>
+                <input id="ble-mqtt-port" type="text" style={inputStyle}
+                  value={form.mqttBrokerPort} onChange={e => setForm(f => ({ ...f, mqttBrokerPort: e.target.value }))} />
+              </div>
 
-            <div style={{ marginBottom: 10 }}>
-              <label htmlFor="ble-mqtt-username" style={labelStyle}>MQTT Username</label>
-              <input id="ble-mqtt-username" type="text" style={inputStyle}
-                value={form.mqttUsername} onChange={e => setForm(f => ({ ...f, mqttUsername: e.target.value }))} />
-            </div>
+              <div style={{ marginBottom: 10 }}>
+                <label htmlFor="ble-mqtt-username" style={labelStyle}>MQTT Username</label>
+                <input id="ble-mqtt-username" type="text" style={inputStyle}
+                  value={form.mqttUsername} onChange={e => setForm(f => ({ ...f, mqttUsername: e.target.value }))} />
+              </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label htmlFor="ble-mqtt-password" style={labelStyle}>MQTT Password</label>
-              <input id="ble-mqtt-password" type="password" style={inputStyle}
-                value={form.mqttPassword} onChange={e => setForm(f => ({ ...f, mqttPassword: e.target.value }))} />
-            </div>
+              <div style={{ marginBottom: 16 }}>
+                <label htmlFor="ble-mqtt-password" style={labelStyle}>MQTT Password</label>
+                <input id="ble-mqtt-password" type="password" style={inputStyle}
+                  value={form.mqttPassword} onChange={e => setForm(f => ({ ...f, mqttPassword: e.target.value }))} />
+              </div>
+            </fieldset>
 
             <button className="btn-primary" onClick={handleProvision} disabled={phase === 'provisioning'}
               style={{ fontSize: 13, padding: '8px 16px' }}>
