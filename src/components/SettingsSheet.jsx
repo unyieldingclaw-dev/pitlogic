@@ -10,7 +10,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, gatewayHealth = [], onHasConfigBaseline, onUpdateDeviceConfig }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, gatewayHealth = [], onHasConfigBaseline, onUpdateDeviceConfig, onOpenBleWizard }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -178,6 +178,27 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Set Up New Device */}
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+            Set Up New Device
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Provision a new RFX device's WiFi and MQTT settings over Bluetooth.
+          </div>
+          {typeof navigator !== 'undefined' && 'bluetooth' in navigator ? (
+            <button type="button" className="btn-primary" onClick={onOpenBleWizard}
+              style={{ fontSize: 13, padding: '6px 14px' }}>
+              Set Up Device via Bluetooth
+            </button>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+              Bluetooth device setup isn't supported in this browser. Use Chrome or Edge on desktop or Android,
+              or provision your device with a separate BLE tool, then connect below.
+            </div>
+          )}
         </div>
 
         {/* Live Device */}

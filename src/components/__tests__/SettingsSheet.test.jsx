@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import SettingsSheet from '../SettingsSheet';
 
 const baseProps = {
@@ -80,5 +80,38 @@ describe('SettingsSheet — Device Settings panel', () => {
       { ...gw('gw1'), editableConfig: { channelLabels: { 1: 'Ribs' }, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null } },
     ]} onHasConfigBaseline={() => true} onUpdateDeviceConfig={vi.fn()} />);
     expect(screen.getByLabelText(/channel 1 label/i).value).toBe('Ribs');
+  });
+});
+
+describe('SettingsSheet — BLE provisioning entry point', () => {
+  const originalBluetooth = Object.getOwnPropertyDescriptor(window.navigator, 'bluetooth');
+
+  afterEach(() => {
+    if (originalBluetooth) {
+      Object.defineProperty(window.navigator, 'bluetooth', originalBluetooth);
+    } else {
+      delete window.navigator.bluetooth;
+    }
+  });
+
+  it('shows the Set Up Device via Bluetooth button when navigator.bluetooth is supported', () => {
+    Object.defineProperty(window.navigator, 'bluetooth', { value: {}, configurable: true });
+    render(<SettingsSheet {...baseProps} onOpenBleWizard={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /set up device via bluetooth/i })).toBeTruthy();
+  });
+
+  it('calls onOpenBleWizard when the entry point button is clicked', () => {
+    Object.defineProperty(window.navigator, 'bluetooth', { value: {}, configurable: true });
+    const onOpenBleWizard = vi.fn();
+    render(<SettingsSheet {...baseProps} onOpenBleWizard={onOpenBleWizard} />);
+    fireEvent.click(screen.getByRole('button', { name: /set up device via bluetooth/i }));
+    expect(onOpenBleWizard).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows unsupported-browser messaging instead of the button when navigator.bluetooth is absent', () => {
+    if ('bluetooth' in window.navigator) delete window.navigator.bluetooth;
+    render(<SettingsSheet {...baseProps} onOpenBleWizard={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /set up device via bluetooth/i })).toBeNull();
+    expect(screen.getByText(/isn't supported in this browser/i)).toBeTruthy();
   });
 });
