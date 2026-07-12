@@ -63,7 +63,13 @@ export default function BleProvisioningWizard({ open, onClose }) {
     setErrorMessage('');
     try {
       const info = await provisioner.connect();
-      if (closedRef.current) return;
+      if (closedRef.current) {
+        // handleClose's disconnect() ran before this connect() resolved, when there was no
+        // live GATT connection yet to tear down — disconnect the one that just came up instead
+        // of leaving it orphaned.
+        provisioner.disconnect();
+        return;
+      }
       setDeviceInfo(info);
       setForm(initialForm());
       setPhase('form');

@@ -279,4 +279,32 @@ describe('BleProvisioningWizard', () => {
     expect(screen.getByRole('button', { name: /scan for device/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
   });
+
+  it('disconnects an in-flight connection that resolves after closing mid-connect, instead of leaving it orphaned', async () => {
+    let resolveConnect;
+    mockConnect.mockImplementation(() => new Promise(resolve => { resolveConnect = resolve; }));
+    const onClose = vi.fn();
+    const { rerender } = render(<BleProvisioningWizard open={true} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByText(/connecting/i)).toBeTruthy(); });
+
+    // User closes while still connecting — at this point provisioner.disconnect() is a no-op
+    // inside ThermoWorksBleProvisioner, since connect() hasn't resolved and there's no GATT
+    // server yet to tear down.
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(mockDisconnect).toHaveBeenCalledTimes(1);
+    rerender(<BleProvisioningWizard open={false} onClose={onClose} />);
+
+    // The interrupted connect() resolves late — a real GATT connection now exists and must be
+    // torn down rather than left orphaned.
+    resolveConnect(DEVICE_INFO);
+    await Promise.resolve();
+
+    expect(mockDisconnect).toHaveBeenCalledTimes(2);
+
+    // Reopening should still show a fresh idle phase, not the now-stale connected device's form.
+    rerender(<BleProvisioningWizard open={true} onClose={onClose} />);
+    expect(screen.getByRole('button', { name: /scan for device/i })).toBeTruthy();
+  });
 });
