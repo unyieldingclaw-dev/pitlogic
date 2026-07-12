@@ -221,4 +221,62 @@ describe('BleProvisioningWizard', () => {
     expect(screen.getByRole('button', { name: /scan for device/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
   });
+
+  it('resets the network list and scan error after closing mid-scan, even if the interrupted scan resolves late', async () => {
+    let capturedOnNetwork;
+    let resolveScan;
+    mockScanWifiNetworks.mockImplementation(onNetwork => {
+      capturedOnNetwork = onNetwork;
+      return new Promise(resolve => { resolveScan = resolve; });
+    });
+    const onClose = vi.fn();
+    const { rerender } = render(<BleProvisioningWizard open={true} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
+
+    fireEvent.click(screen.getByRole('button', { name: /scan for networks/i }));
+    await waitFor(() => { expect(screen.getByRole('button', { name: /scanning/i }).disabled).toBe(true); });
+
+    // User closes mid-scan.
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    rerender(<BleProvisioningWizard open={false} onClose={onClose} />);
+
+    // The interrupted scan keeps running after close: a late network notification arrives,
+    // then the scan resolves — neither should touch the (already-reset) wizard state.
+    capturedOnNetwork({ authMode: 'WPA2', rssi: -50, ssid: 'LateNetwork' });
+    resolveScan();
+    await Promise.resolve();
+
+    // Reconnecting shouldn't resurface the stale network from the interrupted scan.
+    rerender(<BleProvisioningWizard open={true} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
+    expect(screen.queryByText(/LateNetwork/)).toBeNull();
+  });
+
+  it('does not resurface a stale error phase after closing mid-connect, even if the interrupted connect() rejects late', async () => {
+    let rejectConnect;
+    mockConnect.mockImplementation(() => new Promise((_resolve, reject) => { rejectConnect = reject; }));
+    const onClose = vi.fn();
+    const { rerender } = render(<BleProvisioningWizard open={true} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByText(/connecting/i)).toBeTruthy(); });
+
+    // User closes while still connecting.
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    rerender(<BleProvisioningWizard open={false} onClose={onClose} />);
+
+    // The interrupted connect() rejects late (e.g. the user cancels the native device
+    // chooser after the wizard was already closed).
+    rejectConnect(new Error('User cancelled the requestDevice() chooser.'));
+    await Promise.resolve();
+
+    // Reopening should show a fresh idle phase, not a stale error phase clobbered in by
+    // the late-arriving rejection.
+    rerender(<BleProvisioningWizard open={true} onClose={onClose} />);
+    expect(screen.getByRole('button', { name: /scan for device/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
+  });
 });

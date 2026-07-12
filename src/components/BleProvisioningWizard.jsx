@@ -81,12 +81,14 @@ export default function BleProvisioningWizard({ open, onClose }) {
     setNetworks([]);
     try {
       await provisioner.scanWifiNetworks(network => {
+        if (closedRef.current) return;
         setNetworks(prev => [...prev, network]);
       });
     } catch (err) {
+      if (closedRef.current) return;
       setScanError(err instanceof Error ? err.message : 'Failed to scan for networks.');
     } finally {
-      setScanning(false);
+      if (!closedRef.current) setScanning(false);
     }
   };
 
