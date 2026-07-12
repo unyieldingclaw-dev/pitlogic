@@ -21,6 +21,7 @@ import AnalyticsTab from './components/AnalyticsTab';
 import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
+import BleProvisioningWizard from './components/BleProvisioningWizard';
 
 export default function App() {
   const [tab, setTab]               = useState('dashboard');
@@ -37,6 +38,7 @@ export default function App() {
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBleWizard, setShowBleWizard] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
@@ -544,7 +546,10 @@ export default function App() {
         gatewayHealth={gatewayHealth}
         onHasConfigBaseline={mqttProvider.hasConfigBaseline}
         onUpdateDeviceConfig={mqttProvider.updateDeviceConfig}
+        onOpenBleWizard={() => setShowBleWizard(true)}
       />
+
+      <BleProvisioningWizard open={showBleWizard} onClose={() => setShowBleWizard(false)} />
 
       {/* Bottom nav (mobile) */}
       <nav id="bottom-nav" aria-label="Main navigation" style={{
