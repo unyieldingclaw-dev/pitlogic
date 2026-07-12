@@ -38,6 +38,7 @@ ThermoWorks MQTT adapter — fully implemented, reviewed, and pushed to main. 16
 - Device Health panel in Settings: per-gateway wifi/battery/firmware and per-probe battery, sourced from `TelemetryStore` via `useTelemetryStore()`; hidden entirely when no gateway is known
 - Bidirectional device config: `ThermoWorksAdapter` subscribes to `/devices/+/config`, caches the full retained baseline per gateway, and exposes `publishConfig(gatewayId, edits, fallbackBaseline?)` which merges edits onto that baseline and republishes the complete object (retained) — never a partial config, which the RFX SDK would otherwise silently wipe. Settings now has a "Device Settings"/"Initialize Configuration" card per gateway (`DeviceSettingsCard.jsx`) for editing channel labels, alarm thresholds, and transmit/recording intervals
 - CSV import completion: historical (completed) cooks can now import a CSV export too, via a new "Import CSV" card in `DetailView.jsx`'s Overview tab (mirrors `ActiveTab.jsx`'s existing control, wired to the same cook-agnostic `handleCSV`). The unused `CsvProvider`/`csvSchemas.ts` (dead `TemperatureProvider` implementation, registered but never connected) was deleted
+- BLE provisioning wizard ships: `ThermoWorksBleProvisioner.ts` (connect/scanWifiNetworks/provision over the ThermaConnect open BLE GATT protocol) behind `useBleProvisioning.js` (the ADR-001 crossing point), driving `BleProvisioningWizard.jsx` — a single-screen idle→connecting→form→provisioning→success/error flow reachable from a new "Set Up New Device" card in Settings, gated on `navigator.bluetooth` support. Manually verified in-browser: entry point renders/gates correctly, wizard opens, `connect()` invokes the real native device chooser and a cancelled/failed pick correctly lands on the error phase with retry, unsupported-browser fallback text replaces the button when `navigator.bluetooth` is absent, no console errors, production build clean
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
@@ -86,6 +87,7 @@ All 22 operations from the testing agent flow plan are complete:
 
 - CSP eval error in dev server: `vite.config.js` configureServer approach (low priority)
 - iOS silent switch bypasses all browser audio/notifications — investigate PWA push notifications
+- BLE provisioning wizard has **not** been verified against real hardware (an actual RFX/NODE device in SETUPMODE) — Web Bluetooth's GATT connect/scan/provision flow can only be exercised end-to-end with physical hardware and a Chrome/Edge browser. Flag for a follow-up manual test with real hardware before considering it fully production-verified.
 
 ## Environment Status
 
