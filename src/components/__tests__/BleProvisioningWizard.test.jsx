@@ -148,4 +148,77 @@ describe('BleProvisioningWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('disables the WiFi/MQTT fields and the scan button while provisioning', async () => {
+    let resolveProvision;
+    mockProvision.mockImplementation(() => new Promise(resolve => { resolveProvision = resolve; }));
+    render(<BleProvisioningWizard open={true} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
+
+    fireEvent.click(screen.getByRole('button', { name: /^provision device$/i }));
+
+    // jsdom doesn't implement the native browser behavior where a disabled <fieldset>
+    // cascades .disabled to its descendant form controls, so assert on the fieldset
+    // itself (implicit role="group") rather than the individual inputs/buttons inside it.
+    await waitFor(() => { expect(screen.getByRole('group').disabled).toBe(true); });
+
+    resolveProvision();
+  });
+
+  it('surfaces a scan failure as a scoped error without moving to the fatal error phase', async () => {
+    mockScanWifiNetworks.mockRejectedValue(new Error('Scan timed out'));
+    render(<BleProvisioningWizard open={true} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
+
+    fireEvent.click(screen.getByRole('button', { name: /scan for networks/i }));
+
+    expect(await screen.findByText(/scan timed out/i)).toBeTruthy();
+    // Form fields remain visible/usable — the user was not kicked into the fatal error phase.
+    expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
+  });
+
+  it('ignores a second "Scan for networks" click while a scan is already in flight', async () => {
+    let resolveScan;
+    mockScanWifiNetworks.mockImplementation(() => new Promise(resolve => { resolveScan = resolve; }));
+    render(<BleProvisioningWizard open={true} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
+
+    fireEvent.click(screen.getByRole('button', { name: /scan for networks/i }));
+    await waitFor(() => { expect(screen.getByRole('button', { name: /scanning/i }).disabled).toBe(true); });
+    fireEvent.click(screen.getByRole('button', { name: /scanning/i }));
+
+    expect(mockScanWifiNetworks).toHaveBeenCalledTimes(1);
+    resolveScan();
+  });
+
+  it('resets to a fresh idle phase after closing mid-provisioning, even if the interrupted provision() rejects late', async () => {
+    let rejectProvision;
+    mockProvision.mockImplementation(() => new Promise((_resolve, reject) => { rejectProvision = reject; }));
+    const onClose = vi.fn();
+    const { rerender } = render(<BleProvisioningWizard open={true} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
+    await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
+    fireEvent.click(screen.getByRole('button', { name: /^provision device$/i }));
+    await waitFor(() => { expect(screen.getByRole('group').disabled).toBe(true); });
+
+    // User closes mid-flight (e.g. clicks the X while the device is still connecting).
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    rerender(<BleProvisioningWizard open={false} onClose={onClose} />);
+
+    // The interrupted provision() now rejects late (e.g. the GATT server disconnect
+    // triggered by handleClose surfaces as a write/notify rejection).
+    rejectProvision(new Error('GATT Server disconnected'));
+    await Promise.resolve();
+
+    // Reopening the still-mounted wizard should show a fresh idle phase, not a stale
+    // error phase clobbered in by the late-arriving rejection.
+    rerender(<BleProvisioningWizard open={true} onClose={onClose} />);
+    expect(screen.getByRole('button', { name: /scan for device/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
+  });
 });

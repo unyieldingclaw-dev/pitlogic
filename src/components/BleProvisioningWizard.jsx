@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useBleProvisioning } from '../hooks/useBleProvisioning.js';
 
@@ -50,18 +50,25 @@ export default function BleProvisioningWizard({ open, onClose }) {
   const [scanError, setScanError] = useState('');
   const [statusLog, setStatusLog] = useState([]);
   const [form, setForm] = useState(initialForm);
+  // Tracks whether the user has closed the dialog since the current async flow started,
+  // so a late-arriving connect()/provision() result (e.g. a GATT disconnect rejection
+  // that lands after handleClose already reset to idle) can't clobber state after close.
+  const closedRef = useRef(false);
 
   if (!open) return null;
 
   const handleScan = async () => {
+    closedRef.current = false;
     setPhase('connecting');
     setErrorMessage('');
     try {
       const info = await provisioner.connect();
+      if (closedRef.current) return;
       setDeviceInfo(info);
       setForm(initialForm());
       setPhase('form');
     } catch (err) {
+      if (closedRef.current) return;
       setErrorMessage(err instanceof Error ? err.message : 'Failed to connect to device.');
       setPhase('error');
     }
@@ -88,16 +95,20 @@ export default function BleProvisioningWizard({ open, onClose }) {
     setStatusLog([]);
     try {
       await provisioner.provision(form, event => {
+        if (closedRef.current) return;
         setStatusLog(prev => [...prev, statusEventToLogLine(event)]);
       });
+      if (closedRef.current) return;
       setPhase('success');
     } catch (err) {
+      if (closedRef.current) return;
       setErrorMessage(err instanceof Error ? err.message : 'Failed to provision device.');
       setPhase('error');
     }
   };
 
   const handleClose = () => {
+    closedRef.current = true;
     provisioner.disconnect();
     // Reset so a stale phase (e.g. mid-provisioning or success) can't resurface against
     // a now-disconnected provisioner if this wizard stays mounted and reopens later.
