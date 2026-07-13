@@ -114,15 +114,32 @@ export type NormalizedTelemetryEvent =
   | ProbeBatteryEvent;
 ```
 
-- [ ] **Step 4: Typecheck**
+- [ ] **Step 4: Fix the two `ProbeState` construction sites that predate `battery`**
 
-Run: `npx tsc --noEmit`
-Expected: no errors (this task only adds types, nothing consumes them yet).
+Making `battery` a required field breaks the whole-program typecheck immediately: `TelemetryStore.ts` already constructs two `ProbeState` object literals (in `applyActiveReading` and `applyDisconnect`) that don't set it. This is a required fixup for Task 1 to compile — not new behavior, and not the same as Task 4's later additions (new event handling, new methods).
 
-- [ ] **Step 5: Commit**
+Edit `src/lib/telemetry/store/TelemetryStore.ts`. In `applyActiveReading`, add one field to the object literal:
+
+```typescript
+      targetTemp: existing?.targetTemp ?? null,
+      battery: existing?.battery ?? null,
+```
+
+(i.e. add `battery: existing?.battery ?? null,` immediately after the existing `targetTemp` line — same pattern, preserves any previously-known value.)
+
+Do the same in `applyDisconnect`'s object literal.
+
+Do not add anything else to this file in this task — no new methods, no new event handling. That's Task 4.
+
+- [ ] **Step 5: Typecheck**
+
+Run: `npx tsc --noEmit -p tsconfig.lib.json`
+Expected: no errors.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/lib/telemetry/domain/GatewayState.ts src/lib/telemetry/domain/ProbeSemantics.ts src/lib/telemetry/domain/TelemetryEvents.ts
+git add src/lib/telemetry/domain/GatewayState.ts src/lib/telemetry/domain/ProbeSemantics.ts src/lib/telemetry/domain/TelemetryEvents.ts src/lib/telemetry/store/TelemetryStore.ts
 git commit -m "feat: add GatewayState domain type and gateway/probe-battery events"
 ```
 
@@ -687,39 +704,7 @@ Add the two new private handlers (place after `applyDisconnect`):
   }
 ```
 
-`applyActiveReading` and `applyDisconnect` construct a `ProbeState` without a `battery` field today — update both to preserve any existing battery value:
-
-```typescript
-  private applyActiveReading(reading: ActiveReading): void {
-    const existing = this.probes.get(reading.probeId);
-    const probe: ProbeState = {
-      probeId: reading.probeId,
-      label: existing?.label ?? reading.probeId,
-      occupancy: 'occupied',
-      status: 'active',
-      lastReading: reading,
-      targetTemp: existing?.targetTemp ?? null,
-      battery: existing?.battery ?? null,
-    };
-    this.probes.set(reading.probeId, probe);
-    this.notify();
-  }
-
-  private applyDisconnect(probeId: string): void {
-    const existing = this.probes.get(probeId);
-    const probe: ProbeState = {
-      probeId,
-      label: existing?.label ?? probeId,
-      occupancy: existing?.occupancy ?? 'occupied',
-      status: 'disconnected',
-      lastReading: existing?.lastReading ?? null,
-      targetTemp: existing?.targetTemp ?? null,
-      battery: existing?.battery ?? null,
-    };
-    this.probes.set(probeId, probe);
-    this.notify();
-  }
-```
+`applyActiveReading` and `applyDisconnect` should already preserve `battery: existing?.battery ?? null` — Task 1 fixed this as a compile-error prerequisite (adding the required `battery` field to `ProbeState` broke these two construction sites immediately). Run `git log -p -- src/lib/telemetry/store/TelemetryStore.ts` if you want to confirm; if for any reason that fix isn't present, add `battery: existing?.battery ?? null` to both object literals now before proceeding.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -728,7 +713,7 @@ Expected: PASS — full file.
 
 - [ ] **Step 6: Typecheck the whole lib**
 
-Run: `npx tsc --noEmit`
+Run: `npx tsc --noEmit -p tsconfig.lib.json`
 Expected: no errors.
 
 - [ ] **Step 7: Commit**
@@ -786,7 +771,7 @@ export function useTelemetryStore() {
 
 - [ ] **Step 3: Verify it builds**
 
-Run: `npx tsc --noEmit`
+Run: `npx tsc --noEmit -p tsconfig.lib.json`
 Expected: no errors. (No test file for this step — it's a thin wiring layer with no branching logic; Task 4's `TelemetryStore` tests and Task 6's component test cover its behavior end-to-end.)
 
 - [ ] **Step 4: Commit**
