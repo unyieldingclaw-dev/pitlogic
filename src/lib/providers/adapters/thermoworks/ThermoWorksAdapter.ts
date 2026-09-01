@@ -15,6 +15,7 @@ import mqtt from 'mqtt';
 import type { IConnackPacket, MqttClient } from 'mqtt';
 import type { TemperatureProvider } from '../../core/TemperatureProvider.js';
 import type { RawProviderEvent } from '../../core/ProviderTypes.js';
+import { mergeDeviceConfig, type ConfigEdits, type DeviceConfigJson } from './deviceConfigMerge.js';
 
 export interface ThermoWorksConfig {
   brokerUrl: string;
@@ -23,9 +24,19 @@ export interface ThermoWorksConfig {
   unit?: 'F' | 'C';
 }
 
+export interface TransformOptions {
+  now?: number;
+  getUnitsForGateway?: (gatewayId: string) => 'F' | 'C';
+}
+
 // ---------------------------------------------------------------------------
 // Device meta event types — emitted by subscribeDeviceMeta(), NOT by subscribe().
-// Device state must NOT flow through globalEventBus; it stays in hook-local state.
+// The full per-channel state (labels, alarms) must NOT flow through globalEventBus;
+// it stays in hook-local state (feeds Channel Labels UI). The gateway-level summary
+// fields (wifiStrength/battery/firmware/units, no channels) are a different, smaller
+// slice of the same /state message — those DO flow through subscribe()/globalEventBus
+// as a RawProviderEvent, because TelemetryStore's GatewayState (Device Health) needs
+// them and only observes state materialized through the store, not hook-local state.
 // ---------------------------------------------------------------------------
 
 export interface DeviceStateChannelInfo {
@@ -64,25 +75,30 @@ export type DeviceMetaEvent = DeviceStateEvent | DeviceBatteryEvent | DeviceFirm
 
 const EVENTS_TOPIC_RE = /^\/(?:probes|devices)\/([^/]+)\/events$/;
 const STATE_TOPIC_RE = /^\/devices\/([^/]+)\/state$/;
-const SUBSCRIPTIONS = ['/probes/+/events', '/devices/+/events', '/devices/+/state'];
+const CONFIG_TOPIC_RE = /^\/devices\/([^/]+)\/config$/;
+const SUBSCRIPTIONS = ['/probes/+/events', '/devices/+/events', '/devices/+/state', '/devices/+/config'];
 
 /**
  * Transforms a raw ThermaConnect MQTT message into zero or more RawProviderEvents.
  *
- * ThermaConnect telemetry format (topic: /probes/{probeId}/events or /devices/{deviceId}/events):
- *   { gatewayId?, channels: [{ number, ts (ms epoch), readings: [{ value, type }] }] }
- * Only readings with type === 'T' (temperature) produce events. Type 'H' (humidity) and
- * others are silently ignored. Battery/firmware messages have no channels array and are
- * discarded. Timestamp validation is per-channel — bad-ts channels are skipped individually.
+ * Three shapes are handled, dispatched by topic:
+ *   - /devices/{gatewayId}/state  → one gateway-level event (wifiStrength/battery/firmware/units)
+ *   - /devices/{gatewayId}/config → one event carrying the raw retained config payload
+ *   - /probes/{probeId}/events or /devices/{deviceId}/events →
+ *       { channels: [{ number, ts (ms epoch), readings: [{ value, type }] }] }
+ *     Only readings with type === 'T' (temperature) produce events. Type 'H' (humidity) and
+ *     others are silently ignored. A channels-less battery-only payload on an events topic
+ *     is treated as the probe's sole channel (see WHY ch1 below). Per-channel timestamp
+ *     validation rejects both stale seconds-epoch values and far-future spoofed ones.
  */
-export function transformPayload(
-  topic: string,
-  rawPayload: Buffer | string,
-  unit: 'F' | 'C' = 'F',
-): RawProviderEvent[] {
-  const match = topic.match(EVENTS_TOPIC_RE);
-  if (!match) return [];
-  const topicProbeId = match[1];
+export function transformPayload(topic: string, rawPayload: Buffer | string, opts: TransformOptions = {}): RawProviderEvent[] {
+  const now = opts.now ?? Date.now();
+  const getUnits = opts.getUnitsForGateway ?? (() => 'F' as const);
+
+  const deviceStateMatch = topic.match(STATE_TOPIC_RE);
+  const deviceConfigMatch = topic.match(CONFIG_TOPIC_RE);
+  const eventsMatch = topic.match(EVENTS_TOPIC_RE);
+  if (!deviceStateMatch && !deviceConfigMatch && !eventsMatch) return [];
 
   let parsed: unknown;
   try {
@@ -93,14 +109,43 @@ export function transformPayload(
     return [];
   }
 
-  if (typeof parsed !== 'object' || parsed === null) return [];
-  const p = parsed as Record<string, unknown>;
-  if (!Array.isArray(p.channels)) return [];
+  if (typeof parsed !== 'object' || parsed === null) {
+    console.warn('[thermoworks] unexpected payload structure', { topic });
+    return [];
+  }
+  const body = parsed as Record<string, unknown>;
 
-  const now = Date.now();
+  if (deviceStateMatch) {
+    const gatewayId = deviceStateMatch[1];
+    const event: RawProviderEvent = { gatewayId, capturedAt: now };
+    if (typeof body.wifi_strength === 'number') event.wifiStrength = body.wifi_strength;
+    if (typeof body.battery === 'string') event.battery = body.battery;
+    if (typeof body.firmware === 'string') event.firmware = body.firmware;
+    if (body.units === 'F' || body.units === 'C') event.units = body.units;
+    return [event];
+  }
+
+  if (deviceConfigMatch) {
+    const gatewayId = deviceConfigMatch[1];
+    return [{ gatewayId, capturedAt: now, raw: body }];
+  }
+
+  const topicProbeId = eventsMatch![1]!;
+
+  if (!Array.isArray(body.channels)) {
+    if (typeof body.battery === 'number') {
+      // WHY ch1: RFX probes are single-channel devices (see RFX Probe Information in the
+      // SDK docs) — the battery sub-payload has no per-channel breakdown, so it applies to
+      // the probe's sole channel.
+      return [{ probeId: `${topicProbeId}-ch1`, capturedAt: now, battery: body.battery }];
+    }
+    console.warn('[thermoworks] unexpected payload structure', { topic });
+    return [];
+  }
+
+  const gatewayUnits = getUnits(topicProbeId);
   const events: RawProviderEvent[] = [];
-
-  for (const channel of p.channels as Record<string, unknown>[]) {
+  for (const channel of body.channels as Record<string, unknown>[]) {
     // Per-channel timestamp: must be ms-epoch integer. 1e10 boundary rejects seconds-epoch
     // values (~2001 in ms). Upper bound (+60 s) blocks far-future spoofed timestamps.
     const ts = channel.ts;
@@ -116,7 +161,7 @@ export function transformPayload(
         probeId: `${topicProbeId}-ch${channelNumber}`,
         capturedAt: ts as number,
         temperature: reading.value,
-        unit,
+        unit: gatewayUnits,
         source: 'live',
       });
     }
@@ -179,6 +224,8 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   private _messageHandlerRegistered = false;
   private readonly _handlers = new Set<(event: RawProviderEvent) => void>();
   private readonly _metaHandlers = new Set<(event: DeviceMetaEvent) => void>();
+  private readonly _gatewayUnits = new Map<string, 'F' | 'C'>();
+  private readonly _configCache = new Map<string, Record<string, unknown>>();
 
   constructor(config: ThermoWorksConfig) {
     this._config = config;
@@ -232,6 +279,20 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     );
   }
 
+  /**
+   * Merges `edits` onto the cached (or supplied fallback) retained config baseline for
+   * `gatewayId` and republishes the complete object — never a partial write, which the RFX
+   * SDK would otherwise silently wipe. Throws if not connected.
+   */
+  async publishConfig(gatewayId: string, edits: ConfigEdits, fallbackBaseline?: DeviceConfigJson): Promise<void> {
+    if (!this._client) throw new Error('Cannot publish config: not connected');
+    // Validate gatewayId to prevent topic injection via broker-supplied device identifiers.
+    if (!/^[\w-]+$/.test(gatewayId)) throw new Error(`[thermoworks] publishConfig: invalid gatewayId "${gatewayId}"`);
+    const baseline = this._configCache.get(gatewayId) ?? fallbackBaseline ?? {};
+    const merged = mergeDeviceConfig(baseline, edits);
+    await this._client.publishAsync(`/devices/${gatewayId}/config`, JSON.stringify(merged), { retain: true, qos: 1 });
+  }
+
   private _registerMessageHandler(): void {
     if (this._messageHandlerRegistered) return;
     this._client!.on('message', (topic: string, payload: Buffer) => {
@@ -246,9 +307,18 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
-    // Temperature readings → temperature event handlers
-    const events = transformPayload(topic, payload, this._config.unit);
+    // Temperature/gateway-state/config readings → temperature event handlers
+    const events = transformPayload(topic, payload, {
+      now: Date.now(),
+      getUnitsForGateway: (gatewayId) => this._gatewayUnits.get(gatewayId) ?? this._config.unit ?? 'F',
+    });
     for (const event of events) {
+      if (typeof event.gatewayId === 'string' && typeof event.units === 'string') {
+        this._gatewayUnits.set(event.gatewayId, event.units as 'F' | 'C');
+      }
+      if (typeof event.gatewayId === 'string' && typeof event.raw === 'object' && event.raw !== null) {
+        this._configCache.set(event.gatewayId, event.raw as Record<string, unknown>);
+      }
       for (const handler of this._handlers) {
         try { handler(event); } catch { /* isolate handler failures */ }
       }

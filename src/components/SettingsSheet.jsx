@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
+import DeviceSettingsCard from './DeviceSettingsCard';
 import { probeStatusColor } from '../utils/helpers';
 
 function pad2(n) { return String(n).padStart(2, '0'); }
@@ -17,7 +18,7 @@ function missingMqttConfigField(parsed) {
   return null;
 }
 
-export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes, deviceState }) {
+export default function SettingsSheet({ open, onClose, cookState, recipes, onImportCooks, onImportRecipes, prefs, resetCutPref, setTheme, mqttStatus, mqttError, onMqttConnect, onMqttDisconnect, csvStatus, csvError, onCsvReplay, onCsvReset, liveProbes, deviceState, gatewayHealth = [], onHasConfigBaseline, onUpdateDeviceConfig, onOpenBleWizard }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [mode, setMode] = useState('merge');
@@ -242,6 +243,27 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Set Up New Device */}
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+            Set Up New Device
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
+            Provision a new RFX device's WiFi and MQTT settings over Bluetooth.
+          </div>
+          {typeof navigator !== 'undefined' && 'bluetooth' in navigator ? (
+            <button type="button" className="btn-primary" onClick={onOpenBleWizard}
+              style={{ fontSize: 13, padding: '6px 14px' }}>
+              Set Up Device via Bluetooth
+            </button>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+              Bluetooth device setup isn't supported in this browser. Use Chrome or Edge on desktop or Android,
+              or provision your device with a separate BLE tool, then connect below.
+            </div>
+          )}
         </div>
 
         {/* Live Device */}
@@ -505,6 +527,56 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
             </span>
           </div>
         </div>
+
+        {/* Device Health */}
+        {gatewayHealth.length > 0 && (
+          <div className="card" style={{ marginBottom: '1rem' }}>
+            <div className="gradient-text" style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+              Device Health
+            </div>
+            {gatewayHealth.map(gw => (
+              <div key={gw.gatewayId} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--text2)', marginBottom: 4 }}>
+                  {gw.gatewayId}
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: 'var(--text2)', marginBottom: 6 }}>
+                  {gw.wifiStrength != null && <span>Wi-Fi {gw.wifiStrength}%</span>}
+                  {gw.battery != null && <span>Battery {gw.battery}</span>}
+                  {gw.firmware != null && <span>Firmware {gw.firmware}</span>}
+                </div>
+                {gw.unitMismatch && (
+                  <div style={{ fontSize: 12, color: 'var(--amber)', marginBottom: 6 }}>
+                    This device is reporting Celsius readings, but PitLogic displays °F. Values shown may not match what you expect.
+                  </div>
+                )}
+                {gw.probes.length > 0 && (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {gw.probes.map(p => (
+                      <li key={p.probeId} style={{ fontSize: 12, color: p.battery <= 20 ? 'var(--red)' : 'var(--text3)',
+                        fontWeight: p.battery <= 20 ? 600 : 400, fontFamily: 'var(--mono)' }}>
+                        {p.probeId}: {p.battery}%{p.battery <= 20 ? ' (Low)' : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Device Settings */}
+        {gatewayHealth.map(gw => (
+          <DeviceSettingsCard
+            // Re-key on the config content, not just gatewayId: DeviceSettingsCard's form state
+            // is initialized once at mount, so a retained config update arriving while Settings
+            // stays open (e.g. the device echoing back the user's own save) would otherwise never
+            // reach the form. Remounting on genuine content change re-syncs the displayed baseline.
+            key={`${gw.gatewayId}:${JSON.stringify(gw.editableConfig)}`}
+            gw={gw}
+            hasConfigBaseline={onHasConfigBaseline}
+            onUpdateDeviceConfig={onUpdateDeviceConfig}
+          />
+        ))}
 
         {/* Export */}
         <div className="card" style={{ marginBottom: '1rem' }}>

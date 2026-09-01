@@ -7,6 +7,7 @@ import { normalizeProviderEvent } from '../lib/telemetry/normalization/normalize
 import { globalEventBus } from '../lib/telemetry/eventBus/EventBus.js';
 
 const STORAGE_KEY = 'pitlogic-mqtt-v1';
+export const CONFIG_CACHE_KEY = 'pitlogic-thermoworks-config-cache-v1';
 
 function loadConfig() {
   try {
@@ -17,12 +18,33 @@ function loadConfig() {
   }
 }
 
+function loadConfigCache() {
+  try {
+    const raw = localStorage.getItem(CONFIG_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveConfigCacheEntry(gatewayId, rawConfig) {
+  const cache = loadConfigCache();
+  cache[gatewayId] = rawConfig;
+  try {
+    localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Quota errors or private-mode restrictions are non-fatal — this cache is a convenience
+    // fallback only, never a source of truth (see design spec).
+  }
+}
+
 export function useThermoWorksProvider() {
   const [status, setStatus] = useState('disconnected');
   const [error, setError] = useState(null);
   // Device meta (state/battery/firmware) stays in hook-local state — must NOT flow through globalEventBus.
   const [deviceState, setDeviceState] = useState(() => new Map());
   const sessionRef = useRef(null); // { adapter, unsub, unsubMeta }
+  const seenConfigRef = useRef(new Set()); // gatewayIds with a live retained config seen this session
 
   const connect = useCallback(async () => {
     const config = loadConfig();
@@ -42,6 +64,10 @@ export function useThermoWorksProvider() {
       // in the hook, not in the adapter, to keep the adapter purely transport-layer.
       const unsub = adapter.subscribe(rawEvent => {
         const normalized = normalizeProviderEvent(rawEvent, adapter.id);
+        if (normalized.type === 'gateway:config') {
+          seenConfigRef.current.add(normalized.gatewayId);
+          saveConfigCacheEntry(normalized.gatewayId, normalized.raw);
+        }
         globalEventBus.publish(normalized);
       });
       const unsubMeta = adapter.subscribeDeviceMeta(event => {
@@ -72,10 +98,19 @@ export function useThermoWorksProvider() {
     unsubMeta();
     await adapter.disconnect();
     sessionRef.current = null;
+    seenConfigRef.current.clear(); // "seen this session" — a new session starts with no baselines seen
     setStatus('disconnected');
     setError(null);
     setDeviceState(new Map());
   }, []);
+
+  const hasConfigBaseline = useCallback(gatewayId => seenConfigRef.current.has(gatewayId), []);
+
+  const updateDeviceConfig = useCallback(async (gatewayId, edits) => {
+    if (!sessionRef.current) throw new Error('Not connected');
+    const fallbackBaseline = hasConfigBaseline(gatewayId) ? undefined : loadConfigCache()[gatewayId];
+    await sessionRef.current.adapter.publishConfig(gatewayId, edits, fallbackBaseline);
+  }, [hasConfigBaseline]);
 
   const publishDeviceConfig = useCallback(async (deviceId, config) => {
     if (!sessionRef.current) throw new Error('[thermoworks] publishDeviceConfig: not connected');
@@ -105,9 +140,20 @@ export function useThermoWorksProvider() {
         session.unsubMeta();
         void session.adapter.disconnect();
         sessionRef.current = null;
+        seenConfigRef.current.clear();
       }
     };
   }, []);
 
-  return { status, error, connect, disconnect, deviceState, channelMeta, publishDeviceConfig };
+  return {
+    status,
+    error,
+    connect,
+    disconnect,
+    hasConfigBaseline,
+    updateDeviceConfig,
+    deviceState,
+    channelMeta,
+    publishDeviceConfig,
+  };
 }

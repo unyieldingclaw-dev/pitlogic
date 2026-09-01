@@ -1,7 +1,13 @@
 import type { NormalizedTelemetryEvent } from '../domain/TelemetryEvents.js';
 import type { ActiveReading, DisconnectedReading } from '../domain/TelemetryModels.js';
 import type { TelemetryTimestamp } from '../domain/TimestampSemantics.js';
-import { RawActiveReadingSchema, RawDisconnectedReadingSchema } from './schemas.js';
+import {
+  RawActiveReadingSchema,
+  RawDisconnectedReadingSchema,
+  RawGatewayConfigSchema,
+  RawGatewayStateSchema,
+  RawProbeBatterySchema,
+} from './schemas.js';
 import { normalizeTemperature } from './temperatureUtils.js';
 
 export type RawProviderEvent = Record<string, unknown>;
@@ -40,6 +46,32 @@ export function normalizeProviderEvent(
       timestamp: makeTimestamp(a.capturedAt),
     };
     return { type: 'probe:reading', reading };
+  }
+
+  const gatewayConfigResult = RawGatewayConfigSchema.safeParse(raw);
+  if (gatewayConfigResult.success) {
+    const g = gatewayConfigResult.data;
+    return { type: 'gateway:config', gatewayId: g.gatewayId, raw: g.raw, timestamp: g.capturedAt };
+  }
+
+  const gatewayStateResult = RawGatewayStateSchema.safeParse(raw);
+  if (gatewayStateResult.success) {
+    const g = gatewayStateResult.data;
+    return {
+      type: 'gateway:state',
+      gatewayId: g.gatewayId,
+      wifiStrength: g.wifiStrength ?? null,
+      battery: g.battery ?? null,
+      firmware: g.firmware ?? null,
+      units: g.units ?? 'F',
+      timestamp: g.capturedAt,
+    };
+  }
+
+  const probeBatteryResult = RawProbeBatterySchema.safeParse(raw);
+  if (probeBatteryResult.success) {
+    const b = probeBatteryResult.data;
+    return { type: 'probe:battery', probeId: b.probeId, battery: b.battery, timestamp: b.capturedAt };
   }
 
   return {

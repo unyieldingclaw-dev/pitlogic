@@ -5,10 +5,12 @@ import { save, load } from './hooks/useStorage.js';
 import { useRecipes } from './hooks/useRecipes.js';
 import { usePrefs } from './hooks/usePrefs';
 import { useThermoWorksProvider } from './hooks/useThermoWorksProvider.js';
+import { useTelemetryStore } from './hooks/useTelemetryStore.js';
 import { useCsvProvider } from './hooks/useCsvProvider.js';
 import { useLiveProbes } from './hooks/useLiveProbes.js';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
+import { computeGatewayHealth } from './utils/deviceHealth.js';
 import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
@@ -20,6 +22,7 @@ import AnalyticsTab from './components/AnalyticsTab';
 import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
+import BleProvisioningWizard from './components/BleProvisioningWizard';
 
 export default function App() {
   const [tab, setTab]               = useState('dashboard');
@@ -36,9 +39,11 @@ export default function App() {
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBleWizard, setShowBleWizard] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
+  const { probes: telemetryProbes, gatewayState } = useTelemetryStore();
   const csvProvider = useCsvProvider();
   const liveProbes = useLiveProbes();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
@@ -298,6 +303,8 @@ export default function App() {
     { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
   ];
 
+  const gatewayHealth = computeGatewayHealth(gatewayState, telemetryProbes);
+
   return (
     <div id="root">
       {/* Background flame */}
@@ -475,7 +482,7 @@ export default function App() {
           {isDetail && (
             <DetailView cooks={cooks} detailId={detailId}
               onBack={() => { setView('history'); setTab('history'); }}
-              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} />
+              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} onCSV={handleCSV} />
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
@@ -539,6 +546,10 @@ export default function App() {
         mqttError={mqttProvider.error}
         onMqttConnect={mqttProvider.connect}
         onMqttDisconnect={mqttProvider.disconnect}
+        gatewayHealth={gatewayHealth}
+        onHasConfigBaseline={mqttProvider.hasConfigBaseline}
+        onUpdateDeviceConfig={mqttProvider.updateDeviceConfig}
+        onOpenBleWizard={() => setShowBleWizard(true)}
         deviceState={mqttProvider.deviceState}
         csvStatus={csvProvider.status}
         csvError={csvProvider.error}
@@ -546,6 +557,8 @@ export default function App() {
         onCsvReset={csvProvider.reset}
         liveProbes={liveProbes}
       />
+
+      <BleProvisioningWizard open={showBleWizard} onClose={() => setShowBleWizard(false)} />
 
       {/* Bottom nav (mobile) */}
       <nav id="bottom-nav" aria-label="Main navigation" style={{

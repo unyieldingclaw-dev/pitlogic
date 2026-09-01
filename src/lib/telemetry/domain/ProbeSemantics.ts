@@ -9,4 +9,6 @@ export interface ProbeState {
   status: 'active' | 'disconnected' | 'stale';
   lastReading: ActiveReading | null;
   targetTemp: number | null;
+  /** Percent (0-100) from the probe's own battery event. Null until first reported. */
+  battery: number | null;
 }

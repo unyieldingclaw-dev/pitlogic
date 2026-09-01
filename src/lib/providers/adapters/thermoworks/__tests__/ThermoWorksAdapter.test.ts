@@ -4,6 +4,7 @@ import { transformPayload, parseStatePayload } from '../ThermoWorksAdapter.js';
 const PROBE_TOPIC = '/probes/M123456789012/events';
 const DEVICE_TOPIC = '/devices/T10061CE92E24/events';
 const STATE_TOPIC = '/devices/T10061CE92E24/state';
+const CONFIG_TOPIC = '/devices/T10061CE92E24/config';
 
 function makePayload(channels: unknown[], overrides: Record<string, unknown> = {}): Buffer {
   return Buffer.from(JSON.stringify({
@@ -116,8 +117,16 @@ describe('transformPayload', () => {
     expect(transformPayload(PROBE_TOPIC, payload)).toHaveLength(0);
   });
 
-  it('returns empty array when payload has no channels array (e.g. battery message)', () => {
-    const payload = Buffer.from(JSON.stringify({ gatewayId: 'T10061CE92E24', battery: 10 }));
+  it('emits a probe-battery raw event when a probe payload has battery but no channels', () => {
+    const payload = Buffer.from(JSON.stringify({ gatewayId: 'M123456789012', battery: 42 }));
+    const events = transformPayload(PROBE_TOPIC, payload, { now: 5_000 });
+    expect(events).toEqual([
+      { probeId: 'M123456789012-ch1', capturedAt: 5_000, battery: 42 },
+    ]);
+  });
+
+  it('still returns empty array for a probe payload with neither channels nor battery', () => {
+    const payload = Buffer.from(JSON.stringify({ gatewayId: 'M123456789012', firmware: '1.1.10' }));
     expect(transformPayload(PROBE_TOPIC, payload)).toHaveLength(0);
   });
 
@@ -142,17 +151,47 @@ describe('transformPayload', () => {
     expect(events[0].probeId).toBe('T10061CE92E24-ch1');
   });
 
-  it('emits unit:C when unit param is C', () => {
-    const payload = makePayload([makeChannel('1', [{ value: 107.0, type: 'T' }])]);
-    const events = transformPayload(PROBE_TOPIC, payload, 'C');
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ unit: 'C', temperature: 107.0 });
+  it('injects gateway units into channel readings via getUnitsForGateway', () => {
+    const payload = makePayload([makeChannel('1', [{ value: 100.0, type: 'T' }])]);
+    const events = transformPayload(PROBE_TOPIC, payload, { getUnitsForGateway: () => 'C' });
+    expect(events[0]).toMatchObject({ unit: 'C' });
   });
 
-  it('defaults to unit:F when unit param is omitted', () => {
-    const payload = makePayload([makeChannel('1', [{ value: 225.0, type: 'T' }])]);
+  it('defaults to F units when getUnitsForGateway is not provided', () => {
+    const payload = makePayload([makeChannel('1', [{ value: 100.0, type: 'T' }])]);
     const events = transformPayload(PROBE_TOPIC, payload);
     expect(events[0]).toMatchObject({ unit: 'F' });
+  });
+
+  it('emits a gateway:state-shaped raw event for a device state topic', () => {
+    const payload = Buffer.from(JSON.stringify({
+      wifi_strength: 88, battery: 'C', firmware: 'v2.45', units: 'F',
+    }));
+    const events = transformPayload(STATE_TOPIC, payload, { now: 5_000 });
+    expect(events).toEqual([
+      { gatewayId: 'T10061CE92E24', capturedAt: 5_000, wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F' },
+    ]);
+  });
+
+  it('gateway:state raw event omits fields absent from the payload', () => {
+    const payload = Buffer.from(JSON.stringify({ wifi_strength: 50 }));
+    const events = transformPayload(STATE_TOPIC, payload, { now: 5_000 });
+    expect(events).toEqual([
+      { gatewayId: 'T10061CE92E24', capturedAt: 5_000, wifiStrength: 50 },
+    ]);
+  });
+
+  it('wraps a device config topic payload as a raw gateway-config event', () => {
+    const configBody = { label: 'My Device', firmware: 'v2.45', channels: [{ number: 1, label: 'Brisket' }] };
+    const payload = Buffer.from(JSON.stringify(configBody));
+    const events = transformPayload(CONFIG_TOPIC, payload, { now: 5_000 });
+    expect(events).toEqual([
+      { gatewayId: 'T10061CE92E24', capturedAt: 5_000, raw: configBody },
+    ]);
+  });
+
+  it('returns empty array for malformed JSON on the config topic', () => {
+    expect(transformPayload(CONFIG_TOPIC, Buffer.from('not json'))).toHaveLength(0);
   });
 });
 
@@ -245,7 +284,7 @@ describe('parseStatePayload', () => {
 });
 
 // ---------------------------------------------------------------------------
-// ThermoWorksAdapter — connection lifecycle and device meta events
+// ThermoWorksAdapter — connection lifecycle, device meta, and config publishing
 // ---------------------------------------------------------------------------
 
 // Hoisted mock values — must be defined before vi.mock() runs
@@ -289,6 +328,7 @@ vi.mock('mqtt', () => ({
 import { ThermoWorksAdapter } from '../ThermoWorksAdapter.js';
 
 const VALID_CONFIG = { brokerUrl: 'wss://test.hivemq.cloud:8884/mqtt', username: 'u', password: 'p' };
+const ALL_TOPICS = ['/probes/+/events', '/devices/+/events', '/devices/+/state', '/devices/+/config'];
 
 describe('ThermoWorksAdapter — connection lifecycle', () => {
   beforeEach(() => {
@@ -302,18 +342,14 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     });
   });
 
-  it('connect() creates client and subscribes to /probes/+/events, /devices/+/events, and /devices/+/state', async () => {
+  it('connect() creates client and subscribes to all telemetry, state, and config topics', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await adapter.connect();
     expect(mockConnectAsync).toHaveBeenCalledWith(VALID_CONFIG.brokerUrl, {
       username: VALID_CONFIG.username,
       password: VALID_CONFIG.password,
     });
-    expect(mockSubscribeAsync).toHaveBeenCalledWith([
-      '/probes/+/events',
-      '/devices/+/events',
-      '/devices/+/state',
-    ]);
+    expect(mockSubscribeAsync).toHaveBeenCalledWith(ALL_TOPICS);
   });
 
   it('connect() is idempotent — second call does not create a second client', async () => {
@@ -326,6 +362,7 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
   it('message listener is registered exactly once across connect cycles', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await adapter.connect();
+    // Simulate a reconnect that would naively re-register if unguarded
     simulateReconnect(false);
     const messageListenerCalls = mockClientOn.mock.calls.filter(([event]) => event === 'message');
     expect(messageListenerCalls).toHaveLength(1);
@@ -385,18 +422,14 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore);
   });
 
-  it('reconnect with sessionPresent=false resubscribes to all three topics', async () => {
+  it('reconnect with sessionPresent=false resubscribes to all topics', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await adapter.connect();
     const callsBefore = mockSubscribeAsync.mock.calls.length;
     simulateReconnect(false);
     await Promise.resolve();
     expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 1);
-    expect(mockSubscribeAsync).toHaveBeenLastCalledWith([
-      '/probes/+/events',
-      '/devices/+/events',
-      '/devices/+/state',
-    ]);
+    expect(mockSubscribeAsync).toHaveBeenLastCalledWith(ALL_TOPICS);
   });
 
   it('emits event for probe topic /probes/+/events (real RFX probe topic)', async () => {
@@ -443,6 +476,34 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     );
     expect(received).toHaveLength(1);
     expect(received[0]).toMatchObject({ unit: 'C', temperature: 107.2 });
+  });
+
+  it('caches the full raw config from a device-config message', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const received: unknown[] = [];
+    adapter.subscribe(e => received.push(e));
+    await adapter.connect();
+    const configBody = { label: 'My Device', channels: [{ number: 1, label: 'Brisket' }] };
+    simulateMessage('/devices/M123456789012/config', Buffer.from(JSON.stringify(configBody)));
+    expect(received).toHaveLength(1);
+    expect(received[0]).toEqual({ gatewayId: 'M123456789012', capturedAt: expect.any(Number), raw: configBody });
+  });
+
+  it('caches gateway units from a device-state message and applies them to subsequent probe readings', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const received: unknown[] = [];
+    adapter.subscribe(e => received.push(e));
+    await adapter.connect();
+    simulateMessage('/devices/M123456789012/state', Buffer.from(JSON.stringify({ units: 'C' })));
+    simulateMessage(
+      '/probes/M123456789012/events',
+      Buffer.from(JSON.stringify({
+        gatewayId: 'M123456789012',
+        channels: [{ number: 1, ts: Date.now(), readings: [{ value: 100.0, type: 'T' }] }],
+      })),
+    );
+    const readingEvent = received.find(e => (e as Record<string, unknown>).temperature !== undefined);
+    expect(readingEvent).toMatchObject({ unit: 'C' });
   });
 });
 
@@ -537,7 +598,11 @@ describe('ThermoWorksAdapter — device meta events', () => {
     expect(metaReceived).toHaveLength(0);
   });
 
-  it('does NOT call temperature handler for state messages', async () => {
+  it('state messages produce a gateway-level event but never a per-channel temperature reading', async () => {
+    // Gateway-level fields (wifiStrength/battery/firmware/units) from a /state message DO
+    // reach subscribe() handlers — TelemetryStore's GatewayState needs them (see the WHY
+    // comment above DeviceMetaEvent in ThermoWorksAdapter.ts). What must never happen is a
+    // state message's channels[] masquerading as a per-probe temperature reading.
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     const tempReceived: unknown[] = [];
     adapter.subscribe(e => tempReceived.push(e));
@@ -545,10 +610,13 @@ describe('ThermoWorksAdapter — device meta events', () => {
 
     simulateMessage(
       STATE_TOPIC,
-      Buffer.from(JSON.stringify({ device: 'T10061CE92E24', channels: [] })),
+      Buffer.from(JSON.stringify({ device: 'T10061CE92E24', wifi_strength: 80, channels: [] })),
     );
 
-    expect(tempReceived).toHaveLength(0);
+    expect(tempReceived).toHaveLength(1);
+    expect(tempReceived[0]).toMatchObject({ gatewayId: 'T10061CE92E24', wifiStrength: 80 });
+    expect(tempReceived[0]).not.toHaveProperty('probeId');
+    expect(tempReceived[0]).not.toHaveProperty('temperature');
   });
 
   it('meta handler unsubscribe prevents further calls', async () => {
@@ -613,5 +681,64 @@ describe('ThermoWorksAdapter — publishDeviceConfig', () => {
   it('throws when not connected', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     await expect(adapter.publishDeviceConfig('T10061CE92E24', {})).rejects.toThrow('not connected');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ThermoWorksAdapter — publishConfig
+// ---------------------------------------------------------------------------
+
+describe('ThermoWorksAdapter — publishConfig', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearListeners();
+    mockConnectAsync.mockResolvedValue({
+      on: mockClientOn,
+      subscribeAsync: mockSubscribeAsync,
+      endAsync: mockEndAsync,
+      publishAsync: mockPublishAsync,
+    });
+  });
+
+  it('publishConfig merges edits onto the cached baseline and publishes a retained message', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    simulateMessage(
+      '/devices/M123456789012/config',
+      Buffer.from(JSON.stringify({ label: 'My Device', channels: [{ number: 1, label: 'Old Label' }] })),
+    );
+    await adapter.publishConfig('M123456789012', { channelLabels: { 1: 'Brisket' } });
+    expect(mockPublishAsync).toHaveBeenCalledWith(
+      '/devices/M123456789012/config',
+      JSON.stringify({ label: 'My Device', channels: [{ number: 1, label: 'Brisket' }] }),
+      { retain: true, qos: 1 },
+    );
+  });
+
+  it('publishConfig uses fallbackBaseline when no config has been cached yet', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    await adapter.publishConfig('M999', { channelLabels: { 1: 'Ribs' } }, { label: 'Fallback Device', channels: [] });
+    expect(mockPublishAsync).toHaveBeenCalledWith(
+      '/devices/M999/config',
+      JSON.stringify({ label: 'Fallback Device', channels: [{ number: 1, label: 'Ribs' }] }),
+      { retain: true, qos: 1 },
+    );
+  });
+
+  it('publishConfig starts from an empty object when there is no cache and no fallback', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await adapter.connect();
+    await adapter.publishConfig('M999', { channelLabels: { 1: 'Ribs' } });
+    expect(mockPublishAsync).toHaveBeenCalledWith(
+      '/devices/M999/config',
+      JSON.stringify({ channels: [{ number: 1, label: 'Ribs' }] }),
+      { retain: true, qos: 1 },
+    );
+  });
+
+  it('publishConfig rejects when not connected', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    await expect(adapter.publishConfig('M999', {})).rejects.toThrow(/not connected/i);
   });
 });
