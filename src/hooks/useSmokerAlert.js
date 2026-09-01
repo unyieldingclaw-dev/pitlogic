@@ -16,7 +16,7 @@ function playBeep() {
     });
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 1);
-  } catch (_) {
+  } catch {
     // AudioContext blocked or unavailable — silent fallback
   }
 }

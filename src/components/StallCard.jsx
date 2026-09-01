@@ -1,4 +1,4 @@
-import { Thermometer, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Thermometer, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const STALL_BARS = [
   { label: 'Brisket',        time: 'up to 7 hrs', width: 95, color: 'var(--red)'   },

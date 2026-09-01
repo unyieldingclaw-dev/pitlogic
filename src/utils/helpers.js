@@ -26,3 +26,9 @@ export const shortDate = ts =>
   new Date(ts).toLocaleDateString([], {
     month: 'short', day: 'numeric', year: 'numeric'
   });
+
+export const probeStatusColor = status =>
+  status === 'active' ? 'var(--green)' : status === 'stale' ? 'var(--amber)' : 'var(--text3)';
+
+export const probeStatusBorderColor = status =>
+  status === 'active' ? 'rgba(16,185,129,0.3)' : status === 'stale' ? 'rgba(245,158,11,0.3)' : 'var(--border)';
