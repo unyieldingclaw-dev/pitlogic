@@ -1,5 +1,6 @@
 import { Flame, ChevronRight } from 'lucide-react';
 import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
+import ProbeFreshness from './ProbeFreshness';
 
 // Last-resort label when no device state label is available.
 // "M180280635-ch2" → "Ch 2",  "M180280635-s3" → "Ch 3"
@@ -43,6 +44,8 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
   const cutCounts = completed.reduce((a, c) => { a[c.cut] = (a[c.cut] || 0) + 1; return a; }, {});
   const favCut = Object.entries(cutCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
   const recent = [...completed].sort((a, b) => b.startTime - a.startTime).slice(0, 4);
+  const hasLiveProbe = [...(liveProbes?.values() ?? [])].some(probe => probe.status === 'active');
+  const hasStaleProbe = [...(liveProbes?.values() ?? [])].some(probe => probe.status === 'stale');
 
   return (
     <div className="fadein">
@@ -94,12 +97,12 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
 
       {/* Live MQTT readings */}
       {liveProbes?.size > 0 && (
-        <div style={{ background: 'var(--surface)', border: '1px solid rgba(16,185,129,0.25)',
+        <div style={{ background: 'var(--surface)', border: `1px solid ${hasLiveProbe ? 'rgba(16,185,129,0.25)' : hasStaleProbe ? 'rgba(245,158,11,0.3)' : 'var(--border)'}`,
           borderRadius: 14, padding: '1.25rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)',
-              display: 'inline-block', boxShadow: '0 0 6px var(--green)' }} />
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>Live Readings</span>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: hasLiveProbe ? 'var(--green)' : hasStaleProbe ? 'var(--amber)' : 'var(--text2)',
+              display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>{hasLiveProbe ? 'Live Readings' : 'Last Readings'}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[...liveProbes.values()].map(probe => {
@@ -125,6 +128,8 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
                     color: isAlarming ? 'var(--red)' : probeStatusColor(probe.status) }}>
                     {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
                   </div>
+                  <ProbeFreshness key={`${probe.status}-${probe.lastReading?.timestamp.capturedAt ?? 'none'}`}
+                    probe={probe} style={{ display: 'block', fontSize: 11, color: 'var(--text2)', marginTop: 2 }} />
                 </div>
               );
             })}

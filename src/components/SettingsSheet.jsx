@@ -3,6 +3,7 @@ import { X, Download, Upload } from 'lucide-react';
 import { buildExport, parseImport, mergeCooks, triggerDownload } from '../utils/dataPortability';
 import DeviceSettingsCard from './DeviceSettingsCard';
 import { probeStatusColor } from '../utils/helpers';
+import ProbeFreshness from './ProbeFreshness';
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -428,7 +429,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
           {liveProbes?.size > 0 && (
             <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
               <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase',
-                letterSpacing: '0.08em', marginBottom: 6 }}>Live Probes</div>
+                letterSpacing: '0.08em', marginBottom: 6 }}>Probe Readings</div>
               {[...liveProbes.values()].map(probe => (
                 <div key={probe.probeId} style={{ display: 'flex', justifyContent: 'space-between',
                   alignItems: 'center', padding: '4px 0', fontSize: 13 }}>
@@ -440,7 +441,8 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
                     fontFamily: 'var(--mono)', fontSize: 13,
                   }}>
                     {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°F` : '—'}
-                    {probe.status === 'stale' && ' (stale)'}
+                    <ProbeFreshness key={`${probe.status}-${probe.lastReading?.timestamp.capturedAt ?? 'none'}`}
+                      probe={probe} style={{ display: 'block', fontSize: 11, color: 'var(--text2)', textAlign: 'right' }} />
                   </span>
                 </div>
               ))}

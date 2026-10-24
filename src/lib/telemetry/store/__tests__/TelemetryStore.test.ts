@@ -32,11 +32,12 @@ describe('TelemetryStore', () => {
 
   it('derives reconnect when disconnected probe emits active reading', () => {
     const { bus, store } = makeStore();
-    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200) });
+    const firstCapturedAt = Date.now() - 1000;
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200, firstCapturedAt) });
     bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1') });
     expect(store.getProbes().get('p1')?.status).toBe('disconnected');
 
-    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 205) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 205, firstCapturedAt + 1) });
     expect(store.getProbes().get('p1')?.status).toBe('active');
   });
 
@@ -64,6 +65,43 @@ describe('TelemetryStore', () => {
     store.stopStaleCheck();
 
     expect(store.getProbes().get('p1')?.status).toBe('active');
+  });
+
+  it('keeps a newer reading when an older event arrives later', () => {
+    const { bus, store } = makeStore();
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 182, now) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 160, now - 20_000) });
+
+    expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(182);
+    expect(store.getProbes().get('p1')?.lastReading?.timestamp.capturedAt).toBe(now);
+  });
+
+  it('keeps the first value when equal-timestamp events conflict', () => {
+    const { bus, store } = makeStore();
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200, now) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 150, now) });
+
+    expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(200);
+  });
+
+  it('marks an already-old reading stale on arrival', () => {
+    const { bus, store } = makeStore();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 177.3, Date.now() - STALE_THRESHOLD_MS - 1000) });
+
+    expect(store.getProbes().get('p1')?.status).toBe('stale');
+  });
+
+  it('does not reactivate a disconnected probe from an older replay', () => {
+    const { bus, store } = makeStore();
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 182, now) });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', now + 1) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 160, now - 40_000) });
+
+    expect(store.getProbes().get('p1')?.status).toBe('disconnected');
+    expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(182);
   });
 
   it('notifies listeners on state change', () => {

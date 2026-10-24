@@ -65,11 +65,12 @@ export class TelemetryStore {
 
   private applyActiveReading(reading: ActiveReading): void {
     const existing = this.probes.get(reading.probeId);
+    if (existing?.lastReading && reading.timestamp.capturedAt <= existing.lastReading.timestamp.capturedAt) return;
     const probe: ProbeState = {
       probeId: reading.probeId,
       label: existing?.label ?? reading.probeId,
       occupancy: 'occupied',
-      status: 'active',
+      status: Date.now() - reading.timestamp.capturedAt > STALE_THRESHOLD_MS ? 'stale' : 'active',
       lastReading: reading,
       targetTemp: existing?.targetTemp ?? null,
       battery: existing?.battery ?? null,
