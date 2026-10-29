@@ -290,7 +290,7 @@ describe('parseStatePayload', () => {
 // Hoisted mock values — must be defined before vi.mock() runs
 const {
   mockConnectAsync, mockSubscribeAsync, mockEndAsync, mockPublishAsync,
-  mockClientOn, simulateMessage, simulateReconnect, clearListeners,
+  mockClientOn, simulateMessage, simulateReconnect, simulateLifecycle, clearListeners,
 } =
   vi.hoisted(() => {
     const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
@@ -313,6 +313,9 @@ const {
       },
       simulateReconnect: (sessionPresent: boolean) => {
         (listeners['connect'] ?? []).forEach(cb => cb({ sessionPresent }));
+      },
+      simulateLifecycle: (event: string) => {
+        (listeners[event] ?? []).forEach(cb => cb());
       },
       clearListeners: () => {
         Object.keys(listeners).forEach(k => { delete listeners[k]; });
@@ -430,6 +433,53 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     await Promise.resolve();
     expect(mockSubscribeAsync.mock.calls.length).toBe(callsBefore + 1);
     expect(mockSubscribeAsync).toHaveBeenLastCalledWith(ALL_TOPICS);
+  });
+
+  it('reports interruption promptly and recovery after subscriptions resume', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const states: string[] = [];
+    adapter.subscribeConnectionState(state => states.push(state));
+    await adapter.connect();
+    expect(states).toEqual(['connected']);
+
+    simulateLifecycle('offline');
+    simulateLifecycle('close');
+    simulateLifecycle('reconnect');
+    expect(states.at(-1)).toBe('reconnecting');
+
+    let finishSubscribe!: () => void;
+    mockSubscribeAsync.mockImplementationOnce(() => new Promise<void>(resolve => { finishSubscribe = resolve; }));
+    simulateReconnect(false);
+    expect(states.at(-1)).toBe('reconnecting');
+    finishSubscribe();
+    await vi.waitFor(() => expect(states.at(-1)).toBe('connected'));
+  });
+
+  it('keeps reconnecting when resubscription fails', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const states: string[] = [];
+    adapter.subscribeConnectionState(state => states.push(state));
+    await adapter.connect();
+    simulateLifecycle('offline');
+    mockSubscribeAsync.mockRejectedValueOnce(new Error('subscription failed'));
+    simulateReconnect(false);
+    await vi.waitFor(() => expect(mockSubscribeAsync).toHaveBeenCalledTimes(2));
+    expect(states.at(-1)).toBe('reconnecting');
+  });
+
+  it('stops lifecycle notifications after unsubscribe and manual disconnect', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const states: string[] = [];
+    const unsubscribe = adapter.subscribeConnectionState(state => states.push(state));
+    await adapter.connect();
+    unsubscribe();
+    simulateLifecycle('offline');
+    expect(states).toEqual(['connected']);
+
+    adapter.subscribeConnectionState(state => states.push(state));
+    await adapter.disconnect();
+    simulateLifecycle('close');
+    expect(states).toEqual(['connected']);
   });
 
   it('emits event for probe topic /probes/+/events (real RFX probe topic)', async () => {

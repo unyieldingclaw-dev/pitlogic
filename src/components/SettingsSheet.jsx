@@ -370,7 +370,7 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               style={{ fontSize: 13, padding: '6px 14px' }}>
               Paste config
             </button>
-            {mqttStatus === 'connected' ? (
+            {mqttStatus === 'connected' || mqttStatus === 'reconnecting' ? (
               <button type="button" className="btn-ghost" onClick={onMqttDisconnect}
                 aria-label="Disconnect from MQTT broker"
                 style={{ fontSize: 13, padding: '6px 14px', color: 'var(--red)', borderColor: 'var(--red)' }}>
@@ -385,9 +385,11 @@ export default function SettingsSheet({ open, onClose, cookState, recipes, onImp
               </button>
             )}
             <span style={{ fontSize: 12, color: mqttStatus === 'connected' ? 'var(--green)' :
+              mqttStatus === 'reconnecting' ? 'var(--amber)' :
               mqttStatus === 'error' ? 'var(--red)' : 'var(--text3)' }}
               role="status" aria-live="polite">
               {mqttStatus === 'connected' && '● Connected'}
+              {mqttStatus === 'reconnecting' && '○ Reconnecting…'}
               {mqttStatus === 'connecting' && '○ Connecting…'}
               {mqttStatus === 'disconnected' && '○ Disconnected'}
               {mqttStatus === 'error' && `✕ ${mqttError ?? 'Error'}`}

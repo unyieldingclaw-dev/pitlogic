@@ -49,6 +49,15 @@ describe('SettingsSheet — Live Device config copy/paste', () => {
     vi.restoreAllMocks();
   });
 
+  it('shows Reconnecting with a Disconnect control during broker loss', () => {
+    render(<SettingsSheet {...baseProps({ mqttStatus: 'reconnecting' })} />);
+
+    expect(screen.getByText('○ Reconnecting…')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Disconnect from MQTT broker' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Connect to MQTT broker' })).toBeNull();
+    expect(screen.queryByText('● Connected')).toBeNull();
+  });
+
   it('copies the current MQTT config to the clipboard as JSON and flashes "Copied ✓"', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });

@@ -4,10 +4,12 @@ import { renderHook, act } from '@testing-library/react';
 // vi.hoisted() runs before vi.mock() which runs before top-level imports.
 // These mock fns are defined here so they can be referenced inside the vi.mock() factories below.
 // Modifying vi.hoisted() or vi.mock() blocks requires keeping them in sync — they are intentionally coupled.
-const { mockConnect, mockSubscribe, mockSubscribeDeviceMeta, mockDisconnect, mockPublish, mockNormalize, mockPublishConfig } = vi.hoisted(() => ({
+const { mockConnect, mockSubscribe, mockSubscribeDeviceMeta, mockSubscribeConnectionState, mockUnsubscribeConnectionState, mockDisconnect, mockPublish, mockNormalize, mockPublishConfig } = vi.hoisted(() => ({
   mockConnect: vi.fn().mockResolvedValue(undefined),
   mockSubscribe: vi.fn().mockReturnValue(() => {}),
   mockSubscribeDeviceMeta: vi.fn().mockReturnValue(() => {}),
+  mockSubscribeConnectionState: vi.fn(),
+  mockUnsubscribeConnectionState: vi.fn(),
   mockDisconnect: vi.fn().mockResolvedValue(undefined),
   mockPublish: vi.fn(),
   mockNormalize: vi.fn().mockReturnValue({ type: 'probe:reading', reading: {} }),
@@ -21,6 +23,7 @@ vi.mock('../../lib/providers/adapters/thermoworks/ThermoWorksAdapter.js', () => 
       this.connect = mockConnect;
       this.subscribe = mockSubscribe;
       this.subscribeDeviceMeta = mockSubscribeDeviceMeta;
+      this.subscribeConnectionState = mockSubscribeConnectionState;
       this.disconnect = mockDisconnect;
       this.publishConfig = mockPublishConfig;
     }
@@ -62,6 +65,7 @@ describe('useThermoWorksProvider', () => {
     mockConnect.mockResolvedValue(undefined);
     mockSubscribe.mockReturnValue(() => {});
     mockSubscribeDeviceMeta.mockReturnValue(() => {});
+    mockSubscribeConnectionState.mockReturnValue(mockUnsubscribeConnectionState);
     mockDisconnect.mockResolvedValue(undefined);
     mockPublishConfig.mockResolvedValue(undefined);
   });
@@ -81,6 +85,35 @@ describe('useThermoWorksProvider', () => {
     expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
+  it('shows reconnecting on transport loss and connected after recovery', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    let reportState;
+    mockSubscribeConnectionState.mockImplementation(handler => { reportState = handler; return mockUnsubscribeConnectionState; });
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    expect(mockSubscribeConnectionState).toHaveBeenCalledTimes(1);
+
+    act(() => reportState('reconnecting'));
+    expect(result.current.status).toBe('reconnecting');
+    act(() => reportState('connected'));
+    expect(result.current.status).toBe('connected');
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores late recovery after manual disconnect during an outage', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    let reportState;
+    mockSubscribeConnectionState.mockImplementation(handler => { reportState = handler; return mockUnsubscribeConnectionState; });
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => reportState('reconnecting'));
+    await act(async () => { await result.current.disconnect(); });
+    act(() => reportState('connected'));
+
+    expect(result.current.status).toBe('disconnected');
+    expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
+  });
+
   it('connect() sets error status when config is missing', async () => {
     lsMock.getItem.mockReturnValue(null);
     const { result } = renderHook(() => useThermoWorksProvider());
@@ -97,6 +130,19 @@ describe('useThermoWorksProvider', () => {
     await act(async () => { await result.current.connect(); });
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('ECONNREFUSED');
+  });
+
+  it('keeps the original connection error when cleanup also fails', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    mockConnect.mockRejectedValue(new Error('ECONNREFUSED'));
+    mockDisconnect.mockRejectedValue(new Error('cleanup failed'));
+    const { result } = renderHook(() => useThermoWorksProvider());
+
+    await act(async () => { await result.current.connect(); });
+
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('ECONNREFUSED');
+    expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
   });
 
   it('disconnect() transitions back to disconnected', async () => {

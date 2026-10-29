@@ -43,7 +43,7 @@ export function useThermoWorksProvider() {
   const [error, setError] = useState(null);
   // Device meta (state/battery/firmware) stays in hook-local state — must NOT flow through globalEventBus.
   const [deviceState, setDeviceState] = useState(() => new Map());
-  const sessionRef = useRef(null); // { adapter, unsub, unsubMeta }
+  const sessionRef = useRef(null); // { adapter, unsub, unsubMeta, stopConnectionUpdates }
   const seenConfigRef = useRef(new Set()); // gatewayIds with a live retained config seen this session
 
   const connect = useCallback(async () => {
@@ -57,12 +57,16 @@ export function useThermoWorksProvider() {
     setStatus('connecting');
     setError(null);
 
+    let adapter;
+    let unsub;
+    let unsubMeta;
+    let stopConnectionUpdates;
     try {
-      const adapter = new ThermoWorksAdapter(config);
+      adapter = new ThermoWorksAdapter(config);
       // Raw events cross the provider boundary here: normalize validates shape (Zod),
       // then publish delivers to TelemetryStore via the eventBus. Normalization happens
       // in the hook, not in the adapter, to keep the adapter purely transport-layer.
-      const unsub = adapter.subscribe(rawEvent => {
+      unsub = adapter.subscribe(rawEvent => {
         const normalized = normalizeProviderEvent(rawEvent, adapter.id);
         if (normalized.type === 'gateway:config') {
           seenConfigRef.current.add(normalized.gatewayId);
@@ -70,7 +74,7 @@ export function useThermoWorksProvider() {
         }
         globalEventBus.publish(normalized);
       });
-      const unsubMeta = adapter.subscribeDeviceMeta(event => {
+      unsubMeta = adapter.subscribeDeviceMeta(event => {
         setDeviceState(prev => {
           const map = new Map(prev);
           if (event.type === 'state') {
@@ -82,10 +86,23 @@ export function useThermoWorksProvider() {
           return map;
         });
       });
+      let listening = true;
+      let lastConnectionState = null;
+      const unsubConnectionState = adapter.subscribeConnectionState(nextState => {
+        if (!listening) return;
+        lastConnectionState = nextState;
+        setStatus(nextState);
+        if (nextState === 'connected') setError(null);
+      });
+      stopConnectionUpdates = () => { listening = false; unsubConnectionState(); };
       await adapter.connect();
-      sessionRef.current = { adapter, unsub, unsubMeta };
-      setStatus('connected');
+      sessionRef.current = { adapter, unsub, unsubMeta, stopConnectionUpdates };
+      setStatus(lastConnectionState === 'reconnecting' ? 'reconnecting' : 'connected');
     } catch (err) {
+      stopConnectionUpdates?.();
+      unsub?.();
+      unsubMeta?.();
+      try { await adapter?.disconnect(); } catch { /* preserve the original connection error */ }
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Connection failed');
     }
@@ -93,11 +110,12 @@ export function useThermoWorksProvider() {
 
   const disconnect = useCallback(async () => {
     if (!sessionRef.current) return;
-    const { adapter, unsub, unsubMeta } = sessionRef.current;
+    const { adapter, unsub, unsubMeta, stopConnectionUpdates } = sessionRef.current;
+    sessionRef.current = null;
+    stopConnectionUpdates();
     unsub();
     unsubMeta();
     await adapter.disconnect();
-    sessionRef.current = null;
     seenConfigRef.current.clear(); // "seen this session" — a new session starts with no baselines seen
     setStatus('disconnected');
     setError(null);
@@ -136,6 +154,7 @@ export function useThermoWorksProvider() {
     return () => {
       const session = sessionRef.current;
       if (session) {
+        session.stopConnectionUpdates();
         session.unsub();
         session.unsubMeta();
         void session.adapter.disconnect();

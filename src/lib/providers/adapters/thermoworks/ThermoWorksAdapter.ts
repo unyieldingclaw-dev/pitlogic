@@ -68,6 +68,7 @@ export interface DeviceFirmwareEvent {
 }
 
 export type DeviceMetaEvent = DeviceStateEvent | DeviceBatteryEvent | DeviceFirmwareEvent;
+export type ConnectionState = 'connected' | 'reconnecting';
 
 // ---------------------------------------------------------------------------
 // Pure transform functions — exported for unit testing without a mock broker.
@@ -224,6 +225,8 @@ export class ThermoWorksAdapter implements TemperatureProvider {
   private _messageHandlerRegistered = false;
   private readonly _handlers = new Set<(event: RawProviderEvent) => void>();
   private readonly _metaHandlers = new Set<(event: DeviceMetaEvent) => void>();
+  private readonly _connectionStateHandlers = new Set<(state: ConnectionState) => void>();
+  private _connectionGeneration = 0;
   private readonly _gatewayUnits = new Map<string, 'F' | 'C'>();
   private readonly _configCache = new Map<string, Record<string, unknown>>();
 
@@ -238,9 +241,18 @@ export class ThermoWorksAdapter implements TemperatureProvider {
       password: this._config.password,
     });
     this._client = client;
+    client.on('offline', () => this._markReconnecting(client));
+    client.on('close', () => this._markReconnecting(client));
+    client.on('reconnect', () => this._markReconnecting(client));
+    client.on('error', () => this._markReconnecting(client));
+    client.on('connect', (connack: IConnackPacket) => {
+      const generation = ++this._connectionGeneration;
+      void this._onReconnect(connack, client, generation);
+    });
+    const generation = ++this._connectionGeneration;
     await client.subscribeAsync(SUBSCRIPTIONS);
     this._registerMessageHandler();
-    client.on('connect', (connack: IConnackPacket) => { void this._onReconnect(connack); });
+    if (this._client === client && this._connectionGeneration === generation) this._emitConnectionState('connected');
   }
 
   subscribe(handler: (event: RawProviderEvent) => void): () => void {
@@ -254,10 +266,18 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     return () => { this._metaHandlers.delete(handler); };
   }
 
+  subscribeConnectionState(handler: (state: ConnectionState) => void): () => void {
+    this._connectionStateHandlers.add(handler);
+    return () => { this._connectionStateHandlers.delete(handler); };
+  }
+
   async disconnect(): Promise<void> {
     if (!this._client) return;
-    await this._client.endAsync(true);
+    const client = this._client;
     this._client = null;
+    this._connectionGeneration++;
+    this._connectionStateHandlers.clear();
+    await client.endAsync(true);
     this._messageHandlerRegistered = false;
     this._handlers.clear();
     this._metaHandlers.clear();
@@ -301,9 +321,26 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     this._messageHandlerRegistered = true;
   }
 
-  private async _onReconnect(connack: IConnackPacket): Promise<void> {
-    if (connack.sessionPresent || !this._client) return;
-    await this._client.subscribeAsync(SUBSCRIPTIONS);
+  private _markReconnecting(client: MqttClient): void {
+    if (this._client !== client) return;
+    this._connectionGeneration++;
+    this._emitConnectionState('reconnecting');
+  }
+
+  private _emitConnectionState(state: ConnectionState): void {
+    for (const handler of this._connectionStateHandlers) {
+      try { handler(state); } catch { /* isolate handler failures */ }
+    }
+  }
+
+  private async _onReconnect(connack: IConnackPacket, client: MqttClient, generation: number): Promise<void> {
+    if (this._client !== client) return;
+    try {
+      if (!connack.sessionPresent) await client.subscribeAsync(SUBSCRIPTIONS);
+      if (this._client === client && this._connectionGeneration === generation) this._emitConnectionState('connected');
+    } catch {
+      if (this._client === client && this._connectionGeneration === generation) this._emitConnectionState('reconnecting');
+    }
   }
 
   private _onMessage(topic: string, payload: Buffer): void {
