@@ -1,7 +1,7 @@
 import type { NormalizedTelemetryEvent } from '../domain/TelemetryEvents.js';
 import type { ProbeState } from '../domain/ProbeSemantics.js';
 import type { GatewayState, EditableDeviceConfig } from '../domain/GatewayState.js';
-import type { ActiveReading } from '../domain/TelemetryModels.js';
+import type { ActiveReading, DisconnectedReading } from '../domain/TelemetryModels.js';
 import type { IEventBus } from '../eventBus/types.js';
 import { STALE_THRESHOLD_MS } from './StoreTypes.js';
 
@@ -14,6 +14,7 @@ type StateListener = (probes: ReadonlyMap<string, ProbeState>) => void;
  */
 export class TelemetryStore {
   private readonly probes = new Map<string, ProbeState>();
+  private readonly lastStateEventAt = new Map<string, number>();
   private readonly gatewayStateMap = new Map<string, GatewayState>();
   private readonly listeners = new Set<StateListener>();
   private staleCheckInterval: ReturnType<typeof setInterval> | null = null;
@@ -53,7 +54,7 @@ export class TelemetryStore {
     if (event.type === 'probe:reading') {
       this.applyActiveReading(event.reading);
     } else if (event.type === 'probe:disconnected') {
-      this.applyDisconnect(event.reading.probeId);
+      this.applyDisconnect(event.reading);
     } else if (event.type === 'gateway:state') {
       this.applyGatewayState(event);
     } else if (event.type === 'probe:battery') {
@@ -65,7 +66,7 @@ export class TelemetryStore {
 
   private applyActiveReading(reading: ActiveReading): void {
     const existing = this.probes.get(reading.probeId);
-    if (existing?.lastReading && reading.timestamp.capturedAt <= existing.lastReading.timestamp.capturedAt) return;
+    if (reading.timestamp.capturedAt <= (this.lastStateEventAt.get(reading.probeId) ?? -Infinity)) return;
     const probe: ProbeState = {
       probeId: reading.probeId,
       label: existing?.label ?? reading.probeId,
@@ -75,11 +76,14 @@ export class TelemetryStore {
       targetTemp: existing?.targetTemp ?? null,
       battery: existing?.battery ?? null,
     };
+    this.lastStateEventAt.set(reading.probeId, reading.timestamp.capturedAt);
     this.probes.set(reading.probeId, probe);
     this.notify();
   }
 
-  private applyDisconnect(probeId: string): void {
+  private applyDisconnect(reading: DisconnectedReading): void {
+    const { probeId } = reading;
+    if (reading.timestamp.capturedAt < (this.lastStateEventAt.get(probeId) ?? -Infinity)) return;
     const existing = this.probes.get(probeId);
     const probe: ProbeState = {
       probeId,
@@ -90,6 +94,7 @@ export class TelemetryStore {
       targetTemp: existing?.targetTemp ?? null,
       battery: existing?.battery ?? null,
     };
+    this.lastStateEventAt.set(probeId, reading.timestamp.capturedAt);
     this.probes.set(probeId, probe);
     this.notify();
   }

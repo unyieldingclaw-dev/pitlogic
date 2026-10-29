@@ -3,6 +3,8 @@ import { TelemetryStore } from '../TelemetryStore.js';
 import { EventBus } from '../../eventBus/EventBus.js';
 import { STALE_THRESHOLD_MS } from '../StoreTypes.js';
 import { fakeActiveReading, fakeDisconnectedReading } from '../../../providers/testing/fakeTelemetry.js';
+import { CsvProvider } from '../../../providers/adapters/csv/CsvProvider.js';
+import { normalizeProviderEvent } from '../../normalization/normalize.js';
 
 function makeStore() {
   const bus = new EventBus();
@@ -25,8 +27,9 @@ describe('TelemetryStore', () => {
 
   it('marks probe disconnected on probe:disconnected', () => {
     const { bus, store } = makeStore();
-    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200) });
-    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1') });
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200, now - 1) });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', now) });
     expect(store.getProbes().get('p1')?.status).toBe('disconnected');
   });
 
@@ -34,10 +37,10 @@ describe('TelemetryStore', () => {
     const { bus, store } = makeStore();
     const firstCapturedAt = Date.now() - 1000;
     bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200, firstCapturedAt) });
-    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1') });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', firstCapturedAt + 1) });
     expect(store.getProbes().get('p1')?.status).toBe('disconnected');
 
-    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 205, firstCapturedAt + 1) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 205, firstCapturedAt + 2) });
     expect(store.getProbes().get('p1')?.status).toBe('active');
   });
 
@@ -104,13 +107,59 @@ describe('TelemetryStore', () => {
     expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(182);
   });
 
+  it('does not reactivate from a reading captured before the disconnect', () => {
+    const { bus, store } = makeStore();
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 182, now - 2_000) });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', now) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 190, now - 1_000) });
+
+    expect(store.getProbes().get('p1')?.status).toBe('disconnected');
+    expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(182);
+  });
+
+  it('does not disconnect from an event captured before the latest reading', () => {
+    const { bus, store } = makeStore();
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 182, now) });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', now - 1_000) });
+
+    expect(store.getProbes().get('p1')?.status).toBe('active');
+    expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(182);
+  });
+
+  it('treats a disconnect at the same capture time as the safer final status', () => {
+    const { bus, store } = makeStore();
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 182, now) });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', now) });
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 190, now) });
+
+    expect(store.getProbes().get('p1')?.status).toBe('disconnected');
+    expect(store.getProbes().get('p1')?.lastReading?.temp.valueF).toBe(182);
+  });
+
+  it('keeps the last value from a CSV replay without timestamps', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-23T20:00:00Z'));
+    const { bus, store } = makeStore();
+    const provider = new CsvProvider();
+    provider.subscribe(raw => bus.publish(normalizeProviderEvent(raw, provider.id)));
+    provider.load('Probe 1\n180\n205');
+
+    await provider.connect();
+
+    expect(store.getProbes().get('probe-0')?.lastReading?.temp.valueF).toBe(205);
+  });
+
   it('notifies listeners on state change', () => {
     const { bus, store } = makeStore();
     const calls: number[] = [];
     store.subscribe(() => calls.push(1));
 
-    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200) });
-    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1') });
+    const now = Date.now();
+    bus.publish({ type: 'probe:reading', reading: fakeActiveReading('p1', 200, now - 1) });
+    bus.publish({ type: 'probe:disconnected', reading: fakeDisconnectedReading('p1', now) });
 
     expect(calls).toHaveLength(2);
   });
