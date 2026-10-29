@@ -8,6 +8,7 @@ QA-005: During a controlled 37-second MQTT transport outage, Settings continued 
 - On MQTT offline, close, or reconnect, Settings promptly says Reconnecting and keeps Disconnect available.
 - After a recovered connection has restored subscriptions, Settings says Connected again.
 - A manual disconnect says Disconnected and cannot be reversed by a late client event.
+- A recoverable MQTT error while the transport is still connected does not imply a broker outage. If forced shutdown rejects, application listeners are still detached and Settings leaves Reconnecting.
 - Last probe values continue to use the existing per-probe Live/Stale/Disconnected age display; broker state does not manufacture probe readings.
 
 ## Design

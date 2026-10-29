@@ -244,7 +244,7 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     client.on('offline', () => this._markReconnecting(client));
     client.on('close', () => this._markReconnecting(client));
     client.on('reconnect', () => this._markReconnecting(client));
-    client.on('error', () => this._markReconnecting(client));
+    client.on('error', () => { if (!client.connected) this._markReconnecting(client); });
     client.on('connect', (connack: IConnackPacket) => {
       const generation = ++this._connectionGeneration;
       void this._onReconnect(connack, client, generation);
@@ -277,10 +277,10 @@ export class ThermoWorksAdapter implements TemperatureProvider {
     this._client = null;
     this._connectionGeneration++;
     this._connectionStateHandlers.clear();
-    await client.endAsync(true);
     this._messageHandlerRegistered = false;
     this._handlers.clear();
     this._metaHandlers.clear();
+    await client.endAsync(true);
   }
 
   /**

@@ -114,6 +114,22 @@ describe('useThermoWorksProvider', () => {
     expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
   });
 
+  it('finishes manual disconnect when MQTT shutdown rejects', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    let reportState;
+    mockSubscribeConnectionState.mockImplementation(handler => { reportState = handler; return mockUnsubscribeConnectionState; });
+    mockDisconnect.mockRejectedValueOnce(new Error('shutdown failed'));
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => reportState('reconnecting'));
+
+    await act(async () => { await result.current.disconnect(); });
+    act(() => reportState('connected'));
+
+    expect(result.current.status).toBe('disconnected');
+    expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
+  });
+
   it('connect() sets error status when config is missing', async () => {
     lsMock.getItem.mockReturnValue(null);
     const { result } = renderHook(() => useThermoWorksProvider());

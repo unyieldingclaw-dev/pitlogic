@@ -115,7 +115,7 @@ export function useThermoWorksProvider() {
     stopConnectionUpdates();
     unsub();
     unsubMeta();
-    await adapter.disconnect();
+    try { await adapter.disconnect(); } catch { /* app listeners are already detached */ }
     seenConfigRef.current.clear(); // "seen this session" — a new session starts with no baselines seen
     setStatus('disconnected');
     setError(null);

@@ -482,6 +482,42 @@ describe('ThermoWorksAdapter — connection lifecycle', () => {
     expect(states).toEqual(['connected']);
   });
 
+  it('does not report reconnecting for an error while transport is connected', async () => {
+    const client = {
+      on: mockClientOn, subscribeAsync: mockSubscribeAsync, endAsync: mockEndAsync,
+      publishAsync: mockPublishAsync, connected: true,
+    };
+    mockConnectAsync.mockResolvedValue(client);
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const states: string[] = [];
+    adapter.subscribeConnectionState(state => states.push(state));
+    await adapter.connect();
+
+    simulateLifecycle('error');
+    expect(states.at(-1)).toBe('connected');
+    client.connected = false;
+    simulateLifecycle('error');
+    expect(states.at(-1)).toBe('reconnecting');
+  });
+
+  it('clears listeners even when forced MQTT shutdown rejects', async () => {
+    const adapter = new ThermoWorksAdapter(VALID_CONFIG);
+    const states: string[] = [];
+    const received: unknown[] = [];
+    adapter.subscribeConnectionState(state => states.push(state));
+    adapter.subscribe(event => received.push(event));
+    await adapter.connect();
+    mockEndAsync.mockRejectedValueOnce(new Error('shutdown failed'));
+
+    await expect(adapter.disconnect()).rejects.toThrow('shutdown failed');
+    simulateLifecycle('close');
+    simulateMessage('/probes/QA000/events', Buffer.from(JSON.stringify({
+      channels: [{ number: 1, ts: Date.now(), readings: [{ type: 'T', value: 180 }] }],
+    })));
+    expect(states).toEqual(['connected']);
+    expect(received).toHaveLength(0);
+  });
+
   it('emits event for probe topic /probes/+/events (real RFX probe topic)', async () => {
     const adapter = new ThermoWorksAdapter(VALID_CONFIG);
     const received: unknown[] = [];
