@@ -65,6 +65,7 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
           borderRadius: 14, padding: '1.25rem', marginBottom: '1rem', cursor: 'pointer',
           boxShadow: '0 0 24px rgba(255,107,53,0.12)',
           width: '100%', textAlign: 'left', fontFamily: 'inherit',
+          color: 'var(--text)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
