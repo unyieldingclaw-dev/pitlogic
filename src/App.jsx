@@ -279,8 +279,8 @@ export default function App() {
     setTab(id);
     if (id === 'active') {
       if (!activeId) setView('new'); else setView('active');
-    }
-    if (id !== 'history' && id !== 'dashboard') setDetailId(null);
+    } else setView('history');
+    setDetailId(null);
   };
 
   if (!loaded) return (
