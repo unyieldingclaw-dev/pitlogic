@@ -11,7 +11,15 @@ describe('Devices guided state', () => {
     expect(screen.getByText('Set up a new gateway').closest('details').open).toBe(false);
     expect(screen.getByText(/Device readings — not recorded in a cook/)).toBeTruthy();
     expect(screen.getByText('Connected — waiting for fresh device readings.')).toBeTruthy();
+    expect(screen.getByText('Connection settings', { exact: true }).closest('details').open).toBe(false);
     expect(screen.getByLabelText('Broker URL').matches(':disabled')).toBe(true);
+  });
+  it('reopens editable connection settings after an error', () => {
+    const base = props();
+    const { rerender } = render(<DevicesPanel {...base} />);
+    rerender(<DevicesPanel {...base} mqttStatus="error" mqttError="Connection failed" />);
+    expect(screen.getByText('Connection settings', { exact: true }).closest('details').open).toBe(true);
+    expect(screen.getByLabelText('Broker URL').matches(':disabled')).toBe(false);
   });
   it('does not treat CSV replay or stale samples as verified fresh device readings', () => {
     const base = props();

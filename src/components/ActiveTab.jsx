@@ -82,7 +82,7 @@ export default function ActiveTab({
       </div>
 
       {/* Multi-cook tab strip */}
-      {allActiveCooks && allActiveCooks.length > 1 && (
+      {allActiveCooks && allActiveCooks.length > 0 && (
         <div style={{ display: 'flex', gap: 6, marginBottom: '1rem', overflowX: 'auto' }}>
           {allActiveCooks.map((c, i) => (
             <button key={c.id} onClick={() => setActiveCookIdx(i)}

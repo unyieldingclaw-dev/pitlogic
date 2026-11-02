@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import App from '../App.jsx';
 
@@ -11,10 +11,11 @@ const completedCook = {
 
 describe('navigation from completed cook detail', () => {
   beforeEach(() => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     localStorage.clear();
     localStorage.setItem('pitlogic-v5', JSON.stringify({ cooks: [completedCook], activeCooks: [], dis: {} }));
   });
-  afterEach(() => cleanup());
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
   it.each([
     ['Dashboard', 'Home', 'Recent Cooks'],
@@ -29,6 +30,7 @@ describe('navigation from completed cook detail', () => {
     const main = screen.getByRole('main');
 
     fireEvent.click(within(nav).getByRole('button', { name: 'History' }));
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
     fireEvent.click(within(main).getByRole('button', { name: /Test Brisket/ }));
     expect(within(main).getByRole('button', { name: 'History' })).toBeTruthy();
 
@@ -70,5 +72,19 @@ describe('navigation from completed cook detail', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(settings);
+  });
+
+  it('can add a second cook directly from the first active cook', async () => {
+    const active = { ...completedCook, id: 'active1', name: 'First active cook', status: 'active', endTime: null };
+    localStorage.setItem('pitlogic-v5', JSON.stringify({ cooks: [completedCook, active], activeCooks: [active.id], dis: {} }));
+    render(<App />);
+    const nav = await screen.findByRole('navigation', { name: 'Main navigation' });
+    fireEvent.click(within(nav).getByRole('button', { name: 'Cook', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add Cook', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Cook', exact: true }));
+    const saved = JSON.parse(localStorage.getItem('pitlogic-v5'));
+    expect(saved.activeCooks.length).toBe(2);
+    expect(saved.activeCooks).toContain('active1');
+    expect(saved.cooks.find(cook => cook.id === 'active1').status).toBe('active');
   });
 });

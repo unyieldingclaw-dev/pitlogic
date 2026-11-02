@@ -44,10 +44,10 @@
 
 **Interfaces:** `NewCookSetup({form,onChange,onStart,onOpenDevices})` is a presentation extraction of the existing manual form; no persistent mode/binding field yet. `MoreTab({onSelect})` links Devices/Guides/Recipes/Stats/Settings. Both surfaces use Home/Cook/History/More; More remains selected for secondary screens. App retains selected cook/detail and multi-cook state.
 
-- [ ] Write failing navigation tests from detail to four main destinations and More children; preserve detail entry, active selection, Add cook, guide-to-start, History return, Settings close and reload.
-- [ ] Write failing setup tests: no connection required; food/cut/probe names/targets precede optional name/equipment/pellets/timers/guidance; optional details can expand; values survive a Devices round-trip. Existing manual Start/Log/End values and backup data shape remain identical.
-- [ ] Extract/reorder only the form presentation and implement the consistent navigation/Home priority. Resume active cook or Start a cook comes before historical statistics. Keep multi-cook selection.
-- [ ] Run focused tests, changed-file lint, production build; visually inspect mobile/desktop in both themes. Commit A1.
+- [x] Write failing navigation tests from detail to four main destinations and More children; preserve detail entry, active selection, Add cook, guide-to-start, History return, Settings close and reload.
+- [x] Write failing setup tests: no connection required; food/cut/probe names/targets precede optional name/equipment/pellets/timers/guidance; optional details can expand; values survive a Devices round-trip. Existing manual Start/Log/End values and backup data shape remain identical.
+- [x] Extract/reorder only the form presentation and implement the consistent navigation/Home priority. Resume active cook or Start a cook comes before historical statistics. Keep multi-cook selection.
+- [x] Run focused tests, changed-file lint, production build; visually inspect mobile/desktop in both themes. Commit A1.
 
 ### A2: Discoverable Devices and edited-config connection
 
@@ -55,19 +55,19 @@
 
 **Interfaces:** `useDeviceConnectionConfig()` owns the existing config key without changing its shape. Provider `connect(config?)` accepts submitted current values or loads existing saved values when omitted. Devices receives connection/config/probe state via props; Bluetooth success has an explicit Continue to connection action. Its return action restores the pending cook form.
 
-- [ ] Red tests: edited fields reach Save and connect without a second Save; save failure never claims Saved; failed connect is distinct from failed save; no credentials in error/evidence/logs.
-- [ ] Implement already-configured vs initial device-setup paths, required endpoint guidance, unsupported-Bluetooth recovery, independent Connected versus Fresh readings state. Hardware status/edits and clipboard/CSV replay remain explicit advanced actions.
-- [ ] Existing live device readings must say **Device readings — not recorded in a cook**. Stage A does not add a disabled or apparently working RFX cook-source choice; do not imply source parity is complete yet.
-- [ ] Test no probes/stale/reconnecting/readings received, form return, and no device-config publish from normal setup. Run focused tests/browser fixture; commit A2.
+- [x] Red tests: edited fields reach Save and connect without a second Save; save failure never claims Saved; failed connect is distinct from failed save; no credentials in error/evidence/logs.
+- [x] Implement already-configured vs initial device-setup paths, required endpoint guidance, unsupported-Bluetooth recovery, independent Connected versus Fresh readings state. Hardware status/edits and clipboard/CSV replay remain explicit advanced actions.
+- [x] Existing live device readings must say **Device readings — not recorded in a cook**. Stage A does not add a disabled or apparently working RFX cook-source choice; do not imply source parity is complete yet.
+- [x] Test no probes/stale/reconnecting/readings received, form return, and no device-config publish from normal setup. Run focused tests/browser fixture; commit A2.
 
 ### A3: Stage A verification and independent review
 
 **Files:** create `scripts/qa/usability-flow.mjs`; update audit evidence/Memory Bank and task checkboxes.
 
-- [ ] Full Vitest, changed-file lint, build, diff check. Compare the eight known library TypeScript diagnostics if TS boundary files change; introduce none.
-- [ ] Playwright empty Home → manual setup → log → end → History; Devices round-trip, error/reconnect and current-reading disclosure; preserve recipe/guide/stats access and two active cooks. Verify saved state/export against the pre-change schema.
-- [ ] Inspect settled 390×844/1440×900 dark/light screenshots, keyboard/error focus and touch targets. Record hesitation/wrong turns; do not call this a novice user study.
-- [ ] Independent branch review, correct verified findings and rerun affected checks. Hand over Stage A separately, with automatic RFX recording explicitly incomplete and no release-ready claim. Local merge is a separate decision.
+- [x] Full Vitest, changed-file lint, build, diff check. Compare the eight known library TypeScript diagnostics if TS boundary files change; introduce none.
+- [x] Playwright empty Home → manual setup → log → end → History; Devices round-trip, error/reconnect and current-reading disclosure; preserve recipe/guide/stats access and two active cooks. Verify saved state/export against the pre-change schema.
+- [x] Inspect settled 390×844/1440×900 dark/light screenshots, keyboard/error focus and touch targets. Record hesitation/wrong turns; do not call this a novice user study.
+- [x] Independent branch review, correct verified findings and rerun affected checks. Hand over Stage A separately, with automatic RFX recording explicitly incomplete and no release-ready claim. Local merge is a separate decision.
 
 ## Stage B — storage and recording proof before full-flow integration
 

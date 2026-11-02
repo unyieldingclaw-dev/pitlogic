@@ -69,6 +69,17 @@ describe('DevicesPanel — Live Device config copy/paste', () => {
       expect(screen.queryByText('Saved ✓')).toBeNull();
     } finally { storage.mockRestore(); }
   });
+
+  it('clears an earlier success message when a later save is rejected', () => {
+    render(<SettingsSheet {...baseProps()} />);
+    fillMqttFields({});
+    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    expect(screen.getByText('Saved ✓')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save and connect', exact: true }));
+    expect(screen.getByRole('alert').textContent).toMatch(/enter the broker address/i);
+    expect(screen.queryByText('Saved ✓')).toBeNull();
+  });
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers({ shouldAdvanceTime: true });

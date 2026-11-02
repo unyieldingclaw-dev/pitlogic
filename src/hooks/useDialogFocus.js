@@ -12,7 +12,7 @@ export function useDialogFocus(open, onClose) {
     document.body.style.overflow = 'hidden';
     const focusable = () => [...dialog.querySelectorAll('button, input, select, textarea, a[href], summary, [tabindex]')].filter(el => {
       const closed = el.closest('details:not([open])');
-      return !el.disabled && el.tabIndex >= 0 && getComputedStyle(el).display !== 'none' && !el.closest('[hidden]') && (!closed || closed.querySelector('summary')?.contains(el));
+      return !el.matches(':disabled') && el.tabIndex >= 0 && getComputedStyle(el).display !== 'none' && !el.closest('[hidden]') && (!closed || closed.querySelector('summary')?.contains(el));
     });
     (focusable()[0] ?? dialog).focus();
     const onKey = event => {

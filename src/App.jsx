@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MEATS } from './data/meats';
 import { G } from './data/cuts';
 import { save, load } from './hooks/useStorage.js';
@@ -36,6 +36,7 @@ export default function App() {
   const [guideKey, setGuideKey]     = useState('Brisket');
   const [guideCat, setGuideCat]     = useState('Beef');
   const [loaded, setLoaded]         = useState(false);
+  const mainRef = useRef(null);
   const [tick, setTick]             = useState(0);
   const [msg, setMsg]               = useState('');
   const [dismissed, setDismissed]   = useState({});
@@ -69,6 +70,12 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = prefs.theme === 'light' ? 'light' : 'dark';
   }, [prefs.theme]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    window.scrollTo(0, 0);
+    mainRef.current?.focus({ preventScroll: true });
+  }, [loaded, tab, view]);
 
   const persist = (nc, ac, dis) => save({ cooks: nc, activeCooks: ac, dis });
   const update  = (nc, ac = activeCooks, dis = dismissed) => { setCooks(nc); persist(nc, ac, dis); };
@@ -491,7 +498,7 @@ export default function App() {
         </header>
 
         {/* Page content */}
-        <main className="app-content">
+        <main ref={mainRef} tabIndex={-1} className="app-content">
           {!isDetail && tab === 'more' && <MoreTab onSelect={handleNavClick} />}
           {!isDetail && tab === 'devices' && <DevicesPanel onBack={closeDevices} backLabel={deviceReturn?.view === 'new' ? 'Back to cook setup' : 'Back'}
         mqttStatus={mqttProvider.status}

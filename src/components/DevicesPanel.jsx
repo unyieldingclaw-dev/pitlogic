@@ -36,7 +36,12 @@ export default function DevicesPanel({ onBack, backLabel = "Back", mqttStatus, m
 
   const handleMqttSave = () => {
     try { saveConfig(mqttConfig); setConfigError(null); }
-    catch (error) { setConfigError(error.message); return false; }
+    catch (error) {
+      if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
+      setMqttSaved(false);
+      setConfigError(error.message);
+      return false;
+    }
     if (mqttSavedTimerRef.current) clearTimeout(mqttSavedTimerRef.current);
     setMqttSaved(true);
     mqttSavedTimerRef.current = setTimeout(() => setMqttSaved(false), 2000);
@@ -145,6 +150,9 @@ export default function DevicesPanel({ onBack, backLabel = "Back", mqttStatus, m
           </div>
           <p className="flow-help">Use an already configured gateway. Enter your broker's WebSocket address and credentials to receive readings in PitLogic. The gateway's MQTT address is a separate connection.</p>
           {configError && <p ref={errorRef} tabIndex={-1} role="alert" className="flow-error">{configError}</p>}
+          <details className="flow-options" open={!busy}>
+          <summary>Connection settings</summary>
+          {busy && <p className="flow-help">Disconnect before editing these settings.</p>}
           <fieldset disabled={busy} className="connection-fields"><legend className="sr-only">Broker connection settings</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
             <div>
@@ -221,6 +229,7 @@ export default function DevicesPanel({ onBack, backLabel = "Back", mqttStatus, m
           </div>
 
           </fieldset>
+          </details>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             {mqttStatus === 'connected' || mqttStatus === 'reconnecting' ? (
               <button type="button" className="btn-ghost" onClick={onMqttDisconnect}
