@@ -1,0 +1,12 @@
+# Execution ledger — plan: docs/superpowers/plans/2026-10-31-intuitive-cook-flow-v2.md
+
+Approved scope: Stage A only, user 2026-11-01. Base: 21eef18; branch codex/usability-stage-a. Stage B/storage migration is unapproved.
+
+Pre-flight: A1 navigation/form must supply A2 Devices entry and preserve pending form. A2 connection submission must pass edited values to provider without touching cook state. A3 verifies both without new cook fields.
+
+Ruling: use a committed Windows-native ledger rather than Bash workspace scripts — preserve resumable evidence with available PowerShell tools.
+Ruling: NewCookSetup retains prefs/setCutPref/onGoGuide presentation props — existing defaults and guide-to-start behavior must survive extraction.
+
+- A1: in progress; red navigation/form regression pending.
+- A2: pending.
+- A3: pending.
