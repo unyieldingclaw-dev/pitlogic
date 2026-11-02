@@ -56,4 +56,19 @@ describe('navigation from completed cook detail', () => {
     expect(localStorage.getItem('pitlogic-v5')).toBe(before);
     expect(within(nav).getAllByRole('button').map(b => b.textContent)).toEqual(['Home', 'Cook', 'History', 'More']);
   });
+
+  it('keeps Settings separate from Devices and restores keyboard focus on Escape', async () => {
+    render(<App />);
+    const nav = await screen.findByRole('navigation', { name: 'Main navigation' });
+    fireEvent.click(within(nav).getByRole('button', { name: 'More' }));
+    const settings = within(screen.getByRole('main')).getByRole('button', { name: 'Settings', exact: true });
+    settings.focus();
+    fireEvent.click(settings);
+    const dialog = screen.getByRole('dialog', { name: 'Settings' });
+    expect(within(dialog).queryByLabelText('Broker URL')).toBeNull();
+    expect(document.activeElement.getAttribute('aria-label')).toBe('Close settings');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(settings);
+  });
 });

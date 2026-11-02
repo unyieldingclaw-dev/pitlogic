@@ -46,8 +46,9 @@ export function useThermoWorksProvider() {
   const sessionRef = useRef(null); // { adapter, unsub, unsubMeta, stopConnectionUpdates }
   const seenConfigRef = useRef(new Set()); // gatewayIds with a live retained config seen this session
 
-  const connect = useCallback(async () => {
-    const config = loadConfig();
+  const connect = useCallback(async submittedConfig => {
+    if (sessionRef.current) return;
+    const config = submittedConfig ?? loadConfig();
     if (!config?.brokerUrl || !config?.username || !config?.password) {
       setError('Missing broker configuration. Set broker URL, username, and password first.');
       setStatus('error');
@@ -98,13 +99,13 @@ export function useThermoWorksProvider() {
       await adapter.connect();
       sessionRef.current = { adapter, unsub, unsubMeta, stopConnectionUpdates };
       setStatus(lastConnectionState === 'reconnecting' ? 'reconnecting' : 'connected');
-    } catch (err) {
+    } catch {
       stopConnectionUpdates?.();
       unsub?.();
       unsubMeta?.();
       try { await adapter?.disconnect(); } catch { /* preserve the original connection error */ }
       setStatus('error');
-      setError(err instanceof Error ? err.message : 'Connection failed');
+      setError('Could not connect. Check the address and credentials, then try again.');
     }
   }, []);
 

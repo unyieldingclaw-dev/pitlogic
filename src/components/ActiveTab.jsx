@@ -60,6 +60,7 @@ export default function ActiveTab({
 
   return (
     <div className="fadein">
+      <p className="flow-help">Manual entry — log temperatures to save them to this cook.</p>
       {/* Cook header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <div>
@@ -293,21 +294,21 @@ export default function ActiveTab({
         <div className="g4" style={{ marginBottom: 8 }}>
           {activeCook.probes.map((p, i) => (
             <div key={i}>
-              <label style={{ borderBottom: `1.5px solid ${PROBE_COLORS[i % PROBE_COLORS.length]}`, paddingBottom: 2 }}>{p.name} °F</label>
+              <label htmlFor={`entry-food-${i}`} style={{ borderBottom: `1.5px solid ${PROBE_COLORS[i % PROBE_COLORS.length]}`, paddingBottom: 2 }}>{p.name} °F</label>
               <input
                 type="number"
                 placeholder="—"
-                value={entry.temps[i] || ''}
+                id={`entry-food-${i}`} value={entry.temps[i] || ''}
                 onChange={e => setEntry(en => ({ ...en, temps: en.temps.map((v, j) => j === i ? e.target.value : v) }))}
               />
             </div>
           ))}
           <div>
-            <label style={{ borderBottom: '1.5px solid var(--ash)', paddingBottom: 2 }}>Smoker °F</label>
+            <label htmlFor="entry-smoker" style={{ borderBottom: '1.5px solid var(--ash)', paddingBottom: 2 }}>Smoker °F</label>
             <input
               type="number"
               placeholder="—"
-              value={entry.smokerTemp}
+              id="entry-smoker" value={entry.smokerTemp}
               onChange={e => setEntry(en => ({ ...en, smokerTemp: e.target.value }))}
             />
           </div>

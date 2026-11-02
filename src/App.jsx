@@ -23,6 +23,7 @@ import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
 import MoreTab from './components/MoreTab';
+import DevicesPanel from './components/DevicesPanel';
 import BleProvisioningWizard from './components/BleProvisioningWizard';
 
 export default function App() {
@@ -492,7 +493,22 @@ export default function App() {
         {/* Page content */}
         <main className="app-content">
           {!isDetail && tab === 'more' && <MoreTab onSelect={handleNavClick} />}
-          {!isDetail && tab === 'devices' && <section><h1 className="flow-title">Devices</h1><button className="btn" onClick={closeDevices}>{deviceReturn?.view === 'new' ? 'Back to cook setup' : 'Back'}</button><p className="flow-help">View your device readings and connection in Settings.</p><button className="btn-primary" onClick={() => setShowSettings(true)}>Open device settings</button></section>}
+          {!isDetail && tab === 'devices' && <DevicesPanel onBack={closeDevices} backLabel={deviceReturn?.view === 'new' ? 'Back to cook setup' : 'Back'}
+        mqttStatus={mqttProvider.status}
+        mqttError={mqttProvider.error}
+        onMqttConnect={mqttProvider.connect}
+        onMqttDisconnect={mqttProvider.disconnect}
+        gatewayHealth={gatewayHealth}
+        onHasConfigBaseline={mqttProvider.hasConfigBaseline}
+        onUpdateDeviceConfig={mqttProvider.updateDeviceConfig}
+        onOpenBleWizard={() => setShowBleWizard(true)}
+        deviceState={mqttProvider.deviceState}
+        csvStatus={csvProvider.status}
+        csvError={csvProvider.error}
+        onCsvReplay={csvProvider.replay}
+        onCsvReset={csvProvider.reset}
+        liveProbes={liveProbes}
+          />}
           {isDetail && (
             <DetailView cooks={cooks} detailId={detailId}
               onBack={() => { setView('history'); setTab('history'); }}
@@ -557,23 +573,9 @@ export default function App() {
         prefs={prefs}
         resetCutPref={resetCutPref}
         setTheme={setTheme}
-        mqttStatus={mqttProvider.status}
-        mqttError={mqttProvider.error}
-        onMqttConnect={mqttProvider.connect}
-        onMqttDisconnect={mqttProvider.disconnect}
-        gatewayHealth={gatewayHealth}
-        onHasConfigBaseline={mqttProvider.hasConfigBaseline}
-        onUpdateDeviceConfig={mqttProvider.updateDeviceConfig}
-        onOpenBleWizard={() => setShowBleWizard(true)}
-        deviceState={mqttProvider.deviceState}
-        csvStatus={csvProvider.status}
-        csvError={csvProvider.error}
-        onCsvReplay={csvProvider.replay}
-        onCsvReset={csvProvider.reset}
-        liveProbes={liveProbes}
       />
 
-      <BleProvisioningWizard open={showBleWizard} onClose={() => setShowBleWizard(false)} />
+      <BleProvisioningWizard open={showBleWizard} onClose={() => setShowBleWizard(false)} onContinue={() => { setShowBleWizard(false); setTab('devices'); requestAnimationFrame(() => document.getElementById('mqtt-broker-url')?.focus()); }} />
 
       {/* Bottom nav (mobile) */}
       <nav id="bottom-nav" aria-label="Main navigation" style={{

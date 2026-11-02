@@ -54,7 +54,7 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
         <button className="btn-primary" onClick={onNewCook}
           style={{ width: '100%', marginBottom: '1.5rem', padding: '14px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15 }}>
-          <Flame size={18} /> Start New Cook
+            <Flame size={18} /> Start a cook
         </button>
       )}
 
@@ -109,6 +109,7 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
               display: 'inline-block' }} />
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>{hasLiveProbe ? 'Live Readings' : 'Last Readings'}</span>
           </div>
+          <p className="flow-help">Device and replay readings are not recorded in a cook. Log temperatures manually to save them.</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[...liveProbes.values()].map(probe => {
               const chMeta = channelMeta?.get(probe.probeId);

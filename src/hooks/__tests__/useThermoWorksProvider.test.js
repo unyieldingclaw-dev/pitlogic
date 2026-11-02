@@ -59,6 +59,20 @@ const VALID_CONFIG = JSON.stringify({
 import { useThermoWorksProvider } from '../useThermoWorksProvider.js';
 
 describe('useThermoWorksProvider', () => {
+  it('connects with explicitly submitted config even when no config was previously saved', async () => {
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(JSON.parse(VALID_CONFIG)); });
+    expect(result.current.status).toBe('connected');
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+  });
+  it('does not expose connection credential strings in an adapter error', async () => {
+    mockConnect.mockRejectedValueOnce(new Error('Connection rejected for fixture-private-password'));
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect({ ...JSON.parse(VALID_CONFIG), password: 'fixture-private-password' }); });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toMatch(/check the address and credentials/i);
+    expect(result.current.error).not.toContain('fixture-private-password');
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     lsMock._clear();
@@ -145,7 +159,7 @@ describe('useThermoWorksProvider', () => {
     const { result } = renderHook(() => useThermoWorksProvider());
     await act(async () => { await result.current.connect(); });
     expect(result.current.status).toBe('error');
-    expect(result.current.error).toBe('ECONNREFUSED');
+    expect(result.current.error).toBe('Could not connect. Check the address and credentials, then try again.');
   });
 
   it('keeps the original connection error when cleanup also fails', async () => {
@@ -157,7 +171,7 @@ describe('useThermoWorksProvider', () => {
     await act(async () => { await result.current.connect(); });
 
     expect(result.current.status).toBe('error');
-    expect(result.current.error).toBe('ECONNREFUSED');
+    expect(result.current.error).toBe('Could not connect. Check the address and credentials, then try again.');
     expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
   });
 

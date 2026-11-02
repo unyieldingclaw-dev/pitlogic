@@ -121,13 +121,18 @@ describe('BleProvisioningWizard', () => {
   });
 
   it('shows the success screen with the device serial after provision() resolves', async () => {
-    render(<BleProvisioningWizard open={true} onClose={vi.fn()} />);
+    const onContinue = vi.fn();
+    const onClose = vi.fn();
+    render(<BleProvisioningWizard open={true} onClose={onClose} onContinue={onContinue} />);
     fireEvent.click(screen.getByRole('button', { name: /scan for device/i }));
     await waitFor(() => { expect(screen.getByLabelText(/wifi ssid/i)).toBeTruthy(); });
     fireEvent.click(screen.getByRole('button', { name: /^provision device$/i }));
 
     expect(await screen.findByText(/device provisioned/i)).toBeTruthy();
     expect(screen.getByText(/T10061CE92E24/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to connection' }));
+    expect(onContinue).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows a wifi/mqtt error message from a status event without treating it as fatal to the whole flow', async () => {

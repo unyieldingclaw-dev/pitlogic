@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useBleProvisioning } from '../hooks/useBleProvisioning.js';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 const STORAGE_KEY = 'pitlogic-mqtt-v1';
 
@@ -40,7 +41,7 @@ const labelStyle = { display: 'block', fontSize: 12, color: 'var(--text3)', marg
 
 const initialForm = () => ({ wifiSsid: '', wifiPassword: '', ...deriveMqttFieldsFromStoredConfig() });
 
-export default function BleProvisioningWizard({ open, onClose }) {
+export default function BleProvisioningWizard({ open, onClose, onContinue }) {
   const [phase, setPhase] = useState('idle'); // idle | connecting | form | provisioning | success | error
   const provisioner = useBleProvisioning();
   const [deviceInfo, setDeviceInfo] = useState(null);
@@ -55,6 +56,23 @@ export default function BleProvisioningWizard({ open, onClose }) {
   // that lands after handleClose already reset to idle) can't clobber state after close.
   const closedRef = useRef(false);
 
+  const handleClose = () => {
+    closedRef.current = true;
+    provisioner.disconnect();
+    // Reset so a stale phase (e.g. mid-provisioning or success) can't resurface against
+    // a now-disconnected provisioner if this wizard stays mounted and reopens later.
+    setPhase('idle');
+    setDeviceInfo(null);
+    setErrorMessage('');
+    setNetworks([]);
+    setScanning(false);
+    setScanError('');
+    setStatusLog([]);
+    setForm(initialForm());
+    onClose();
+  };
+
+  const dialogRef = useDialogFocus(open, handleClose);
   if (!open) return null;
 
   const handleScan = async () => {
@@ -115,24 +133,10 @@ export default function BleProvisioningWizard({ open, onClose }) {
     }
   };
 
-  const handleClose = () => {
-    closedRef.current = true;
-    provisioner.disconnect();
-    // Reset so a stale phase (e.g. mid-provisioning or success) can't resurface against
-    // a now-disconnected provisioner if this wizard stays mounted and reopens later.
-    setPhase('idle');
-    setDeviceInfo(null);
-    setErrorMessage('');
-    setNetworks([]);
-    setScanning(false);
-    setScanError('');
-    setStatusLog([]);
-    setForm(initialForm());
-    onClose();
-  };
+
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Set up device via Bluetooth"
+    <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Set up device via Bluetooth"
       style={{ position: 'fixed', inset: 0, zIndex: 210, display: 'flex', alignItems: 'flex-end',
         justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
@@ -247,11 +251,12 @@ export default function BleProvisioningWizard({ open, onClose }) {
               Serial {deviceInfo.serial}
             </div>
             <div style={{ fontSize: 13, color: 'var(--text2)' }}>
-              Once it connects, use the Live Device section in Settings to connect PitLogic to the same broker —
-              from there you can edit channel labels and alarms in Device Settings.
+              Your gateway has its connection settings. Next, connect PitLogic to the same broker and verify fresh readings.
             </div>
           </div>
         )}
+
+        {phase === 'success' && <button type="button" className="btn-primary" onClick={() => { handleClose(); onContinue?.(); }}>Continue to connection</button>}
 
         {/* Status log persists across the provisioning -> success transition: a status
             event (e.g. a wifi-error) can arrive and the provision() promise can still

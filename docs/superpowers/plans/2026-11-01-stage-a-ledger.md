@@ -12,3 +12,6 @@ Ruling: NewCookSetup retains prefs/setCutPref/onGoGuide presentation props — e
 - A3: pending.
 
 A1: complete — 8 focused tests green; lint and production build passed. Existing Devices/settings route remains functional until A2 replaces its presentation. No new cook fields/storage writes. Ruling: retain a native details section for all optional controls rather than multiple competing form steps.
+
+A2: complete — 353/353 full-suite tests passed; production build passed; changed-product lint has zero errors and the pre-existing provider cleanup warning. Save/connect tests were red before implementation. Configuration normalization and dialog focus had observed red-to-green regressions. Device controls moved from Settings into Devices with advanced disclosures, live-source verification and explicit no-cook-recording copy.
+Ruling: add reusable dialog focus/Escape/return behavior and field associations for the touched flows — necessary for planned keyboard/error recovery. No persistence shape change. Connection errors are generic to avoid leaking credentials; advanced config capabilities remain accessible.

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import DashboardTab from '../DashboardTab.jsx';
-import SettingsSheet from '../SettingsSheet.jsx';
+import SettingsSheet from '../DevicesPanel.jsx';
 
 const NOW = new Date('2026-10-23T20:00:00Z').getTime();
 
@@ -68,7 +68,7 @@ describe('live reading freshness', () => {
     expect(screen.getByText('Disconnected · 3h ago')).toBeTruthy();
   });
 
-  it('shows a disconnected probe status and age in Settings', () => {
+  it('shows a disconnected probe status and age in Devices', () => {
     settings(new Map([['p1', probe('p1', 'disconnected', 45_000)]]));
 
     expect(screen.getByText('Probe Readings')).toBeTruthy();

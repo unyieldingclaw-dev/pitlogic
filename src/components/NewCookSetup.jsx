@@ -36,7 +36,7 @@ export default function NewCookSetup({ form, onChange: setForm, onStart, onOpenD
 
           {/* Ambient probe — always present, non-removable */}
           <div style={{ marginBottom: '1rem' }}>
-            <div style={{ fontSize: 12, color: 'var(--text3)', textTransform: 'uppercase',
+            <div style={{ fontSize: 12, color: 'var(--text2)', textTransform: 'uppercase',
               letterSpacing: '0.08em', marginBottom: 8 }}>Probes</div>
 
             {/* Ambient row */}
@@ -45,7 +45,7 @@ export default function NewCookSetup({ form, onChange: setForm, onStart, onOpenD
               border: '1px solid rgba(90,90,85,0.4)' }}>
               <div style={{ flex: 2 }}>
                 <label style={{ borderBottom: '1.5px solid var(--ash)', paddingBottom: 2, display: 'block', marginBottom: 4 }}>Ambient / Smoker</label>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text3)' }}>Enter the smoker temperature manually</div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)' }}>Enter the smoker temperature manually</div>
               </div>
               <div style={{ flex: 1 }}>
                 <label htmlFor="smoker-target">Smoker target °F</label>
@@ -134,22 +134,22 @@ export default function NewCookSetup({ form, onChange: setForm, onStart, onOpenD
               <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="g2">
                   <div>
-                    <label>Meat weight (lbs)</label>
-                    <input type="number" min="0" step="0.1" placeholder="e.g. 12.5"
+                    <label htmlFor="cook-weight">Meat weight (lbs)</label>
+                    <input id="cook-weight" type="number" min="0" step="0.1" placeholder="e.g. 12.5"
                       value={form.weight}
                       onChange={e => setForm(f => ({ ...f, weight: e.target.value }))} />
                   </div>
                   <div>
-                    <label>Wood / Pellets</label>
-                    <select value={form.pellet} onChange={e => setForm(f => ({ ...f, pellet: e.target.value }))}>
+                    <label htmlFor="cook-pellet">Wood / Pellets</label>
+                    <select id="cook-pellet" value={form.pellet} onChange={e => setForm(f => ({ ...f, pellet: e.target.value }))}>
                       <option value="">— Select —</option>
                       {allPellets.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label>Smoker / Equipment</label>
-                  <input placeholder="e.g. Traeger Pro 575"
+                  <label htmlFor="cook-equipment">Smoker / Equipment</label>
+                  <input id="cook-equipment" placeholder="e.g. Traeger Pro 575"
                     value={form.equipment}
                     onChange={e => setForm(f => ({ ...f, equipment: e.target.value }))} />
                 </div>
@@ -179,8 +179,8 @@ export default function NewCookSetup({ form, onChange: setForm, onStart, onOpenD
 
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <label style={{ margin: 0, fontSize: 13, color: 'var(--text)' }}>Mop / Spray Timer</label>
-              <button type="button" className={form.mop?.enabled ? 'btn-primary' : 'btn-ghost'}
+              <label htmlFor="mop-toggle" style={{ margin: 0, fontSize: 13, color: 'var(--text)' }}>Mop / Spray Timer</label>
+              <button id="mop-toggle" aria-label="Mop / Spray Timer" aria-pressed={!!form.mop?.enabled} type="button" className={form.mop?.enabled ? 'btn-primary' : 'btn-ghost'}
                 style={{ padding: '4px 12px', fontSize: 12 }}
                 onClick={() => setForm(f => ({ ...f, mop: { ...(f.mop || { intervalMin: 45, label: '' }), enabled: !f.mop?.enabled } }))}>
                 {form.mop?.enabled ? 'On' : 'Off'}
@@ -189,15 +189,15 @@ export default function NewCookSetup({ form, onChange: setForm, onStart, onOpenD
             {form.mop?.enabled && (
               <div className="g2">
                 <div>
-                  <label>Interval (min)</label>
-                  <select value={form.mop.intervalMin}
+                  <label htmlFor="mop-interval">Interval (min)</label>
+                  <select id="mop-interval" value={form.mop.intervalMin}
                     onChange={e => setForm(f => ({ ...f, mop: { ...f.mop, intervalMin: Number(e.target.value) } }))}>
                     {[15, 30, 45, 60].map(v => <option key={v} value={v}>{v} min</option>)}
                   </select>
                 </div>
                 <div>
-                  <label>What (e.g. apple juice)</label>
-                  <input value={form.mop.label || ''}
+                  <label htmlFor="mop-label">What (e.g. apple juice)</label>
+                  <input id="mop-label" value={form.mop.label || ''}
                     onChange={e => setForm(f => ({ ...f, mop: { ...f.mop, label: e.target.value } }))}
                     placeholder="Apple juice + butter" />
                 </div>
