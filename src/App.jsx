@@ -11,7 +11,7 @@ import { useLiveProbes } from './hooks/useLiveProbes.js';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
 import { computeGatewayHealth } from './utils/deviceHealth.js';
-import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
+import { LayoutDashboard, Flame, Clock, MoreHorizontal, Settings } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
 import GuideTab from './components/GuideTab';
@@ -22,6 +22,7 @@ import AnalyticsTab from './components/AnalyticsTab';
 import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
+import MoreTab from './components/MoreTab';
 import BleProvisioningWizard from './components/BleProvisioningWizard';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
   const [msg, setMsg]               = useState('');
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [deviceReturn, setDeviceReturn] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showBleWizard, setShowBleWizard] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
@@ -275,7 +277,18 @@ export default function App() {
     else replaceAllRecipes(incoming);
   };
 
+  const openDevices = () => {
+    setDeviceReturn({ tab, view, detailId });
+    setTab('devices'); setView('history'); setDetailId(null);
+  };
+  const closeDevices = () => {
+    setTab(deviceReturn?.tab ?? 'dashboard');
+    setView(deviceReturn?.view ?? 'history');
+    setDetailId(deviceReturn?.detailId ?? null);
+  };
   const handleNavClick = id => {
+    if (id === 'devices') { openDevices(); return; }
+    if (id === 'settings') { setShowSettings(true); return; }
     setTab(id);
     if (id === 'active') {
       if (!activeId) setView('new'); else setView('active');
@@ -294,13 +307,12 @@ export default function App() {
 
   const isDetail = view === 'detail';
 
+  const primaryTab = ['devices', 'analytics', 'guide', 'recipes'].includes(tab) ? 'more' : tab;
   const NAV_ITEMS = [
-    { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard',  mobileLabel: 'Home'    },
-    { id: 'active',    Icon: Flame,           label: activeId ? 'Active Cook' : 'New Cook', mobileLabel: activeId ? 'Active' : 'Cook' },
-    { id: 'history',   Icon: Clock,           label: 'History',    mobileLabel: 'History' },
-    { id: 'analytics', Icon: BarChart2,        label: 'Analytics',  mobileLabel: 'Stats'   },
-    { id: 'guide',     Icon: BookOpen,        label: 'Guides',     mobileLabel: 'Guides'  },
-    { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
+    { id: 'dashboard', Icon: LayoutDashboard, label: 'Home', mobileLabel: 'Home' },
+    { id: 'active', Icon: Flame, label: 'Cook', mobileLabel: 'Cook' },
+    { id: 'history', Icon: Clock, label: 'History', mobileLabel: 'History' },
+    { id: 'more', Icon: MoreHorizontal, label: 'More', mobileLabel: 'More' },
   ];
 
   const gatewayHealth = computeGatewayHealth(gatewayState, telemetryProbes);
@@ -428,16 +440,16 @@ export default function App() {
 
         <nav aria-label="Main navigation">
           {NAV_ITEMS.map(({ id, Icon, label }) => (
-            <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
+            <button key={id} onClick={() => handleNavClick(id)} aria-current={primaryTab === id ? 'page' : undefined} style={{
               display: 'flex', alignItems: 'center', gap: 12,
               padding: '11px 1.25rem', border: 'none',
-              background: tab === id
+              background: primaryTab === id
                 ? 'linear-gradient(90deg, rgba(255,107,53,0.14), rgba(245,158,11,0.04))'
                 : 'transparent',
-              color: tab === id ? 'var(--ember)' : 'var(--text2)',
+              color: primaryTab === id ? 'var(--ember)' : 'var(--text2)',
               fontSize: 14, fontFamily: 'var(--font)',
-              borderLeft: `3px solid ${tab === id ? 'var(--ember)' : 'transparent'}`,
-              boxShadow: tab === id ? 'var(--glow-ember)' : 'none',
+              borderLeft: `3px solid ${primaryTab === id ? 'var(--ember)' : 'transparent'}`,
+              boxShadow: primaryTab === id ? 'var(--glow-ember)' : 'none',
               cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
             }}>
               <Icon size={18} />{label}
@@ -479,6 +491,8 @@ export default function App() {
 
         {/* Page content */}
         <main className="app-content">
+          {!isDetail && tab === 'more' && <MoreTab onSelect={handleNavClick} />}
+          {!isDetail && tab === 'devices' && <section><h1 className="flow-title">Devices</h1><button className="btn" onClick={closeDevices}>{deviceReturn?.view === 'new' ? 'Back to cook setup' : 'Back'}</button><p className="flow-help">View your device readings and connection in Settings.</p><button className="btn-primary" onClick={() => setShowSettings(true)}>Open device settings</button></section>}
           {isDetail && (
             <DetailView cooks={cooks} detailId={detailId}
               onBack={() => { setView('history'); setTab('history'); }}
@@ -494,6 +508,7 @@ export default function App() {
                 }
                 handleNavClick('active');
               }}
+              onOpenDevices={openDevices}
               onNewCook={() => { setTab('active'); setView('new'); }}
               onSelectCook={id => { setDetailId(id); setView('detail'); }} />
           )}
@@ -515,7 +530,7 @@ export default function App() {
               onAddCook={() => setView('new')}
               onSprayEvent={logSprayEvent}
               onUpdateSmokerAlarm={updateSmokerAlarm}
-              prefs={prefs}
+              prefs={prefs} onOpenDevices={openDevices}
               setCutPref={setCutPref} />
           )}
           {!isDetail && tab === 'analytics' && (
@@ -568,11 +583,11 @@ export default function App() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {NAV_ITEMS.map(({ id, Icon, mobileLabel }) => (
-          <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
+          <button key={id} onClick={() => handleNavClick(id)} aria-current={primaryTab === id ? 'page' : undefined} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: 3, border: 'none',
             background: 'transparent',
-            color: tab === id ? 'var(--ember)' : 'var(--text3)',
+            color: primaryTab === id ? 'var(--ember)' : 'var(--text3)',
             fontSize: 10, fontFamily: 'var(--font)', cursor: 'pointer',
             transition: 'color .15s',
           }}>

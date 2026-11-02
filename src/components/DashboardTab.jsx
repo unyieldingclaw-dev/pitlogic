@@ -37,7 +37,7 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, channelMeta, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, channelMeta, onGoActive, onNewCook, onSelectCook, onOpenDevices }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
@@ -49,13 +49,17 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
 
   return (
     <div className="fadein">
-      {/* Stats strip */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: '1.5rem' }}>
-        <StatPill label="Total Cooks" value={completed.length} />
-        <StatPill label="Hours Smoked" value={Math.round(totalHours / 3600000)} />
-        <StatPill label="Fav Cut" value={favCut.length > 8 ? favCut.slice(0,7)+'…' : favCut} />
-      </div>
+      {/* Quick start */}
+      {activeCooks.length === 0 && (
+        <button className="btn-primary" onClick={onNewCook}
+          style={{ width: '100%', marginBottom: '1.5rem', padding: '14px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15 }}>
+          <Flame size={18} /> Start New Cook
+        </button>
+      )}
 
+
+      <button type="button" className="btn flow-device-link" onClick={onOpenDevices}>Connect probes</button>
       {/* Active cook cards (one per active cook) */}
       {activeCooks.map(cook => (
         <button key={cook.id} onClick={() => onGoActive(cook.id)}
@@ -138,14 +142,13 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
         </div>
       )}
 
-      {/* Quick start */}
-      {activeCooks.length === 0 && (
-        <button className="btn-primary" onClick={onNewCook}
-          style={{ width: '100%', marginBottom: '1.5rem', padding: '14px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15 }}>
-          <Flame size={18} /> Start New Cook
-        </button>
-      )}
+      {/* Stats strip */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: '1.5rem' }}>
+        <StatPill label="Total Cooks" value={completed.length} />
+        <StatPill label="Hours Smoked" value={Math.round(totalHours / 3600000)} />
+        <StatPill label="Fav Cut" value={favCut.length > 8 ? favCut.slice(0,7)+'…' : favCut} />
+      </div>
+
 
       {/* Recent cooks */}
       {recent.length > 0 && (

@@ -396,6 +396,20 @@ label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px
   color: var(--text);
   transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
+
+.flow-title { margin: 0 0 1rem; font-family: var(--font-display); font-size: 24px; }
+.flow-help { color: var(--text2); font-size: 13px; line-height: 1.6; }
+.flow-device-link { min-height: 44px; margin: 8px 0 16px; }
+.flow-options { margin: 16px 0; }
+.flow-options > summary { cursor: pointer; padding: 12px 0; min-height: 44px; color: var(--text); }
+.flow-options[open] > summary { margin-bottom: 12px; }
+.cook-setup button, .cook-setup input, .cook-setup select { min-height: 44px; }
+.flow-menu { display: grid; gap: 12px; }
+.flow-menu-item { width: 100%; text-align: left; min-height: 64px; font: inherit; margin: 0; }
+.flow-menu-item span, .flow-menu-item small { display: block; }
+.flow-menu-item small { margin-top: 6px; color: var(--text2); line-height: 1.5; }
+.flow-menu-item:focus-visible, .flow-options > summary:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .fadein { animation: none !important; } }
 .card-interactive:hover {
   border-color: rgba(255,107,53,0.32) !important;
   box-shadow: 0 0 28px rgba(255,107,53,0.09);

@@ -10,3 +10,5 @@ Ruling: NewCookSetup retains prefs/setCutPref/onGoGuide presentation props — e
 - A1: in progress; red navigation/form regression pending.
 - A2: pending.
 - A3: pending.
+
+A1: complete — 8 focused tests green; lint and production build passed. Existing Devices/settings route remains functional until A2 replaces its presentation. No new cook fields/storage writes. Ruling: retain a native details section for all optional controls rather than multiple competing form steps.
