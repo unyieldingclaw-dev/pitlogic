@@ -19,14 +19,14 @@ function parseRows(text: string): RawProviderEvent[] {
   const hdrs = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
   const { timeCol, smokerCol, probeCols } = detectColumns(hdrs);
 
-  let startTs: number | null = null;
+  let lastCapturedAt: number | null = null;
   const events: RawProviderEvent[] = [];
 
   for (const line of lines.slice(1)) {
     const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
     const rawTs = timeCol >= 0 ? new Date(cols[timeCol]).getTime() : NaN;
-    if (!isNaN(rawTs) && !startTs) startTs = rawTs;
-    const capturedAt = !isNaN(rawTs) ? rawTs : (startTs ?? Date.now());
+    const capturedAt: number = !isNaN(rawTs) ? rawTs : (lastCapturedAt ?? Date.now() - lines.length) + 1;
+    lastCapturedAt = capturedAt;
 
     for (let pi = 0; pi < probeCols.length; pi++) {
       const temperature = parseFloat(cols[probeCols[pi]]);

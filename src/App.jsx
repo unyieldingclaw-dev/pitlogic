@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MEATS } from './data/meats';
 import { G } from './data/cuts';
 import { save, load } from './hooks/useStorage.js';
 import { useRecipes } from './hooks/useRecipes.js';
 import { usePrefs } from './hooks/usePrefs';
 import { useThermoWorksProvider } from './hooks/useThermoWorksProvider.js';
+import { useTelemetryStore } from './hooks/useTelemetryStore.js';
 import { useCsvProvider } from './hooks/useCsvProvider.js';
 import { useLiveProbes } from './hooks/useLiveProbes.js';
 import { mergeCooks } from './utils/dataPortability.js';
 import { parseCsvReadings } from './utils/csvTemperatureParser.js';
-import { LayoutDashboard, Flame, Clock, BarChart2, BookOpen, FlaskConical, Settings } from 'lucide-react';
+import { computeGatewayHealth } from './utils/deviceHealth.js';
+import { LayoutDashboard, Flame, Clock, MoreHorizontal, Settings } from 'lucide-react';
 import HistoryTab from './components/HistoryTab';
 import ActiveTab from './components/ActiveTab';
 import GuideTab from './components/GuideTab';
@@ -20,6 +22,9 @@ import AnalyticsTab from './components/AnalyticsTab';
 import RecipesTab from './components/RecipesTab';
 import MultiCookBar from './components/MultiCookBar';
 import SettingsSheet from './components/SettingsSheet';
+import MoreTab from './components/MoreTab';
+import DevicesPanel from './components/DevicesPanel';
+import BleProvisioningWizard from './components/BleProvisioningWizard';
 
 export default function App() {
   const [tab, setTab]               = useState('dashboard');
@@ -31,14 +36,18 @@ export default function App() {
   const [guideKey, setGuideKey]     = useState('Brisket');
   const [guideCat, setGuideCat]     = useState('Beef');
   const [loaded, setLoaded]         = useState(false);
+  const mainRef = useRef(null);
   const [tick, setTick]             = useState(0);
   const [msg, setMsg]               = useState('');
   const [dismissed, setDismissed]   = useState({});
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [deviceReturn, setDeviceReturn] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBleWizard, setShowBleWizard] = useState(false);
   const { recipes, add: addRecipe, remove: removeRecipe, importMany: importManyRecipes, replaceAll: replaceAllRecipes } = useRecipes();
   const { prefs, setCutPref, resetCutPref, setTheme } = usePrefs();
   const mqttProvider = useThermoWorksProvider();
+  const { probes: telemetryProbes, gatewayState } = useTelemetryStore();
   const csvProvider = useCsvProvider();
   const liveProbes = useLiveProbes();
   const [form, setForm]             = useState({ name: '', meat: 'Beef', cut: 'Brisket', smokerTarget: 225, probes: [{ name: 'Probe 1', target: 203 }], mop: { enabled: false, intervalMin: 45, label: '' }, smokerLowAlarm: { enabled: false, threshold: 200 }, weight: '', equipment: '', pellet: '' });
@@ -61,6 +70,12 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = prefs.theme === 'light' ? 'light' : 'dark';
   }, [prefs.theme]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    window.scrollTo(0, 0);
+    mainRef.current?.focus({ preventScroll: true });
+  }, [loaded, tab, view]);
 
   const persist = (nc, ac, dis) => save({ cooks: nc, activeCooks: ac, dis });
   const update  = (nc, ac = activeCooks, dis = dismissed) => { setCooks(nc); persist(nc, ac, dis); };
@@ -270,12 +285,23 @@ export default function App() {
     else replaceAllRecipes(incoming);
   };
 
+  const openDevices = () => {
+    setDeviceReturn({ tab, view, detailId });
+    setTab('devices'); setView('history'); setDetailId(null);
+  };
+  const closeDevices = () => {
+    setTab(deviceReturn?.tab ?? 'dashboard');
+    setView(deviceReturn?.view ?? 'history');
+    setDetailId(deviceReturn?.detailId ?? null);
+  };
   const handleNavClick = id => {
+    if (id === 'devices') { openDevices(); return; }
+    if (id === 'settings') { setShowSettings(true); return; }
     setTab(id);
     if (id === 'active') {
       if (!activeId) setView('new'); else setView('active');
-    }
-    if (id !== 'history' && id !== 'dashboard') setDetailId(null);
+    } else setView('history');
+    setDetailId(null);
   };
 
   if (!loaded) return (
@@ -289,90 +315,19 @@ export default function App() {
 
   const isDetail = view === 'detail';
 
+  const primaryTab = ['devices', 'analytics', 'guide', 'recipes'].includes(tab) ? 'more' : tab;
   const NAV_ITEMS = [
-    { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard',  mobileLabel: 'Home'    },
-    { id: 'active',    Icon: Flame,           label: activeId ? 'Active Cook' : 'New Cook', mobileLabel: activeId ? 'Active' : 'Cook' },
-    { id: 'history',   Icon: Clock,           label: 'History',    mobileLabel: 'History' },
-    { id: 'analytics', Icon: BarChart2,        label: 'Analytics',  mobileLabel: 'Stats'   },
-    { id: 'guide',     Icon: BookOpen,        label: 'Guides',     mobileLabel: 'Guides'  },
-    { id: 'recipes',   Icon: FlaskConical,    label: 'Recipes',    mobileLabel: 'Recipes' },
+    { id: 'dashboard', Icon: LayoutDashboard, label: 'Home', mobileLabel: 'Home' },
+    { id: 'active', Icon: Flame, label: 'Cook', mobileLabel: 'Cook' },
+    { id: 'history', Icon: Clock, label: 'History', mobileLabel: 'History' },
+    { id: 'more', Icon: MoreHorizontal, label: 'More', mobileLabel: 'More' },
   ];
+
+  const gatewayHealth = computeGatewayHealth(gatewayState, telemetryProbes);
 
   return (
     <div id="root">
-      {/* Background flame */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-        <svg viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg"
-          style={{ width: '82vw', maxWidth: 680, minWidth: 280, opacity: 0.14 }}>
-          <defs>
-            <linearGradient id="flameOuter" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%"   stopColor="#8B1A00" />
-              <stop offset="22%"  stopColor="#CC3300" />
-              <stop offset="52%"  stopColor="#FF6B35" />
-              <stop offset="80%"  stopColor="#F59E0B" />
-              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="flameMid" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%"   stopColor="#FF6B35" />
-              <stop offset="40%"  stopColor="#F59E0B" />
-              <stop offset="75%"  stopColor="#FDE68A" />
-              <stop offset="100%" stopColor="#FDE68A" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="flameCore" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%"   stopColor="#FBBF24" />
-              <stop offset="45%"  stopColor="#FEF3C7" />
-              <stop offset="100%" stopColor="#FFFFFF"  stopOpacity="0" />
-            </linearGradient>
-            <radialGradient id="baseGlow" cx="50%" cy="100%" r="50%">
-              <stop offset="0%"   stopColor="#FF6B35" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#FF6B35" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          {/* Base heat glow */}
-          <ellipse className="flame-glow" cx="100" cy="330" rx="88" ry="22" fill="url(#baseGlow)" />
-
-          {/* Outer flame body — widest, darkest, most red */}
-          <path className="flame-outer" fill="url(#flameOuter)" d="
-            M100 328
-            C 40 328  5 278  5 224
-            C  5 170 28 148 52 112
-            C 44 133 48 156 60 167
-            C 52 122 70  80 100  14
-            C130  80 148 122 140 167
-            C152 156 156 133 148 112
-            C172 148 195 170 195 224
-            C195 278 160 328 100 328Z
-          " />
-
-          {/* Mid flame — narrower, amber */}
-          <path className="flame-mid" fill="url(#flameMid)" d="
-            M100 294
-            C 63 294 40 264 40 234
-            C 40 204 55 190 68 168
-            C 63 184 65 202 75 211
-            C 70 180 83 150 100  82
-            C117 150 130 180 125 211
-            C135 202 137 184 132 168
-            C145 190 160 204 160 234
-            C160 264 137 294 100 294Z
-          " />
-
-          {/* Inner core — narrowest, pale yellow-white */}
-          <path className="flame-core" fill="url(#flameCore)" d="
-            M100 258
-            C 74 258 56 234 56 210
-            C 56 186 67 176 77 158
-            C 73 172 75 188 83 196
-            C 79 168 89 144 100 104
-            C111 144 121 168 117 196
-            C125 188 127 172 123 158
-            C133 176 144 186 144 210
-            C144 234 126 258 100 258Z
-          " />
-        </svg>
-      </div>
+      <div className="background-fire" aria-hidden="true" />
 
       <MultiCookBar activeCooks={allActiveCooks} />
 
@@ -421,16 +376,16 @@ export default function App() {
 
         <nav aria-label="Main navigation">
           {NAV_ITEMS.map(({ id, Icon, label }) => (
-            <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
+            <button key={id} onClick={() => handleNavClick(id)} aria-current={primaryTab === id ? 'page' : undefined} style={{
               display: 'flex', alignItems: 'center', gap: 12,
               padding: '11px 1.25rem', border: 'none',
-              background: tab === id
+              background: primaryTab === id
                 ? 'linear-gradient(90deg, rgba(255,107,53,0.14), rgba(245,158,11,0.04))'
                 : 'transparent',
-              color: tab === id ? 'var(--ember)' : 'var(--text2)',
+              color: primaryTab === id ? 'var(--ember)' : 'var(--text2)',
               fontSize: 14, fontFamily: 'var(--font)',
-              borderLeft: `3px solid ${tab === id ? 'var(--ember)' : 'transparent'}`,
-              boxShadow: tab === id ? 'var(--glow-ember)' : 'none',
+              borderLeft: `3px solid ${primaryTab === id ? 'var(--ember)' : 'transparent'}`,
+              boxShadow: primaryTab === id ? 'var(--glow-ember)' : 'none',
               cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
             }}>
               <Icon size={18} />{label}
@@ -471,11 +426,28 @@ export default function App() {
         </header>
 
         {/* Page content */}
-        <main className="app-content">
+        <main ref={mainRef} tabIndex={-1} className="app-content">
+          {!isDetail && tab === 'more' && <MoreTab onSelect={handleNavClick} />}
+          {!isDetail && tab === 'devices' && <DevicesPanel onBack={closeDevices} backLabel={deviceReturn?.view === 'new' ? 'Back to cook setup' : 'Back'}
+        mqttStatus={mqttProvider.status}
+        mqttError={mqttProvider.error}
+        onMqttConnect={mqttProvider.connect}
+        onMqttDisconnect={mqttProvider.disconnect}
+        gatewayHealth={gatewayHealth}
+        onHasConfigBaseline={mqttProvider.hasConfigBaseline}
+        onUpdateDeviceConfig={mqttProvider.updateDeviceConfig}
+        onOpenBleWizard={() => setShowBleWizard(true)}
+        deviceState={mqttProvider.deviceState}
+        csvStatus={csvProvider.status}
+        csvError={csvProvider.error}
+        onCsvReplay={csvProvider.replay}
+        onCsvReset={csvProvider.reset}
+        liveProbes={liveProbes}
+          />}
           {isDetail && (
             <DetailView cooks={cooks} detailId={detailId}
               onBack={() => { setView('history'); setTab('history'); }}
-              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} />
+              onDelete={deleteCook} onSave={saveCookNotes} flash={flash} onCSV={handleCSV} />
           )}
           {!isDetail && tab === 'dashboard' && (
             <DashboardTab cooks={cooks} activeId={activeId} activeCook={activeCook}
@@ -487,6 +459,7 @@ export default function App() {
                 }
                 handleNavClick('active');
               }}
+              onOpenDevices={openDevices}
               onNewCook={() => { setTab('active'); setView('new'); }}
               onSelectCook={id => { setDetailId(id); setView('detail'); }} />
           )}
@@ -508,7 +481,7 @@ export default function App() {
               onAddCook={() => setView('new')}
               onSprayEvent={logSprayEvent}
               onUpdateSmokerAlarm={updateSmokerAlarm}
-              prefs={prefs}
+              prefs={prefs} onOpenDevices={openDevices}
               setCutPref={setCutPref} />
           )}
           {!isDetail && tab === 'analytics' && (
@@ -535,17 +508,9 @@ export default function App() {
         prefs={prefs}
         resetCutPref={resetCutPref}
         setTheme={setTheme}
-        mqttStatus={mqttProvider.status}
-        mqttError={mqttProvider.error}
-        onMqttConnect={mqttProvider.connect}
-        onMqttDisconnect={mqttProvider.disconnect}
-        deviceState={mqttProvider.deviceState}
-        csvStatus={csvProvider.status}
-        csvError={csvProvider.error}
-        onCsvReplay={csvProvider.replay}
-        onCsvReset={csvProvider.reset}
-        liveProbes={liveProbes}
       />
+
+      <BleProvisioningWizard open={showBleWizard} onClose={() => setShowBleWizard(false)} onContinue={() => { setShowBleWizard(false); setTab('devices'); requestAnimationFrame(() => document.getElementById('mqtt-broker-url')?.focus()); }} />
 
       {/* Bottom nav (mobile) */}
       <nav id="bottom-nav" aria-label="Main navigation" style={{
@@ -555,11 +520,11 @@ export default function App() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {NAV_ITEMS.map(({ id, Icon, mobileLabel }) => (
-          <button key={id} onClick={() => handleNavClick(id)} aria-current={tab === id ? 'page' : undefined} style={{
+          <button key={id} onClick={() => handleNavClick(id)} aria-current={primaryTab === id ? 'page' : undefined} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: 3, border: 'none',
             background: 'transparent',
-            color: tab === id ? 'var(--ember)' : 'var(--text3)',
+            color: primaryTab === id ? 'var(--ember)' : 'var(--text3)',
             fontSize: 10, fontFamily: 'var(--font)', cursor: 'pointer',
             transition: 'color .15s',
           }}>

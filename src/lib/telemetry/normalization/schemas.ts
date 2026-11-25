@@ -48,3 +48,24 @@ export const RawDisconnectedReadingSchema = z.object({
   capturedAt: z.number().int().positive(),
   status: z.literal('disconnected'),
 });
+
+export const RawGatewayConfigSchema = z.object({
+  gatewayId: z.string().min(1),
+  capturedAt: z.number().int().positive(),
+  raw: z.record(z.string(), z.unknown()),
+});
+
+export const RawGatewayStateSchema = z.object({
+  gatewayId: z.string().min(1),
+  capturedAt: z.number().int().positive(),
+  wifiStrength: z.number().optional(),
+  battery: z.string().optional(),
+  firmware: z.string().optional(),
+  units: z.enum(['F', 'C']).optional(),
+});
+
+export const RawProbeBatterySchema = z.object({
+  probeId: z.string().min(1),
+  capturedAt: z.number().int().positive(),
+  battery: z.number(),
+});

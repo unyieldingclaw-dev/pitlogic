@@ -13,13 +13,13 @@ lineage: initial
 
 # Active Context - Current State
 
-**Last Updated**: 2026-07-03
+**Last Updated**: 2026-08-31
 
 ## Current Focus
 
-ThermoWorks live probe pipeline is merged to main and deployed. Recent work has layered on top of it: CSV replay (PR #7), copy/paste Live Device config for cross-device transfer, ThermoWorks channel labels, and a settings-sheet backdrop-click fix (PRs #9, #10).
+ThermoWorks live probe pipeline is merged to main and deployed. Recent work has layered on top of it: CSV replay (PR #7), copy/paste Live Device config for cross-device transfer, ThermoWorks channel labels, and a settings-sheet backdrop-click fix (PRs #9, #10). In parallel, `backlog/rfx-sdk-capabilities` (PR #12) built Device Health, bidirectional device config, completed-cook CSV import, and the BLE provisioning wizard on the same telemetry foundation — merged into this branch from main to reconcile both feature sets before landing.
 
-**Branch**: `main` — all feature branches above are merged. GitHub Pages auto-deploying.
+**Branch**: `backlog/rfx-sdk-capabilities`, merging `origin/main` to reconcile with PRs #7/#9/#10. GitHub Pages auto-deploying from `main`.
 
 ## What's Working
 
@@ -38,7 +38,11 @@ ThermoWorks live probe pipeline is merged to main and deployed. Recent work has 
 - **Live probe pipeline**: MQTT → ThermoWorksAdapter → useThermoWorksProvider → globalEventBus → globalStore (TelemetryStore) → useLiveProbes → DashboardTab "Live Readings" card + SettingsSheet probe list
 - **CSV replay pipeline**: CSV file → `useCsvProvider` → `CsvProvider` → telemetry pipeline → Live Readings card (Settings "Replay CSV" card)
 - **Live Device config copy/paste**: SettingsSheet — copy current MQTT config to clipboard, paste-and-apply with overwrite confirmation, for cross-device transfer
-- **ThermoWorks channel labels**: per-channel high/low alarm labels rendered from `device.channels[]` in SettingsSheet
+- **ThermoWorks channel labels**: per-channel high/low alarm labels rendered from `device.channels[]` in SettingsSheet, delivered via `subscribeDeviceMeta()` and kept in hook-local `deviceState` (not the event bus)
+- Device Health panel in Settings: per-gateway wifi/battery/firmware and per-probe battery, sourced from `TelemetryStore` via `useTelemetryStore()`; hidden entirely when no gateway is known
+- Bidirectional device config: `ThermoWorksAdapter` subscribes to `/devices/+/config`, caches the full retained baseline per gateway, and exposes `publishConfig(gatewayId, edits, fallbackBaseline?)` which merges edits onto that baseline and republishes the complete object (retained) — never a partial config, which the RFX SDK would otherwise silently wipe. Settings now has a "Device Settings"/"Initialize Configuration" card per gateway (`DeviceSettingsCard.jsx`) for editing channel labels, alarm thresholds, and transmit/recording intervals
+- CSV import completion: historical (completed) cooks can now import a CSV export too, via a new "Import CSV" card in `DetailView.jsx`'s Overview tab (mirrors `ActiveTab.jsx`'s existing control, wired to the same cook-agnostic `handleCSV`). The unused `CsvProvider`/`csvSchemas.ts` (dead `TemperatureProvider` implementation, registered but never connected) was deleted
+- BLE provisioning wizard ships: `ThermoWorksBleProvisioner.ts` (connect/scanWifiNetworks/provision over the ThermaConnect open BLE GATT protocol) behind `useBleProvisioning.js` (the ADR-001 crossing point), driving `BleProvisioningWizard.jsx` — a single-screen idle→connecting→form→provisioning→success/error flow reachable from a new "Set Up New Device" card in Settings, gated on `navigator.bluetooth` support. Manually verified in-browser: entry point renders/gates correctly, wizard opens, `connect()` invokes the real native device chooser and a cancelled/failed pick correctly lands on the error phase with retry, unsupported-browser fallback text replaces the button when `navigator.bluetooth` is absent, no console errors, production build clean
 
 ## Claude Code Infrastructure (2026-05-20 → 2026-05-26)
 
@@ -80,12 +84,13 @@ All 22 operations from the testing agent flow plan are complete:
 
 ## Immediate Next Steps
 
-1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`)
-2. **End-to-end smoke test** with real RFX Gateway — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
+1. **Verify HiveMQ Cloud ACL** topic isolation before first live use (each device locked to its own `devices/{id}/events`; see Broker Setup Reference in plan)
+2. **End-to-end smoke test** with a real RFX Gateway + HiveMQ Cloud broker (manual — requires hardware) — open deployed app at https://unyieldingclaw-dev.github.io/pitlogic/, connect via Settings → Live Device, confirm temps appear in Dashboard "Live Readings" card
 
 ## Open Issues
 
 - iOS silent switch bypasses all browser audio/notifications — investigate PWA push notifications
+- BLE provisioning wizard has **not** been verified against real hardware (an actual RFX/NODE device in SETUPMODE) — Web Bluetooth's GATT connect/scan/provision flow can only be exercised end-to-end with physical hardware and a Chrome/Edge browser. Flag for a follow-up manual test with real hardware before considering it fully production-verified.
 
 ## Environment Status
 
@@ -97,10 +102,14 @@ All 22 operations from the testing agent flow plan are complete:
 
 | File | Purpose |
 |------|---------|
-| `src/App.jsx` | Root — all state, nav, wiring; imports `useLiveProbes`, passes `liveProbes` to DashboardTab + SettingsSheet |
+| `src/App.jsx` | Root — all state, nav, wiring; imports `useLiveProbes`/`useTelemetryStore`/`useCsvProvider`, passes `liveProbes`/`gatewayHealth` to DashboardTab + SettingsSheet |
 | `src/hooks/useLiveProbes.js` | Subscribes to globalStore, manages stale check, returns `Map<probeId, ProbeState>` |
 | `src/lib/telemetry/store/globalStore.ts` | Singleton: `TelemetryStore` wired to `globalEventBus` — the domain boundary crossing point |
-| `src/lib/providers/adapters/thermoworks/ThermoWorksAdapter.ts` | ThermaConnect MQTT adapter: topics `/probes/+/events`, `/devices/+/events`, `/devices/+/state`; `channels[]` array; probeId `{topicId}-ch{channelNumber}` |
+| `src/lib/providers/adapters/thermoworks/ThermoWorksAdapter.ts` | ThermaConnect MQTT adapter: topics `/probes/+/events`, `/devices/+/events`, `/devices/+/state`, `/devices/+/config`; `channels[]` array; probeId `{topicId}-ch{channelNumber}`. Gateway-level state summary (wifi/battery/firmware/units) flows through `subscribe()`/globalEventBus for Device Health; full per-channel state (labels/alarms) stays hook-local via `subscribeDeviceMeta()` for Channel Labels |
+| `src/lib/providers/adapters/thermoworks/ThermoWorksBleProvisioner.ts` | Web Bluetooth GATT provisioning (connect/scanWifiNetworks/provision) behind `useBleProvisioning.js` |
+| `src/components/BleProvisioningWizard.jsx` | BLE device setup wizard, reachable from Settings' "Set Up New Device" card |
+| `src/components/DeviceSettingsCard.jsx` | Per-gateway channel labels/alarms/interval editor, backed by `publishConfig()` |
+| `src/utils/deviceHealth.js` | `computeGatewayHealth(gatewayState, telemetryProbes)` — derives the Device Health panel's per-gateway view |
 | `src/hooks/useStorage.js` | localStorage `pitlogic-v5` (cooks, activeCooks, dis) |
 | `src/hooks/useRecipes.js` | localStorage `pitlogic-recipes-v1` |
 | `src/hooks/useProbeAlert.js` | Browser notification when probe hits target temp |

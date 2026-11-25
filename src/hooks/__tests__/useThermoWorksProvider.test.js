@@ -4,13 +4,16 @@ import { renderHook, act } from '@testing-library/react';
 // vi.hoisted() runs before vi.mock() which runs before top-level imports.
 // These mock fns are defined here so they can be referenced inside the vi.mock() factories below.
 // Modifying vi.hoisted() or vi.mock() blocks requires keeping them in sync — they are intentionally coupled.
-const { mockConnect, mockSubscribe, mockSubscribeDeviceMeta, mockDisconnect, mockPublish, mockNormalize } = vi.hoisted(() => ({
+const { mockConnect, mockSubscribe, mockSubscribeDeviceMeta, mockSubscribeConnectionState, mockUnsubscribeConnectionState, mockDisconnect, mockPublish, mockNormalize, mockPublishConfig } = vi.hoisted(() => ({
   mockConnect: vi.fn().mockResolvedValue(undefined),
   mockSubscribe: vi.fn().mockReturnValue(() => {}),
   mockSubscribeDeviceMeta: vi.fn().mockReturnValue(() => {}),
+  mockSubscribeConnectionState: vi.fn(),
+  mockUnsubscribeConnectionState: vi.fn(),
   mockDisconnect: vi.fn().mockResolvedValue(undefined),
   mockPublish: vi.fn(),
   mockNormalize: vi.fn().mockReturnValue({ type: 'probe:reading', reading: {} }),
+  mockPublishConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../lib/providers/adapters/thermoworks/ThermoWorksAdapter.js', () => {
@@ -20,7 +23,9 @@ vi.mock('../../lib/providers/adapters/thermoworks/ThermoWorksAdapter.js', () => 
       this.connect = mockConnect;
       this.subscribe = mockSubscribe;
       this.subscribeDeviceMeta = mockSubscribeDeviceMeta;
+      this.subscribeConnectionState = mockSubscribeConnectionState;
       this.disconnect = mockDisconnect;
+      this.publishConfig = mockPublishConfig;
     }
   };
   return { ThermoWorksAdapter };
@@ -54,13 +59,29 @@ const VALID_CONFIG = JSON.stringify({
 import { useThermoWorksProvider } from '../useThermoWorksProvider.js';
 
 describe('useThermoWorksProvider', () => {
+  it('connects with explicitly submitted config even when no config was previously saved', async () => {
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(JSON.parse(VALID_CONFIG)); });
+    expect(result.current.status).toBe('connected');
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+  });
+  it('does not expose connection credential strings in an adapter error', async () => {
+    mockConnect.mockRejectedValueOnce(new Error('Connection rejected for fixture-private-password'));
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect({ ...JSON.parse(VALID_CONFIG), password: 'fixture-private-password' }); });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toMatch(/check the address and credentials/i);
+    expect(result.current.error).not.toContain('fixture-private-password');
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     lsMock._clear();
     mockConnect.mockResolvedValue(undefined);
     mockSubscribe.mockReturnValue(() => {});
     mockSubscribeDeviceMeta.mockReturnValue(() => {});
+    mockSubscribeConnectionState.mockReturnValue(mockUnsubscribeConnectionState);
     mockDisconnect.mockResolvedValue(undefined);
+    mockPublishConfig.mockResolvedValue(undefined);
   });
 
   it('starts with status disconnected and no error', () => {
@@ -78,6 +99,51 @@ describe('useThermoWorksProvider', () => {
     expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
+  it('shows reconnecting on transport loss and connected after recovery', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    let reportState;
+    mockSubscribeConnectionState.mockImplementation(handler => { reportState = handler; return mockUnsubscribeConnectionState; });
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    expect(mockSubscribeConnectionState).toHaveBeenCalledTimes(1);
+
+    act(() => reportState('reconnecting'));
+    expect(result.current.status).toBe('reconnecting');
+    act(() => reportState('connected'));
+    expect(result.current.status).toBe('connected');
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores late recovery after manual disconnect during an outage', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    let reportState;
+    mockSubscribeConnectionState.mockImplementation(handler => { reportState = handler; return mockUnsubscribeConnectionState; });
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => reportState('reconnecting'));
+    await act(async () => { await result.current.disconnect(); });
+    act(() => reportState('connected'));
+
+    expect(result.current.status).toBe('disconnected');
+    expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
+  });
+
+  it('finishes manual disconnect when MQTT shutdown rejects', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    let reportState;
+    mockSubscribeConnectionState.mockImplementation(handler => { reportState = handler; return mockUnsubscribeConnectionState; });
+    mockDisconnect.mockRejectedValueOnce(new Error('shutdown failed'));
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => reportState('reconnecting'));
+
+    await act(async () => { await result.current.disconnect(); });
+    act(() => reportState('connected'));
+
+    expect(result.current.status).toBe('disconnected');
+    expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
+  });
+
   it('connect() sets error status when config is missing', async () => {
     lsMock.getItem.mockReturnValue(null);
     const { result } = renderHook(() => useThermoWorksProvider());
@@ -93,7 +159,20 @@ describe('useThermoWorksProvider', () => {
     const { result } = renderHook(() => useThermoWorksProvider());
     await act(async () => { await result.current.connect(); });
     expect(result.current.status).toBe('error');
-    expect(result.current.error).toBe('ECONNREFUSED');
+    expect(result.current.error).toBe('Could not connect. Check the address and credentials, then try again.');
+  });
+
+  it('keeps the original connection error when cleanup also fails', async () => {
+    lsMock.getItem.mockReturnValue(VALID_CONFIG);
+    mockConnect.mockRejectedValue(new Error('ECONNREFUSED'));
+    mockDisconnect.mockRejectedValue(new Error('cleanup failed'));
+    const { result } = renderHook(() => useThermoWorksProvider());
+
+    await act(async () => { await result.current.connect(); });
+
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('Could not connect. Check the address and credentials, then try again.');
+    expect(mockUnsubscribeConnectionState).toHaveBeenCalledTimes(1);
   });
 
   it('disconnect() transitions back to disconnected', async () => {
@@ -136,5 +215,95 @@ describe('useThermoWorksProvider', () => {
     expect(mockPublish).toHaveBeenCalledWith(fakeNormalized);
     // Note: individual handler failure isolation (one handler error doesn't block others)
     // is tested at the ThermoWorksAdapter layer — see ThermoWorksAdapter.test.ts.
+  });
+});
+
+describe('useThermoWorksProvider — config cache and updates', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    lsMock._clear();
+    mockConnect.mockResolvedValue(undefined);
+    mockSubscribe.mockReturnValue(() => {});
+    mockDisconnect.mockResolvedValue(undefined);
+    mockPublishConfig.mockResolvedValue(undefined);
+  });
+
+  it('hasConfigBaseline is false before any gateway:config event has been seen', async () => {
+    lsMock.getItem.mockImplementation(key => (key === 'pitlogic-mqtt-v1' ? VALID_CONFIG : null));
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    expect(result.current.hasConfigBaseline('gw1')).toBe(false);
+  });
+
+  it('hasConfigBaseline becomes true after a gateway:config event is seen, and persists it to localStorage', async () => {
+    lsMock.getItem.mockImplementation(key => (key === 'pitlogic-mqtt-v1' ? VALID_CONFIG : null));
+    let capturedHandler;
+    mockSubscribe.mockImplementation(handler => { capturedHandler = handler; return () => {}; });
+    mockNormalize.mockReturnValue({ type: 'gateway:config', gatewayId: 'gw1', raw: { label: 'My Device' }, timestamp: 1 });
+
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => { capturedHandler({}); });
+
+    expect(result.current.hasConfigBaseline('gw1')).toBe(true);
+    expect(lsMock.setItem).toHaveBeenCalledWith(
+      'pitlogic-thermoworks-config-cache-v1',
+      JSON.stringify({ gw1: { label: 'My Device' } }),
+    );
+  });
+
+  it('updateDeviceConfig calls adapter.publishConfig with no fallback once a baseline has been seen', async () => {
+    lsMock.getItem.mockImplementation(key => (key === 'pitlogic-mqtt-v1' ? VALID_CONFIG : null));
+    let capturedHandler;
+    mockSubscribe.mockImplementation(handler => { capturedHandler = handler; return () => {}; });
+    mockNormalize.mockReturnValue({ type: 'gateway:config', gatewayId: 'gw1', raw: { label: 'My Device' }, timestamp: 1 });
+
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => { capturedHandler({}); });
+
+    await act(async () => { await result.current.updateDeviceConfig('gw1', { channelLabels: { 1: 'Brisket' } }); });
+    expect(mockPublishConfig).toHaveBeenCalledWith('gw1', { channelLabels: { 1: 'Brisket' } }, undefined);
+  });
+
+  it('updateDeviceConfig passes the localStorage fallback when no baseline has been seen this session', async () => {
+    lsMock.getItem.mockImplementation(key => {
+      if (key === 'pitlogic-mqtt-v1') return VALID_CONFIG;
+      if (key === 'pitlogic-thermoworks-config-cache-v1') return JSON.stringify({ gw1: { label: 'Cached Device' } });
+      return null;
+    });
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+
+    await act(async () => { await result.current.updateDeviceConfig('gw1', { channelLabels: { 1: 'Brisket' } }); });
+    expect(mockPublishConfig).toHaveBeenCalledWith('gw1', { channelLabels: { 1: 'Brisket' } }, { label: 'Cached Device' });
+  });
+
+  it('updateDeviceConfig throws when not connected', async () => {
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await expect(result.current.updateDeviceConfig('gw1', {})).rejects.toThrow(/not connected/i);
+  });
+
+  it('hasConfigBaseline resets to false after disconnect, so a later reconnect falls back to the cache again', async () => {
+    lsMock.getItem.mockImplementation(key => {
+      if (key === 'pitlogic-mqtt-v1') return VALID_CONFIG;
+      if (key === 'pitlogic-thermoworks-config-cache-v1') return JSON.stringify({ gw1: { label: 'Cached Device' } });
+      return null;
+    });
+    let capturedHandler;
+    mockSubscribe.mockImplementation(handler => { capturedHandler = handler; return () => {}; });
+    mockNormalize.mockReturnValue({ type: 'gateway:config', gatewayId: 'gw1', raw: { label: 'My Device' }, timestamp: 1 });
+
+    const { result } = renderHook(() => useThermoWorksProvider());
+    await act(async () => { await result.current.connect(); });
+    act(() => { capturedHandler({}); });
+    expect(result.current.hasConfigBaseline('gw1')).toBe(true);
+
+    await act(async () => { await result.current.disconnect(); });
+    expect(result.current.hasConfigBaseline('gw1')).toBe(false);
+
+    await act(async () => { await result.current.connect(); });
+    await act(async () => { await result.current.updateDeviceConfig('gw1', { channelLabels: { 1: 'Brisket' } }); });
+    expect(mockPublishConfig).toHaveBeenCalledWith('gw1', { channelLabels: { 1: 'Brisket' } }, { label: 'Cached Device' });
   });
 });

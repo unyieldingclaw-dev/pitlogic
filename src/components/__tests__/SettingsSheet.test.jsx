@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import SettingsSheet from '../SettingsSheet.jsx';
+import { render as rtlRender, screen, fireEvent, act } from '@testing-library/react';
+import SettingsSheet from '../DevicesPanel.jsx';
+
+// These regressions exercise advanced device controls through their disclosure.
+function render(ui) {
+  const result = rtlRender(ui);
+  fireEvent.click(screen.getByText('Advanced connection tools'));
+  fireEvent.click(screen.getByText('Set up a new gateway'));
+  return result;
+}
 
 const STORAGE_KEY = 'pitlogic-mqtt-v1';
 
@@ -25,6 +33,9 @@ function baseProps(overrides = {}) {
     onCsvReset: vi.fn(),
     liveProbes: new Map(),
     deviceState: new Map(),
+    gatewayHealth: [],
+    onHasConfigBaseline: () => false,
+    onUpdateDeviceConfig: vi.fn(),
     ...overrides,
   };
 }
@@ -35,7 +46,40 @@ function fillMqttFields({ brokerUrl = 'wss://cluster.hivemq.cloud:8884/mqtt', us
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: password } });
 }
 
-describe('SettingsSheet — Live Device config copy/paste', () => {
+describe('DevicesPanel — Live Device config copy/paste', () => {
+  it('saves and connects using edited values in one action', async () => {
+    const onMqttConnect = vi.fn();
+    render(<SettingsSheet {...baseProps({ onMqttConnect })} />);
+    fillMqttFields({ brokerUrl: 'wss://edited.example/mqtt', username: 'edited', password: 'fixture-password' });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save and connect', exact: true })); });
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(saved.brokerUrl).toBe('wss://edited.example/mqtt');
+    expect(onMqttConnect).toHaveBeenCalledWith(saved);
+  });
+
+  it('keeps a failed save distinct from a failed connection and never submits', () => {
+    const onMqttConnect = vi.fn();
+    render(<SettingsSheet {...baseProps({ onMqttConnect })} />);
+    fillMqttFields({});
+    const storage = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Save and connect', exact: true }));
+      expect(onMqttConnect).not.toHaveBeenCalled();
+      expect(screen.getByRole('alert').textContent).toMatch(/could not save/i);
+      expect(screen.queryByText('Saved ✓')).toBeNull();
+    } finally { storage.mockRestore(); }
+  });
+
+  it('clears an earlier success message when a later save is rejected', () => {
+    render(<SettingsSheet {...baseProps()} />);
+    fillMqttFields({});
+    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    expect(screen.getByText('Saved ✓')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save and connect', exact: true }));
+    expect(screen.getByRole('alert').textContent).toMatch(/enter the broker address/i);
+    expect(screen.queryByText('Saved ✓')).toBeNull();
+  });
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -46,6 +90,15 @@ describe('SettingsSheet — Live Device config copy/paste', () => {
     vi.restoreAllMocks();
   });
 
+  it('shows Reconnecting with a Disconnect control during broker loss', () => {
+    render(<SettingsSheet {...baseProps({ mqttStatus: 'reconnecting' })} />);
+
+    expect(screen.getByText('○ Reconnecting…')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Disconnect from MQTT broker' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Connect to MQTT broker' })).toBeNull();
+    expect(screen.queryByText('● Connected')).toBeNull();
+  });
+
   it('copies the current MQTT config to the clipboard as JSON and flashes "Copied ✓"', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
@@ -53,7 +106,7 @@ describe('SettingsSheet — Live Device config copy/paste', () => {
     render(<SettingsSheet {...baseProps()} />);
     fillMqttFields();
 
-    await vi.waitFor(() => fireEvent.click(screen.getByRole('button', { name: /copy live device config/i })));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /copy live device config/i })); });
 
     expect(writeText).toHaveBeenCalledWith(JSON.stringify({
       brokerUrl: 'wss://cluster.hivemq.cloud:8884/mqtt',
@@ -74,7 +127,7 @@ describe('SettingsSheet — Live Device config copy/paste', () => {
 
     render(<SettingsSheet {...baseProps()} />);
 
-    await vi.waitFor(() => fireEvent.click(screen.getByRole('button', { name: /copy live device config/i })));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /copy live device config/i })); });
 
     const copyBtn = await screen.findByRole('button', { name: /copy live device config/i });
     expect(copyBtn.textContent).toBe('Copy failed');
@@ -162,5 +215,112 @@ describe('SettingsSheet — Live Device config copy/paste', () => {
 
     expect(screen.queryByLabelText('Pasted Live Device config JSON')).toBeNull();
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('DevicesPanel — Device Health panel', () => {
+  it('shows a gateway health entry with wifi, battery, firmware', () => {
+    render(<SettingsSheet {...baseProps({ gatewayHealth: [
+      { gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', unitMismatch: false, probes: [] },
+    ] })} />);
+    expect(screen.getByText(/88%/)).toBeTruthy();
+    expect(screen.getByText(/v2.45/)).toBeTruthy();
+  });
+
+  it('shows a unit mismatch warning when the gateway reports Celsius', () => {
+    render(<SettingsSheet {...baseProps({ gatewayHealth: [
+      { gatewayId: 'gw1', wifiStrength: 88, battery: null, firmware: null, units: 'C', unitMismatch: true, probes: [] },
+    ] })} />);
+    expect(screen.getByText(/reporting Celsius/i)).toBeTruthy();
+  });
+
+  it('lists per-probe battery percentages', () => {
+    render(<SettingsSheet {...baseProps({ gatewayHealth: [
+      { gatewayId: 'gw1', wifiStrength: null, battery: null, firmware: null, units: 'F', unitMismatch: false,
+        probes: [{ probeId: 'gw1-ch1', battery: 15 }] },
+    ] })} />);
+    expect(screen.getByText(/gw1-ch1/)).toBeTruthy();
+    expect(screen.getByText(/15%/)).toBeTruthy();
+  });
+
+  it('renders nothing device-health-related when gatewayHealth is empty', () => {
+    render(<SettingsSheet {...baseProps({ gatewayHealth: [] })} />);
+    expect(screen.queryByText(/Device Health/i)).toBeNull();
+  });
+});
+
+describe('DevicesPanel — Device Settings panel', () => {
+  it('renders a DeviceSettingsCard for each gateway with editableConfig data', () => {
+    render(<SettingsSheet {...baseProps({
+      gatewayHealth: [
+        { gatewayId: 'gw1', wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', unitMismatch: false,
+          editableConfig: { channelLabels: {}, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null },
+          probes: [] },
+      ],
+      onHasConfigBaseline: () => true,
+      onUpdateDeviceConfig: vi.fn(),
+    })} />);
+    expect(screen.getByText(/^device settings$/i)).toBeTruthy();
+  });
+
+  it('renders nothing device-settings-related when gatewayHealth is empty', () => {
+    render(<SettingsSheet {...baseProps({ gatewayHealth: [], onHasConfigBaseline: () => true, onUpdateDeviceConfig: vi.fn() })} />);
+    expect(screen.queryByText(/device settings/i)).toBeNull();
+  });
+
+  it('re-syncs the form when a new retained config arrives for an already-rendered gateway', () => {
+    const gw = gatewayId => ({
+      gatewayId, wifiStrength: 88, battery: 'C', firmware: 'v2.45', units: 'F', unitMismatch: false, probes: [],
+    });
+    const { rerender } = render(<SettingsSheet {...baseProps({
+      gatewayHealth: [
+        { ...gw('gw1'), editableConfig: { channelLabels: { 1: 'Brisket' }, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null } },
+      ],
+      onHasConfigBaseline: () => true,
+      onUpdateDeviceConfig: vi.fn(),
+    })} />);
+    expect(screen.getByLabelText(/channel 1 label/i).value).toBe('Brisket');
+
+    rerender(<SettingsSheet {...baseProps({
+      gatewayHealth: [
+        { ...gw('gw1'), editableConfig: { channelLabels: { 1: 'Ribs' }, alarms: {}, transmitIntervalInSeconds: null, recordingIntervalInSeconds: null } },
+      ],
+      onHasConfigBaseline: () => true,
+      onUpdateDeviceConfig: vi.fn(),
+    })} />);
+    expect(screen.getByLabelText(/channel 1 label/i).value).toBe('Ribs');
+  });
+});
+
+describe('DevicesPanel — BLE provisioning entry point', () => {
+  const originalBluetooth = Object.getOwnPropertyDescriptor(window.navigator, 'bluetooth');
+
+  afterEach(() => {
+    if (originalBluetooth) {
+      Object.defineProperty(window.navigator, 'bluetooth', originalBluetooth);
+    } else {
+      delete window.navigator.bluetooth;
+    }
+  });
+
+  it('shows the Set Up Device via Bluetooth button when navigator.bluetooth is supported', () => {
+    Object.defineProperty(window.navigator, 'bluetooth', { value: {}, configurable: true });
+    render(<SettingsSheet {...baseProps({ onOpenBleWizard: vi.fn() })} />);
+    expect(screen.getByRole('button', { name: /set up device via bluetooth/i })).toBeTruthy();
+  });
+
+  it('calls onOpenBleWizard when the entry point button is clicked', () => {
+    Object.defineProperty(window.navigator, 'bluetooth', { value: {}, configurable: true });
+    const onOpenBleWizard = vi.fn();
+    render(<SettingsSheet {...baseProps({ onOpenBleWizard })} />);
+    fireEvent.click(screen.getByRole('button', { name: /set up device via bluetooth/i }));
+    expect(onOpenBleWizard).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows unsupported-browser messaging instead of the button when navigator.bluetooth is absent', () => {
+    if ('bluetooth' in window.navigator) delete window.navigator.bluetooth;
+    render(<SettingsSheet {...baseProps({ onOpenBleWizard: vi.fn() })} />);
+    expect(screen.queryByRole('button', { name: /set up device via bluetooth/i })).toBeNull();
+    expect(screen.getByText(/isn't supported in this browser/i)).toBeTruthy();
   });
 });

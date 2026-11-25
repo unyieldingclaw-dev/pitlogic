@@ -1,5 +1,6 @@
 import { Flame, ChevronRight } from 'lucide-react';
 import { dur, shortDate, PROBE_COLORS, probeStatusColor, probeStatusBorderColor } from '../utils/helpers';
+import ProbeFreshness from './ProbeFreshness';
 
 // Last-resort label when no device state label is available.
 // "M180280635-ch2" → "Ch 2",  "M180280635-s3" → "Ch 3"
@@ -36,23 +37,29 @@ function RecentCard({ cook, onClick }) {
   );
 }
 
-export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, channelMeta, onGoActive, onNewCook, onSelectCook }) {
+export default function DashboardTab({ cooks, activeCook, allActiveCooks, liveProbes, channelMeta, onGoActive, onNewCook, onSelectCook, onOpenDevices }) {
   const activeCooks = allActiveCooks?.length > 0 ? allActiveCooks : (activeCook ? [activeCook] : []);
   const completed = cooks.filter(c => c.status === 'complete');
   const totalHours = completed.reduce((acc, c) => acc + (c.endTime && c.startTime ? (c.endTime - c.startTime) : 0), 0);
   const cutCounts = completed.reduce((a, c) => { a[c.cut] = (a[c.cut] || 0) + 1; return a; }, {});
   const favCut = Object.entries(cutCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
   const recent = [...completed].sort((a, b) => b.startTime - a.startTime).slice(0, 4);
+  const hasLiveProbe = [...(liveProbes?.values() ?? [])].some(probe => probe.status === 'active');
+  const hasStaleProbe = [...(liveProbes?.values() ?? [])].some(probe => probe.status === 'stale');
 
   return (
     <div className="fadein">
-      {/* Stats strip */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: '1.5rem' }}>
-        <StatPill label="Total Cooks" value={completed.length} />
-        <StatPill label="Hours Smoked" value={Math.round(totalHours / 3600000)} />
-        <StatPill label="Fav Cut" value={favCut.length > 8 ? favCut.slice(0,7)+'…' : favCut} />
-      </div>
+      {/* Quick start */}
+      {activeCooks.length === 0 && (
+        <button className="btn-primary" onClick={onNewCook}
+          style={{ width: '100%', marginBottom: '1.5rem', padding: '14px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15 }}>
+            <Flame size={18} /> Start a cook
+        </button>
+      )}
 
+
+      <button type="button" className="btn flow-device-link" onClick={onOpenDevices}>Connect probes</button>
       {/* Active cook cards (one per active cook) */}
       {activeCooks.map(cook => (
         <button key={cook.id} onClick={() => onGoActive(cook.id)}
@@ -62,6 +69,7 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
           borderRadius: 14, padding: '1.25rem', marginBottom: '1rem', cursor: 'pointer',
           boxShadow: '0 0 24px rgba(255,107,53,0.12)',
           width: '100%', textAlign: 'left', fontFamily: 'inherit',
+          color: 'var(--text)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -94,13 +102,14 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
 
       {/* Live MQTT readings */}
       {liveProbes?.size > 0 && (
-        <div style={{ background: 'var(--surface)', border: '1px solid rgba(16,185,129,0.25)',
+        <div style={{ background: 'var(--surface)', border: `1px solid ${hasLiveProbe ? 'rgba(16,185,129,0.25)' : hasStaleProbe ? 'rgba(245,158,11,0.3)' : 'var(--border)'}`,
           borderRadius: 14, padding: '1.25rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)',
-              display: 'inline-block', boxShadow: '0 0 6px var(--green)' }} />
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>Live Readings</span>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: hasLiveProbe ? 'var(--green)' : hasStaleProbe ? 'var(--amber)' : 'var(--text2)',
+              display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600 }}>{hasLiveProbe ? 'Live Readings' : 'Last Readings'}</span>
           </div>
+          <p className="flow-help">Device and replay readings are not recorded in a cook. Log temperatures manually to save them.</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[...liveProbes.values()].map(probe => {
               const chMeta = channelMeta?.get(probe.probeId);
@@ -125,6 +134,8 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
                     color: isAlarming ? 'var(--red)' : probeStatusColor(probe.status) }}>
                     {probe.lastReading ? `${probe.lastReading.temp.valueF.toFixed(1)}°` : '—'}
                   </div>
+                  <ProbeFreshness key={`${probe.status}-${probe.lastReading?.timestamp.capturedAt ?? 'none'}`}
+                    probe={probe} style={{ display: 'block', fontSize: 11, color: 'var(--text2)', marginTop: 2 }} />
                 </div>
               );
             })}
@@ -132,14 +143,13 @@ export default function DashboardTab({ cooks, activeCook, allActiveCooks, livePr
         </div>
       )}
 
-      {/* Quick start */}
-      {activeCooks.length === 0 && (
-        <button className="btn-primary" onClick={onNewCook}
-          style={{ width: '100%', marginBottom: '1.5rem', padding: '14px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15 }}>
-          <Flame size={18} /> Start New Cook
-        </button>
-      )}
+      {/* Stats strip */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: '1.5rem' }}>
+        <StatPill label="Total Cooks" value={completed.length} />
+        <StatPill label="Hours Smoked" value={Math.round(totalHours / 3600000)} />
+        <StatPill label="Fav Cut" value={favCut.length > 8 ? favCut.slice(0,7)+'…' : favCut} />
+      </div>
+
 
       {/* Recent cooks */}
       {recent.length > 0 && (
