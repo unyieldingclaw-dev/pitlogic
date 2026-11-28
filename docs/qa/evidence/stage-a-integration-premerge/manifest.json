@@ -1,0 +1,18 @@
+[
+  {
+    "path": "docs/qa/STAGE_A_VERIFICATION.md",
+    "sha256": "FB2961F7892148EC6A0DA485E24B7674E9418145B1163256F4D19A16262EB1DE"
+  },
+  {
+    "path": "docs/specs/2026-10-30-intuitive-cook-flow.md",
+    "sha256": "43A45C961617627C791F113FAFF95A7C9613B1BBBD43F619897F244963B551C3"
+  },
+  {
+    "path": "docs/specs/2026-10-31-cook-recording-storage-v2.md",
+    "sha256": "C1BCC225B059440F89B9809062C3D85988EADB8078260ECB05A81FADDE55D29D"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-10-31-intuitive-cook-flow-v2.md",
+    "sha256": "78F8225BF78966BEEE449871F763AD4A1F341CB9C410D1335F7F24F9A4C5D983"
+  }
+]

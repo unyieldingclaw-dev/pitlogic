@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-24T03:51:44.507Z",
+  "base": "http://127.0.0.1:5174/pitlogic/",
+  "telemetry": {
+    "modulePath": "/pitlogic/src/lib/telemetry/eventBus/EventBus.ts",
+    "moduleDiagnostic": {
+      "sameBus": false,
+      "sameStore": false,
+      "afterJs": {
+        "js": false,
+        "ts": false
+      },
+      "afterTs": {
+        "js": true,
+        "ts": true
+      }
+    },
+    "freshThenOlder": {
+      "afterFresh": 182,
+      "afterOlder": 160,
+      "status": "active"
+    },
+    "uiAfterActualBus": true,
+    "visibleAfterOlder": true,
+    "olderThenFresh": 190,
+    "sameTimestampConflict": 150,
+    "oldImmediate": {
+      "status": "active",
+      "capturedAgeMs": 31000
+    },
+    "afterStaleSweep": {
+      "status": "stale",
+      "ageMs": 36518
+    },
+    "dashboardAfterStale": "Live Readings\nCh 3\n177.3°\nStart New Cook\nNo cooks yet\nStart your first cook to see stats here.",
+    "headerDotAfterStale": "rgb(74, 222, 128)",
+    "settingsAfterStale": "LIVE PROBES\nQA-adversarial-ch3\n177.3°F (stale)\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as ",
+    "afterDisconnect": {
+      "status": "disconnected",
+      "valueF": 177.3
+    },
+    "settingsAfterDisconnect": "LIVE PROBES\nQA-adversarial-ch3\n177.3°F\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON f",
+    "dashboardAfterDisconnect": "Live Readings\nCh 3\n177.3°\nStart New Cook\nNo cooks yet\nStart your first cook to see stats here.",
+    "afterRetainedReplay": {
+      "status": "active",
+      "valueF": 170
+    }
+  },
+  "navigation": {
+    "Dashboard": {
+      "selected": "page",
+      "detailBackVisible": true,
+      "mainText": "History\nQA Adversarial Cook\nOct 23, 2026 · 0m\nShare Cook\nDelete\nOverview\nAnalysis\nCompare\nNotes\nCarryover note:\nBrisket rises ~10°F after pulling. For a 203°F target, pull at 193–1"
+    },
+    "Analytics": {
+      "selected": "page",
+      "detailBackVisible": false,
+      "mainText": "Select a cook from History."
+    },
+    "Guides": {
+      "selected": "page",
+      "detailBackVisible": false,
+      "mainText": "Select a cook from History."
+    },
+    "Recipes": {
+      "selected": "page",
+      "detailBackVisible": false,
+      "mainText": "Select a cook from History."
+    },
+    "New Cook": {
+      "selected": "page",
+      "detailBackVisible": false,
+      "mainText": "New Cook Setup\nCook name (optional)\nMeat type\nBeef\nPork\nPoultry\nFish\nLamb\nCut\nBrisket\nChuck Roast\nShort Ribs\nPrime Rib\nTri-Tip\nBack Ribs\nPlate Ribs\nBeef Cheeks\nPicanha\nRecommended "
+    }
+  },
+  "contrast": {
+    "historyDark": {
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    "recentDark": {
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    }
+  },
+  "limitations": [
+    "No controlled broker, native mobile browser, or hardware used; disconnect event was injected after normalization."
+  ]
+}

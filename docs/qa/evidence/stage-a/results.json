@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-02T00:33:56.399Z",
+  "cases": [
+    {
+      "theme": "dark",
+      "size": "mobile",
+      "manualSaved": true,
+      "noSchemaChange": true,
+      "editedConfigConnected": true,
+      "brokerRecovered": true,
+      "twoCookHistoryPreserved": true,
+      "backupRoundTrip": true,
+      "keyboardTrap": true,
+      "settingsEscape": true,
+      "reload": true,
+      "startButtonY": 629.59375
+    },
+    {
+      "theme": "dark",
+      "size": "desktop",
+      "manualSaved": true,
+      "noSchemaChange": true,
+      "editedConfigConnected": true,
+      "brokerRecovered": true,
+      "twoCookHistoryPreserved": true,
+      "backupRoundTrip": true,
+      "keyboardTrap": true,
+      "settingsEscape": true,
+      "reload": true,
+      "startButtonY": 586.796875
+    },
+    {
+      "theme": "light",
+      "size": "mobile",
+      "manualSaved": true,
+      "noSchemaChange": true,
+      "editedConfigConnected": true,
+      "brokerRecovered": true,
+      "twoCookHistoryPreserved": true,
+      "backupRoundTrip": true,
+      "keyboardTrap": true,
+      "settingsEscape": true,
+      "reload": true,
+      "startButtonY": 629.59375
+    },
+    {
+      "theme": "light",
+      "size": "desktop",
+      "manualSaved": true,
+      "noSchemaChange": true,
+      "editedConfigConnected": true,
+      "brokerRecovered": true,
+      "twoCookHistoryPreserved": true,
+      "backupRoundTrip": true,
+      "keyboardTrap": true,
+      "settingsEscape": true,
+      "reload": true,
+      "startButtonY": 586.796875
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "Synthetic local broker and browser contexts; no production data, real RFX hardware, native mobile browser, or unattended cook duration."
+  ]
+}

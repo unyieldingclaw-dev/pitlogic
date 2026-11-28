@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-30T22:20:17.673Z",
+  "base": "http://127.0.0.1:5177/pitlogic/",
+  "viewports": {
+    "mobile": {
+      "Home": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "1\nTOTAL COOKS\n0\nHOURS SMOKED\nBrisket\nFAV CUT\nStart New Cook\nRECENT COOKS\nOct 30, 2026\nBrisket\n★\n★\n★\n★\n★\n0m"
+      },
+      "History": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Cook History\n+ New Cook\nQA Navigation Cook\nOct 30, 2026 · 0m · 225°F\nProbe 1: — / 203°F"
+      },
+      "Stats": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Your Stats\n1\nTOTAL COOKS\n0h\nHOURS SMOKED\nBrisket\nFAVORITE CUT\n—\nAVG RATING\nout of 5\nCOOKS PER MONTH\nDec\nMar\nApr\nJun\nAug\nOct\n0\n1\n2\n3\n4\nBrisket\nChuck Roast\nShort Ribs\nPrime Rib\nTri-T"
+      },
+      "Guides": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Beef\nPork\nPoultry\nFish\nLamb\nBrisketChuck RoastShort RibsPrime RibTri-TipBack RibsPlate RibsBeef CheeksPicanha\nBrisket\nPull: 203°F\nWrap: 165°F\nStall: 150–165°F\nCarryover: ~10°F\nPell"
+      },
+      "Recipes": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Recipes\nImport CSV\nNew\nRubs\nBrines\nInjections\nSprays/Mops\nSauces\nNo Rubs yet\nAdd one manually or import from Plan to Eat CSV."
+      },
+      "Cook": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "New Cook Setup\nCook name (optional)\nMeat type\nBeef\nPork\nPoultry\nFish\nLamb\nCut\nBrisket\nChuck Roast\nShort Ribs\nPrime Rib\nTri-Tip\nBack Ribs\nPlate Ribs\nBeef Cheeks\nPicanha\nRecommended "
+      },
+      "reload": {
+        "dashboardVisible": true
+      }
+    },
+    "desktop": {
+      "Dashboard": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "1\nTOTAL COOKS\n0\nHOURS SMOKED\nBrisket\nFAV CUT\nStart New Cook\nRECENT COOKS\nOct 30, 2026\nBrisket\n★\n★\n★\n★\n★\n0m"
+      },
+      "History": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Cook History\n+ New Cook\nQA Navigation Cook\nOct 30, 2026 · 0m · 225°F\nProbe 1: — / 203°F"
+      },
+      "Analytics": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Your Stats\n1\nTOTAL COOKS\n0h\nHOURS SMOKED\nBrisket\nFAVORITE CUT\n—\nAVG RATING\nout of 5\nCOOKS PER MONTH\nNov\nDec\nJan\nMar\nMar\nApr\nMay\nJun\nJul\nAug\nSep\nOct\n0\n1\n2\n3\n4\nBrisket\nChuck Roast\nSh"
+      },
+      "Guides": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Beef\nPork\nPoultry\nFish\nLamb\nBrisketChuck RoastShort RibsPrime RibTri-TipBack RibsPlate RibsBeef CheeksPicanha\nBrisket\nPull: 203°F\nWrap: 165°F\nStall: 150–165°F\nCarryover: ~10°F\nPell"
+      },
+      "Recipes": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "Recipes\nImport CSV\nNew\nRubs\nBrines\nInjections\nSprays/Mops\nSauces\nNo Rubs yet\nAdd one manually or import from Plan to Eat CSV."
+      },
+      "New Cook": {
+        "selected": "page",
+        "expectedVisible": true,
+        "detailBackVisible": false,
+        "mainText": "New Cook Setup\nCook name (optional)\nMeat type\nBeef\nPork\nPoultry\nFish\nLamb\nCut\nBrisket\nChuck Roast\nShort Ribs\nPrime Rib\nTri-Tip\nBack Ribs\nPlate Ribs\nBeef Cheeks\nPicanha\nRecommended "
+      },
+      "reload": {
+        "dashboardVisible": true
+      }
+    }
+  },
+  "errors": []
+}

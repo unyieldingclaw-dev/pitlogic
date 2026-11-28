@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-02T03:37:28.471Z",
+  "browser": "156.0.8078.48",
+  "cases": [
+    {
+      "name": "preview required; migration atomic, idempotent and legacy unchanged",
+      "passed": true
+    },
+    {
+      "name": "abort each migration store leaves no completion marker or partial rows",
+      "passed": true
+    },
+    {
+      "name": "malformed and inaccessible legacy data never becomes an empty migration",
+      "passed": true
+    },
+    {
+      "name": "old writer freezes new mutations; both versions remain exportable across reopen",
+      "passed": true
+    },
+    {
+      "name": "failed recovery copy preserves raw data and freezes this client",
+      "passed": true
+    },
+    {
+      "name": "epoch replacement rejects queued and retried jobs, including same cook IDs",
+      "passed": true
+    },
+    {
+      "name": "missed old-writer event is detected at reopen",
+      "passed": true
+    },
+    {
+      "name": "versionchange closes connection; blocked open reports recovery",
+      "passed": true
+    },
+    {
+      "name": "old write during mutation cannot publish unqualified success",
+      "passed": true
+    },
+    {
+      "name": "real second-tab stale mutation rejected after replacement",
+      "passed": true
+    },
+    {
+      "name": "atomic sample identity, manual spots and live watermarks",
+      "passed": true
+    },
+    {
+      "name": "binding intervals, exclusive food ownership and old jobs after replacement",
+      "passed": true
+    },
+    {
+      "name": "aborted append keeps readings and summaries unchanged; end rejects late samples",
+      "passed": true
+    },
+    {
+      "name": "real normalization/store/recorder burst persists each accepted sample",
+      "passed": true
+    },
+    {
+      "name": "end cannot precede a sample that committed in another transaction",
+      "passed": true
+    },
+    {
+      "name": "delete is atomic and a retired cook identity cannot receive queued work",
+      "passed": true
+    },
+    {
+      "name": "storage access loss freezes discovery status but committed history stays exportable",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Isolated Chromium origin and synthetic data; no native Safari, physical hardware, PWA upgrade, or unattended duration proof."
+  ],
+  "longCook": {
+    "samples": 172800,
+    "exact": true,
+    "seconds": 29.49090000003576,
+    "batches": 691,
+    "p95FlushMs": 38.80000001192093,
+    "pending": 0,
+    "legacyProvenance": "absent legacy key; large legacy comparison remains a separate benchmark"
+  }
+}

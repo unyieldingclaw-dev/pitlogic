@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-30T23:00:02.406Z",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "pages": {
+    "home": {
+      "text": "0\nTOTAL COOKS\n0\nHOURS SMOKED\n—\nFAV CUT\nStart New Cook\nNo cooks yet\nStart your first cook to see stats here."
+    },
+    "settings": {
+      "text": "Settings\n0 cooks · 0 recipes\nMy Defaults\n\nNo custom defaults saved yet. Change pit or pull temps in the new cook form and tap “Save as default” to store your preferences here.\n\nAppearance\nTheme\nDark\nLight\nSet Up New Device\nProvision a new RFX device's WiFi and MQTT settings over Bluetooth.\nSet Up Device via Bluetooth\nLive Device\nConnect to a ThermoWorks RFX Gateway via your MQTT broker. Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.\nBroker URL\nUsername\nPassword\nTemperature Unit\n°F\n°C\nSave\nCopy config\nPaste config\nConnect\n○ Disconnected\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON file.\nDownload backup\nRestore\nImport a backup file. Existing data is preserved by default.\nChoose backup file"
+    },
+    "new-cook": {
+      "text": "New Cook Setup\nCook name (optional)\nMeat type\nBeef\nPork\nPoultry\nFish\nLamb\nCut\nBrisket\nChuck Roast\nShort Ribs\nPrime Rib\nTri-Tip\nBack Ribs\nPlate Ribs\nBeef Cheeks\nPicanha\nRecommended pellets for Brisket\nPost Oak\nHickory\nCompetition Blend\nPost Oak = Texas classic, clean & earthy. Hickory = more punch. Competition Blend = reliable all-rounder.\nCOOK STAGES\n1\n180°F Super SmokePlace fat-side up. Keep lid closed — build your smoke ring and initial bark.\n2\n225°FLow & slow. Stall hits at 150–165°F and can last 7 hrs. Don't open the lid.\n3\n225°FWrap in pink butcher paper (preserves bark) or foil (faster, softer bark). Return immediately.\n4\n165°F Keep WarmRest wrapped in towels in a dry cooler. 1–2 hrs minimum — this step is not optional.\nFull guide →\nPROBES\nAmbient / Smoker\nWired ambient probe\nTarget °F\nLow temp alarm\nOff\nProbe label\nTarget °F\n+ Add meat probe\nMore Details\nMop / Spray Timer\nOff\nStart Cook",
+      "startButton": {
+        "x": 37,
+        "y": 1284,
+        "width": 316,
+        "height": 46
+      },
+      "fields": 6
+    },
+    "active-cook": {
+      "text": "UX Walkthrough Cook\nOct 30, 2026 · 0m 00s\nEnd Cook\nSMOKER / AMBIENT\n—\n→ 225°F\nPROBE 1\n—\n→ 203°F\n0%\nTEMPERATURE OVER TIME\nNo readings yet — log your first temp below\nProbe 1 (→203°)\nSmoker\nLog Reading\nProbe 1 °F\nSmoker °F\nLog Now\n↑ Import CSV\nThermoWorks CSV export auto-detected\nBRISKET COOK STAGES\nFull guide\n1\n180°F Super SmokeCook start — Place fat-side up. Keep lid closed — build your smoke ring and initial bark.\n2\n225°FAfter smoke phase — Low & slow. Stall hits at 150–165°F and can last 7 hrs. Don't open the lid.\n3\n225°FAt 165°F — Wrap in pink butcher paper (preserves bark) or foil (faster, softer bark). Return immediately.\n4\n165°F Keep WarmAt 203°F — Rest wrapped in towels in a dry cooler. 1–2 hrs minimum — this step is not optional.\nPro tip: Probe should slide into the flat like warm butter with zero resistance. That feel matters more than hitting an exact number."
+    }
+  },
+  "errors": []
+}
