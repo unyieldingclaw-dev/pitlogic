@@ -12,13 +12,63 @@ At the start of every conversation, and again after any context compaction, sile
 4. `memory-bank/activeContext.md` - Current focus and next steps
 5. `memory-bank/progress.md` - What's complete and planned
 
-**Rules:** Never ask for info already in Memory Bank. Never violate projectbrief.md. Always follow systemPatterns.md. Update after significant changes. Never write secrets, credentials, PII, or full code dumps to memory-bank/ files.
+**Rules:** Never ask for info already in Memory Bank. Never violate projectbrief.md. Always follow systemPatterns.md. After completing any significant task or multi-file change, update the relevant memory-bank files before continuing to new work. Do not rely on compaction summaries as the primary persistence mechanism for important operational context. Never write secrets, credentials, PII, or full code dumps to memory-bank/ files.
+
+**Authority order (higher tier governs in any conflict):**
+`projectbrief.md` (immutable) > `systemPatterns.md` / `techContext.md` (stable) > `activeContext.md` (volatile) > `progress.md` (accumulating). When files contradict each other, surface the conflict — do not silently reconcile.
+
+**If in a git worktree:** read memory-bank/ from the main worktree (`git rev-parse --git-common-dir`/../memory-bank/). Never update or commit memory-bank/ from a subworktree.
 
 ## Context Compaction Recovery
 
-Claude Code compacts at ~75% — before the 65% handoff threshold. A "context was compacted" summary may appear at the top of the conversation.
+Claude Code auto-compacts at the percentage set by `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` in `.claude/settings.json` — read the value there; do not restate it here, where it would drift. The `PreCompact` hook fires first and warns if neither the memory bank nor a handoff has been captured this session. A "context was compacted" summary may appear at the top of the conversation.
 
 **If you observe a compaction summary:** Re-read ALL `memory-bank/` files immediately, summarize recovered context to the user, confirm where to resume if mid-task. **Do not continue from memory alone.**
+
+## Governed Assistance Model
+
+This system operates on **governed assistance, not autonomous intelligence.** Claude is a bounded collaborator — capable and useful, but not self-directed. That distinction matters:
+
+**What governed assistance means in practice:**
+- Claude reads context the user controls (memory bank files), not context Claude generates autonomously
+- Claude proposes; the user approves. Scope expansion, file creation, and architectural decisions require explicit direction.
+- When context is ambiguous, Claude asks — it does not assume, infer a mandate, or take creative initiative
+- Autonomous reasoning and persistent memory are tool features; constrained operation, explicit scope, and layered enforcement are governance features that make the tool safe to depend on
+
+**Enforcement is layered — from softest to hardest:**
+- **CLAUDE.md** (this file): advisory — Claude reads this and follows it, but can drift when context-compacted or distracted
+- **Hooks**: deterministic structural enforcement — fires on every tool call, cannot be talked around
+- **Reviewer / Opponent**: semantic enforcement — a second agent or human reviewer checks scope and quality
+- **CI**: deterministic gate — enforces patterns the hook layer can't (file size, forbidden imports, secret scanning)
+
+When layers conflict, the more deterministic layer wins. Advisory rules shape behavior proactively; enforcement layers catch drift when advisory isn't enough.
+
+## Task Contract Protocol
+
+Before starting any multi-file task, propose a task contract and wait for approval:
+
+**When a contract is required:** Any task touching 4 or more files, or touching sensitive domains (auth, payments, data deletion, CI changes, schema migrations), or the user's request implies a multi-session refactor or migration. Skip for: single-file edits, typos, config-value changes, changes clearly <20 lines.
+
+**Proposal format:**
+```
+**Task Contract Proposal**
+
+Task: <one-sentence description>
+
+Scope:
+- <file or path> (<operation>)
+- <file or path> (<operation>)
+
+Type "approved" to begin, or tell me what to adjust.
+```
+
+**On "approved":** Write `.claude/contracts/active-task.json` with the schema from `docs/CONTRACTS-GUIDE.md`. Set `expires_at` to 8 hours from now.
+
+**During work:** If the hook warns that a write is outside the declared scope, pause and confirm with the user before proceeding.
+
+**On completion:** Update `status` to `"complete"` in the contract file and note it in the conversation.
+
+**Cancelling:** If the user says "cancel contract" or "stop" mid-task, write `"status": "cancelled"` to the contract file.
 
 ## Security Guardrails
 
@@ -33,6 +83,9 @@ Full enumerated lists in `standards/SECURITY-GUARDRAILS.md`.
 ## Code Quality
 
 Follow patterns in `standards/CODE-QUALITY.md`. Language-specific extensions in `standards/extensions/`.
+Comment the WHY, not the WHAT.
+Do not invent rationale, optimization claims, or historical intent not supported by observable behavior, documentation, or explicit project guidance.
+Treat dead-code identification as advisory unless non-use can be proven deterministically.
 Accessibility (UI code — HTML/JSX/TSX/Vue/Svelte): apply WCAG 2.1 AA basics. See `standards/ACCESSIBILITY.md`.
 
 ## Logging
@@ -75,7 +128,7 @@ Full compliance details: `src/lib/compliance/` (ADR-001 through ADR-004, provide
 
 ## Handoff Protocol
 
-When user types "Handoff" or reports context >= 65%:
+When user types "Handoff" or reports context nearing the auto-compact threshold in `.claude/settings.json`:
 
 1. **STOP** all work immediately
 2. **CREATE** `handoff.md` in project root with: accomplishments, files modified, service state, commands to resume, pending tasks, context for next agent
@@ -83,7 +136,8 @@ When user types "Handoff" or reports context >= 65%:
 4. **STOP** - do not continue
 
 When starting a new conversation:
-1. Check for `handoff.md` - if exists, read it FIRST
-2. Merge info into Memory Bank
-3. Delete `handoff.md`
-4. Continue work
+1. Check for `handoff.md` — if present, read it FIRST before anything else
+2. Read ALL files in `memory-bank/` to restore full project context
+3. Run `/pmb-status` to verify current system state
+4. If a handoff was found: merge its info into Memory Bank, delete `handoff.md`, summarize recovered context to user
+5. Confirm where to resume if mid-task; otherwise continue work

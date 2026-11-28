@@ -149,6 +149,24 @@ If using the Superpowers plugin, each phase maps to a skill:
 
 Run `/feature-dev` in Claude Code to trigger the full workflow automatically.
 
+## Context Management
+
+### When to Hand Off
+Trigger a handoff when context nears the auto-compact threshold (see below) or the user types "Handoff":
+1. Stop all work immediately
+2. Write `handoff.md` to the project root (format: accomplishments, files changed, service state, commands to resume, pending tasks)
+3. Respond only: "Handoff ready at `handoff.md`. Start a new conversation."
+4. Do not continue
+
+On next session: read `handoff.md` first, merge into Memory Bank, delete it, then continue.
+
+### Token Budget
+- **Default model:** Sonnet handles 90%+ of tasks
+- **Escalate to Opus** only for: complex architecture, large multi-file refactors, deep cross-file debugging. Switch back after.
+- **Compact at task boundaries** (not mid-task): after planning, after debugging, before switching context
+- Auto-compact fires at the percentage set by `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` in `.claude/settings.json` (read it there; restating it here lets it drift)
+- Manual compact a little before that threshold stays ahead of mid-task interruption
+
 ## Cursor Integration
 
 Add to `.cursor/rules/workflow.mdc`:

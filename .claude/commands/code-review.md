@@ -1,115 +1,158 @@
 ---
-description: Deep code review covering security, performance, style, test coverage, and maintainability. Spawns 5 independent subagents in parallel. Generates a task contract in Phase 2. Phases must run in order — no phase may be omitted.
+description: "Deep code review covering security, correctness, maintainability, testing, and architecture drift. Uses Claude (cloud API) — sends diff content to Anthropic. For offline/local review, use /ai-review instead. Spawns separate subagents per domain so findings don't bias each other."
 allowed-tools:
   - Bash(git diff *)
   - Bash(git log *)
   - Bash(git status *)
-  - Bash(grep -r *)
-  - Bash(find * -type f *)
   - Read
-  - Write
+  - Agent
 ---
 
-# Deep Code Review
+# Code Review
 
-You are a senior engineer running an 8-phase code review. Follow every phase in order. Each phase must output its labeled section header before the next phase begins. No phase may be omitted.
+You are a senior engineer orchestrating a thorough code review. Follow every step below in order. Do not skip any section. The review contract (domains, severity levels, finding schema, report sections, opposition review requirements, and failure criteria) is defined in `standards/CODE-REVIEW.md` — read it at Step 1 and apply it throughout.
 
-## Phase 1 — Determine Scope
+## Step 1 — Load Review Contract
 
-If the user specified a file or folder path, review that target. Otherwise run `git diff HEAD` and `git status`.
+Read `standards/CODE-REVIEW.md` in full. This file defines:
+
+- Required and conditional domains
+- Severity levels and field value scales
+- Required finding fields
+- Required report sections
+- Opposition review requirements
+- Failure criteria
+- Remediation policy
+
+Do not proceed until you have read the standard. All subsequent steps must conform to it.
+
+## Step 2 — Determine Scope
+
+If the user specified a file or folder path, review that target. Otherwise run:
+
+```
+git diff HEAD
+git status
+```
 
 If the diff is empty, let the user know and stop.
 
-**Output header:** `## Phase 1 — Scope`
+## Step 3 — Gather Context
 
-## Phase 2 — Context + Task Contract
+```
+git log --oneline -10
+```
 
-Run `git log --oneline -10`. For each changed file run `git log --oneline -5 -- <filename>`.
+For each changed file run:
 
-Then infer the task scope from the diff, branch name, recent commits, and the user's request. Propose a contract in conversational output — for example:
+```
+git log --oneline -5 -- <filename>
+```
 
-> "Based on the diff, I'd scope this task to: `src/components/CompareChart.jsx, src/utils/analytics.js`. Proposed contract: allow_new_files: no, require_tests: yes, max_files_changed: 3. Confirm or tell me what to adjust."
+Use this to understand why the code exists and whether the change is consistent with past decisions.
 
-Wait for user approval or adjustment. Once approved, write `.claude/contracts/active-task.json` with this structure:
+Determine which conditional domains apply:
 
-    {
-      "task": "...",
-      "allowed_paths": ["src/..."],
-      "max_files_changed": 3,
-      "allow_new_files": false,
-      "allow_architecture_changes": false,
-      "require_tests": true
-    }
+- Performance: does the diff touch tight loops, database queries, or I/O paths?
+- Accessibility: does the diff touch HTML/JSX/TSX/Vue/Svelte files?
 
-**Output header:** `## Phase 2 — Context + Contract`
+## Step 4 — Spawn Independent Domain Subagents
 
-## Phase 3–7 — Independent Subagent Review
+Spawn one subagent per required domain from the standard, plus any conditional domains that apply. Each subagent sees only the code and its own domain lens — not other subagents' findings.
 
-Spawn five subagents in parallel. Each subagent sees only the diff and its own lens — no cross-subagent context. All run on Haiku (`model: haiku` in frontmatter + `CLAUDE_CODE_SUBAGENT_MODEL=haiku` env).
+For each subagent, provide:
 
-**Subagent A — Security**
-Use the `security-reviewer` agent. Check for: secrets, injection risks, auth/authz gaps, weak crypto, data exposure, supply chain issues, AI/LLM injection. Rate each: [CRITICAL], [HIGH], [MEDIUM], [LOW].
+- The diff/file being reviewed
+- Pass the full text of the Severity, Blocking, and Basis field definitions from `standards/CODE-REVIEW.md` verbatim in each subagent prompt — do not paraphrase
+- Instruction to populate all required finding fields: Domain, Severity, Location, Evidence, Basis, Impact, Recommendation, Blocking
+- Instruction to return structured findings only — no remediation
 
-**Subagent B — Performance**
-Check for: N+1 patterns, unbounded loops, large in-memory payloads, blocking I/O, redundant computation, missing pagination. Rate each: [HIGH], [MEDIUM], [LOW].
+Domains to spawn (always): Security, Correctness, Maintainability, Testing, Architecture Drift
+Domains to spawn (if applicable): Performance, Accessibility
 
-**Subagent C — Style & Standards**
-Check for: functions over 50 lines, deep nesting, ambiguous names, missing WHY comments on non-obvious logic, dead code, debug statements, magic numbers, copy-paste duplication. Rate each: [MEDIUM], [LOW].
+## Step 5 — Opposition Review
 
-**Subagent D — Test Coverage**
-Use the `test-strategist` agent. Scope to the diff. Output a prioritized missing-test list (HIGH/MEDIUM/LOW).
+Spawn one final subagent as the opposition reviewer. Give it all domain findings. It must answer all four questions from the standard's Opposition Review section:
 
-**Subagent E — Maintainability**
-Use the `maintainability-reviewer` agent. Scope to the diff. Output dead code, abstraction, and comment-quality findings.
+1. Is any Critical/High finding overstated? Provide counter-evidence.
+2. What was not reviewed that could matter?
+3. Which findings might be false positives in this codebase's context?
+4. What cross-domain risk did no single domain agent catch?
 
-**Output header:** `## Phase 3–7 — Subagent Findings`
+A general statement that none apply is a failure — all four must be explicitly answered.
 
-## Phase 8 — Opponent-Auditor
+## Step 6 — Assemble Report
 
-The main agent (not a subagent) synthesizes all five reports. This phase MUST:
+Produce the report using the required sections from the standard:
 
-1. Explicitly reference findings from ALL FIVE subagents (A through E) by name
-2. Challenge any finding that looks like a false positive — state exactly why
-3. Confirm or downgrade severity ratings with rationale
-4. Surface anything all five subagents missed
-5. Check contract fields from `.claude/contracts/active-task.json`:
-   - `allow_architecture_changes: false` — flag if the diff introduces patterns not in `systemPatterns.md`
-   - `require_tests: true` — flag if the diff adds behavior with no corresponding test
+**Scope:** [git diff HEAD or filename]
+**Files reviewed:** N
 
-**Output header:** `## Phase 8 — Opponent-Auditor`
+**Domain Coverage:**
+| Domain | Status |
+|---|---|
+| Security | Reviewed |
+| Correctness | Reviewed |
+| Maintainability | Reviewed |
+| Testing | Reviewed |
+| Architecture Drift | Reviewed |
+| Performance | Reviewed / Skipped (not applicable) |
+| Accessibility | Reviewed / Skipped (not applicable) |
 
-## Final Summary
+## Supported Findings
 
-### Code Review Summary
-**Scope:** [diff or path]  
-**Contract:** `.claude/contracts/active-task.json`
+_(VERIFIED and INFERRED findings. Omit rows that belong in Predicted Risks.)_
 
-#### Security [A]
-| Severity | Finding | File:Line | Verdict |
-|---|---|---|---|
-| ... | ... | ... | confirmed / downgraded / false positive |
+| Domain | Severity | Location | Evidence | Basis      | Impact | Recommendation | Blocking   |
+| ------ | -------- | -------- | -------- | ---------- | ------ | -------------- | ---------- |
+| ...    | ...      | ...      | ...      | [VERIFIED] | ...    | ...            | true/false |
 
-#### Performance [B]
-_(same format)_
+## Predicted Risks
 
-#### Style & Standards [C]
-_(same format)_
+_(SPECULATIVE findings only. Omit this entire section if none exist.)_
 
-#### Test Coverage [D]
-- Missing: ...
+| Domain | Severity | Location | Evidence | Basis         | Impact | Recommendation | Blocking |
+| ------ | -------- | -------- | -------- | ------------- | ------ | -------------- | -------- |
+| ...    | ...      | ...      | ...      | [SPECULATIVE] | ...    | ...            | false    |
 
-#### Maintainability [E]
-- ...
+**Testing Gaps:**
+List any missing tests identified by the Testing domain subagent.
 
-#### Overall Verdict
-Approve / Request Changes / Needs Discussion
+**Opposition Review:**
+[Answers to all four opposition review questions]
 
-One paragraph on the most important things to address before merging, citing only confirmed findings.
+**Verdict:** Approve / Request Changes / Needs Discussion
+
+One paragraph summary of the most important confirmed findings.
+
+## Step 7 — Record Review Completion
+
+If the Verdict above is **Approve** (no unresolved finding with `Blocking: true`), compute a hash of the reviewed diff and write it to `.claude/.code-review-ok` (create the `.claude` directory first if it doesn't exist). The marker is bound to this exact diff — a `PreToolUse` hook recomputes the same hash before the next `git commit` and only allows it through if the working tree hasn't changed since the review.
+
+Bash:
+```
+git diff HEAD | sha256sum | cut -d' ' -f1 > .claude/.code-review-ok
+```
+
+PowerShell (do NOT pipe `git diff` directly into a hash cmdlet — PowerShell's pipeline re-tokenizes external-command output and will not match the hash `review-reminders.ps1` recomputes; redirect to a file first so the hash covers the exact raw bytes):
+```
+git diff HEAD > "$env:TEMP\pmb-diff-hash.tmp"
+(Get-FileHash "$env:TEMP\pmb-diff-hash.tmp" -Algorithm SHA256).Hash.ToLower() | Set-Content .claude/.code-review-ok
+Remove-Item "$env:TEMP\pmb-diff-hash.tmp" -Force
+```
+
+If the Verdict is **Request Changes** or **Needs Discussion**, do not write the marker.
+
+---
+
+Do NOT edit files, generate tests, or apply fixes during this review — writing the `.claude/.code-review-ok` marker per Step 7 is the sole exception. If the user wants remediation after seeing findings, they will ask explicitly.
 
 ---
 
 ## Usage
 
-    /code-review                          # reviews current git diff
-    /code-review src/components/          # reviews a specific folder
-    /code-review src/utils/analytics.js   # reviews a specific file
+```
+/code-review                     # reviews current git diff
+/code-review src/auth/login.py   # reviews a specific file
+/code-review src/api/            # reviews a whole folder
+```

@@ -11,29 +11,178 @@ Hooks run deterministically at Claude Code lifecycle points. Unlike `CLAUDE.md` 
 | `Stop` | When Claude pauses for input | Desktop notification |
 | `PreCompact` | Before context compaction | Save state summary |
 
+## Enforcement Layer Architecture
+
+Hooks are one layer in a four-layer enforcement stack. Understanding which layer owns which concern prevents duplication and drift:
+
+| Layer | Kind | Owns | Does NOT own |
+|-------|------|------|-------------|
+| **CLAUDE.md** | Advisory | Behavioral norms, workflow philosophy, code style | Anything requiring guaranteed execution |
+| **Hooks** | Deterministic structural | Per-tool-call pattern enforcement: dangerous commands, credential access | Semantic correctness, business logic review |
+| **Reviewer / Opponent** | Semantic | Spec compliance, scope drift, code quality | Mechanical pattern matching |
+| **CI** | Deterministic gate | Codebase invariants: file size, forbidden imports, secret scanning | Real-time per-command interception |
+
+**Design rule:** Don't duplicate concerns across layers. If a check belongs in CI, adding it to hooks creates two places to update when patterns change. If a check is semantic, adding it to hooks creates false confidence (simple pattern matching misses context). Each layer does its job; the stack as a whole provides defense in depth.
+
 ## Default Hooks in This Standard
 
 Configured in `.claude/settings.json`:
 
-### 1. Dangerous-Command Blocker (`PreToolUse`)
+### 1. Dangerous-Command Blocker (`PreToolUse` — Bash + PowerShell tools)
 
-Intercepts Bash tool calls before they run. Blocks commands containing:
-`rm -rf` · `git push --force` · `git push -f` · `DROP TABLE` · `DROP DATABASE`
+Intercepts both Bash and PowerShell tool calls before they run using `scripts/dangerous-commands.ps1`. Enforces 3-tier safety:
 
-If triggered, Claude sees the block message and stops. The command never runs.
+**BLOCK** (16 patterns — command exits non-zero, Claude stops):\
+*Shell:* `rm -rf` · `mkfs` · `dd if=` · `git push --force` · `git push -f` · `DROP TABLE` · `DROP DATABASE` · pipe-to-bash/sh (regex, matches `| bash`, `|bash`, `| sh`, `|sh`)\
+*PowerShell-native:* `Remove-Item -Recurse -Force` · `Remove-Item -Force -Recurse` · `Format-Volume` · `| Invoke-Expression` · `|Invoke-Expression` · `| iex` · `|iex`
 
-**Note:** Requires Node.js or Python 3 to be on PATH. If neither is available, the hook silently passes (fails open). Test with: `claude -p "run: echo test"` and verify no block fires on safe commands.
+**CONFIRM** (5 patterns — surfaces confirmation dialog):
+`git filter-branch` · `git update-ref` · `sudo rm` · `chmod -R 777` · `--no-verify`
 
-### 2. Stop Notification (`Stop`) — removed from template
+**WARN** (4 patterns — exits 0, surfaces access alert):
+`id_rsa` · `.pem` · `.env.production` · `credentials.json`
 
-The Stop hook was removed from `templates/.claude/settings.json` because it causes indefinite hangs in `--Remote-Control` mode (Claude in Chrome). In that mode Claude runs headless; the hook fires but no user is present to dismiss the Windows MessageBox, stalling the session permanently. If you need a Stop notification in an interactive-only project, add it to that project's local `.claude/settings.json` manually.
+If BLOCK or CONFIRM is triggered, the tool call is denied before it executes. WARN surfaces the access as advisory text and lets the command proceed.
 
-### 3. PostToolUse Lint (`PostToolUse`)
+Implemented in `scripts/dangerous-commands.ps1` (Windows/pwsh) and `scripts/dangerous-commands.sh` (POSIX/bash). Configured in `.claude/settings.json` with two matchers — one for `Bash` (with sh fallback) and one for `PowerShell` (PS-only):
 
-Runs `npm run lint` after every `Write` or `Edit` tool call and streams the last 10 lines of output back to Claude, so lint errors appear immediately without a separate step.
+```json
+{ "matcher": "Bash",       "command": "pwsh -NonInteractive -File scripts/dangerous-commands.ps1 2>/dev/null || bash scripts/dangerous-commands.sh 2>/dev/null || true" },
+{ "matcher": "PowerShell", "command": "pwsh -NonInteractive -File scripts/dangerous-commands.ps1 2>/dev/null || true" }
+```
 
-**Why `|| true`?**  
-`|| true` ensures the hook always exits 0. This matters for non-Node projects that have no `package.json` or no `lint` script — without it the hook would exit non-zero and Claude would treat every file write as an error. With `|| true` the hook is a best-effort advisory: output when lint is available, silent when it isn't.
+**Hook error logging (G2):** if `dangerous-commands.ps1` fails unexpectedly, the catch block appends a timestamped entry to `.pmb-hook-errors.log` (gitignored). `mb doctor` Check 16 surfaces entries from this log as WARN.
+
+### 2. Stop Notification (`Stop`) — excluded from install template
+
+The Stop hook is excluded from `templates/.claude/settings.json` because it causes indefinite hangs in headless/remote sessions (no user present to dismiss the notification, stalling the session permanently). If you need a Stop notification in an interactive-only project, add it to that project's local `.claude/settings.json` manually.
+
+### 3. Contract Scope Check (`PreToolUse` — Write + Edit tools)
+
+Checks whether a file being written is within the scope declared in the active task contract (`.claude/contracts/active-task.json`). Implemented in `scripts/check-contract.ps1` and `scripts/check-contract.sh`. See `docs/CONTRACTS-GUIDE.md` for the full contract schema.
+
+- **No contract / inactive contract:** exits 0 silently.
+- **Out-of-scope write (default):** prints a warning and exits 0. Claude sees it and should pause.
+- **Out-of-scope write (hard-block mode):** the tool call is denied when `PMB_CONTRACT_HARD_BLOCK=1` is set in the `env` block of `.claude/settings.json`.
+
+Set `PMB_CONTRACT_HARD_BLOCK=1` for sessions where scope discipline is critical. See `standards/SECURITY-GUARDRAILS.md` for the full env-block example.
+
+**Hook error logging (G2):** unexpected errors are logged to `.pmb-hook-errors.log` via a `trap {}` wrapper.
+
+### 4. Auto-Reviewed Update (`PostToolUse` — Write + Edit tools)
+
+Fires after every `Write` or `Edit` tool call. Reads the edited file path from the tool input JSON, checks whether it is inside `memory-bank/`, and updates the `last-reviewed:` frontmatter line to today's date if present.
+
+**Why silent failure?** The hook must never block agent work. If the update fails (e.g. file not found, malformed frontmatter), the agent continues and the user can run `mb audit` to find stale files. Implemented in `scripts/update-reviewed.ps1` and `scripts/update-reviewed.sh`.
+
+**Hook error logging (G2):** unexpected errors are logged to `.pmb-hook-errors.log`.
+
+### 5. PreCompact Memory Gate (`PreCompact`)
+
+Fires before Claude Code compacts context. Runs two content-based quality checks on the memory bank **or** bypasses via `handoff.md`.
+
+**Exit codes:**
+- **Exits 0** — both checks pass (or `handoff.md` bypass is present). Compaction proceeds normally.
+- **Exits 2** — one or more checks fail. **Compaction is blocked.** Claude Code treats a non-zero exit from a PreCompact hook as a block signal. The hook prints an actionable message explaining what to do.
+
+**To unblock:** address the failing check (see below), then retry. Alternatively, create `handoff.md` to bypass the gate (the handoff file signals that session state has been captured via the Handoff Protocol).
+
+**Detection logic (content-based, not mtime):**
+- **Check 1 — `activeContext.md` substantive content:** counts non-frontmatter, non-heading, non-empty lines with ≥20 characters. Requires ≥3 such lines. A file that was only touched (e.g. `last-reviewed` timestamp updated) fails this check.
+- **Check 2 — `progress.md` dated entry:** looks for at least one line starting with today's date (or a markdown heading/list prefix followed by today's date). The date must appear at the start of a line — embedded dates in prose do not count.
+- **Bypass:** `handoff.md` present in the project root skips both checks.
+
+**Fails open:** unexpected errors (missing runtimes, unreadable files) exit 0 silently and log to `.pmb-hook-errors.log`.
+
+Implemented in `scripts/pre-compact-check.ps1` (Windows/pwsh) and `scripts/pre-compact-check.sh` (POSIX/sh):
+
+```json
+"PreCompact": [
+  {
+    "hooks": [
+      {
+        "type": "command",
+        "command": "pwsh -NonInteractive -File scripts/pre-compact-check.ps1 2>/dev/null || bash scripts/pre-compact-check.sh 2>/dev/null || true"
+      }
+    ]
+  }
+]
+```
+
+Note: `PreCompact` hooks have no `matcher` field — the hook type applies to the compaction event itself, not to a specific tool.
+
+### 6. Agent Delegation Depth Check (`PreToolUse` — Agent tool)
+
+Fires before every `Agent` tool call. Tracks nested agent delegation depth and emits a WARN when depth exceeds the budget defined in `standards/PERFORMANCE-BUDGET.md` (default: ≤1 subagent deep). Implemented in `scripts/delegation-depth-check.ps1` and `scripts/delegation-depth-check.sh`.
+
+**Runtime state file:** The hook stores its counter in `.pmb-delegation-depth` in the project root (gitignored). This file is created automatically on the first agent dispatch and resets after 2 hours of inactivity. Delete it manually to reset the depth counter mid-session without restarting.
+
+**Hook error logging:** Unexpected errors are logged to `.pmb-hook-errors.log`.
+
+### 7. Review Gate (`PreToolUse` — Bash tool)
+
+Fires before every Bash tool call and pattern-matches `git commit` / `git push` (including compound commands like `cd X && git commit ...`). In this project it is **advisory**: when no matching, diff-bound review-ok marker exists in `.claude/`, it emits a reminder (shown to the user and passed to Claude as context) but does not deny the commit or push. No `permissionDecision` is set, so the normal permission flow still applies. Implemented in `scripts/review-reminders.ps1` and `scripts/review-reminders.sh`.
+
+**Marker files (single-use per diff, gitignored):**
+
+- `.claude/.code-review-ok` — written by `/code-review` (Step 7) when the Verdict is **Approve**. Contains a SHA-256 hash of `git diff HEAD` at review time, not an empty file.
+- `.claude/.change-review-ok` — written by `/change-review` (Step 6) when no finding has `Blocking: Yes`. Contains a SHA-256 hash of `git diff origin/main...HEAD` (or `git diff HEAD` with no upstream).
+
+**Why a hash, not an empty marker:** an empty marker is trivially fakeable with `touch` — anyone, or a rushed agent, can satisfy the gate without reviewing anything. Binding the marker to a hash of the exact diff means it only authorizes committing/pushing that specific diff; if the working tree changes after the review, the hash no longer matches and the gate re-engages. The hook recomputes the same hash fresh and compares it to the marker's stored value before allowing the commit/push through.
+
+**Atomic consumption:** the marker is claimed via an atomic rename (`Move-Item`/`mv`) rather than a separate existence-check followed by delete, closing the TOCTOU window between the two steps. The marker is consumed (renamed away and deleted) whether or not its hash matches — a stale marker from a diff that has since changed doesn't linger; a fresh review is required either way.
+
+### 8. Review Gate Failure Recovery (`PostToolUse` — Bash tool)
+
+Companion to the Review Gate above. If a gated `git commit`/`git push` consumes a marker and then the command itself fails (a separate pre-commit hook rejects it, nothing is staged, a merge conflict), this hook reissues the marker so the rejected attempt doesn't force a pointless re-review — the diff hasn't changed, so the same review still applies. Implemented in `scripts/review-reminders-post.ps1` and `scripts/review-reminders-post.sh`.
+
+**How it detects failure:** the `PreToolUse` hook records the current git ref (`HEAD` for commit, `@{u}` for push) to a temp file immediately after consuming a marker. This `PostToolUse` hook compares that recorded ref to the ref's current value — if it didn't move, the command failed, regardless of what any tool-response field says.
+
+On detected failure, the hook recomputes the diff hash fresh (a failed commit/push can't have altered the working tree, so this reproduces the same value) and rewrites the marker.
+
+## Git Hooks (versioned)
+
+PMB distributes two git hooks through the `.githooks/` directory, which is versioned in the project repo. `mb init` and `mb upgrade` both install these hooks and activate them via `core.hooksPath`.
+
+### How it works
+
+`core.hooksPath = .githooks` is a per-project git local config (stored in `.git/config`, not committed). When set, git resolves all hooks from `.githooks/` instead of `.git/hooks/`. The hook *files* are committed and versioned; the *activation* is a local git config that each `mb init`/`mb upgrade` run sets automatically.
+
+`mb upgrade` treats `.githooks/pre-push` and `.githooks/pre-commit` as `TEMPLATE_OWNED` — it overwrites them unconditionally if they differ from the template, so hook logic stays current across PMB version bumps.
+
+### The two hooks
+
+**`.githooks/pre-push`** — delegates to the 7-check push gate:
+- Unresolved merge conflicts or conflict markers
+- Uncommitted working tree changes
+- Missing `.gitattributes`
+- Possible secrets in the push diff (AWS keys, API tokens, GitHub PATs)
+- Files over 500 KB
+- `mb validate` result (if `mb` is in PATH)
+- Scans first pushes via `git log --not --remotes` when no upstream tracking ref exists
+
+Dispatches to `scripts/pre-push-check.ps1` (Windows/pwsh) or `scripts/pre-push-check.sh` (POSIX/bash). Fails open — if the script errors unexpectedly, the push is allowed through.
+
+**`.githooks/pre-commit`** — lightweight two-check gate before every commit:
+- **Blocks** if `handoff.md` is staged (`handoff.md` is ephemeral and must not be committed)
+- **Warns** if `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` is missing from `.claude/settings.json` (token budget auto-compaction may not be configured)
+
+### Migration from `.git/hooks/`
+
+Projects initialized before PMB 1.1.0 have the old PMB shim at `.git/hooks/pre-push`. Running `mb upgrade` on those projects:
+1. Installs `.githooks/pre-push` and `.githooks/pre-commit` (TEMPLATE_OWNED)
+2. Sets `core.hooksPath = .githooks` (git local config)
+3. Removes `.git/hooks/pre-push` if it matches the PMB shim (detected by grepping for `pre-push-check`)
+
+Custom hooks at `.git/hooks/` are unaffected — the migration only removes the PMB-managed shim.
+
+### Verifying hook activation
+
+```bash
+git config core.hooksPath       # should print: .githooks
+ls .githooks/                   # should show: pre-push  pre-commit
+mb doctor                       # check 4 reports [OK] for both
+```
 
 ## Adding Per-Project Hooks
 
@@ -73,7 +222,7 @@ Add to the `PreToolUse` array (alongside the dangerous-command hook):
   "matcher": "Bash",
   "hooks": [{
     "type": "command",
-    "command": "echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git commit' && npm run lint 2>&1 || true"
+    "command": "HOOK_INPUT=$(cat 2>/dev/null); echo \"$HOOK_INPUT\" | grep -q 'git commit' && npm run lint 2>&1 || true"
   }]
 }
 ```
