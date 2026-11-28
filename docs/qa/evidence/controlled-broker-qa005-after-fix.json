@@ -1,0 +1,274 @@
+{
+  "date": "2026-10-29T13:24:26.724Z",
+  "broker": "local mqtt-packet/ws fixture",
+  "interruption": "terminate active WebSocket and reject reconnects for 37 seconds",
+  "connections": [
+    {
+      "id": 1,
+      "packets": [
+        "connect",
+        "subscribe"
+      ],
+      "subscriptions": [
+        [
+          "/probes/+/events",
+          "/devices/+/events",
+          "/devices/+/state",
+          "/devices/+/config"
+        ]
+      ],
+      "protocolVersion": 4
+    },
+    {
+      "id": 2,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 3,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 4,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 5,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 6,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 7,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 8,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 9,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 10,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 11,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 12,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 13,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 14,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 15,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 16,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 17,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 18,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 19,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 20,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 21,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 22,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 23,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 24,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 25,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 26,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 27,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 28,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 29,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 30,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 31,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 32,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 33,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 34,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 35,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 36,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 37,
+      "packets": [],
+      "subscriptions": [],
+      "rejected": true
+    },
+    {
+      "id": 38,
+      "packets": [
+        "connect",
+        "subscribe"
+      ],
+      "subscriptions": [
+        [
+          "/probes/+/events",
+          "/devices/+/events",
+          "/devices/+/state",
+          "/devices/+/config"
+        ]
+      ],
+      "protocolVersion": 4
+    }
+  ],
+  "ui": {
+    "initial": {
+      "brokerStatus": "● Connected",
+      "probe": "Settings\n0 cooks · 0 recipes\nMy Defaults\n\nNo custom defaults saved yet. Change pit or pull temps in the new cook form and tap “Save as default” to store your preferences here.\n\nAppearance\nTheme\nDark\nLight\nSet Up New Device\nProvision a new RFX device's WiFi and MQTT settings over Bluetooth.\nSet Up Device via Bluetooth\nLive Device\nConnect to a ThermoWorks RFX Gateway via your MQTT broker. Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.\nBroker URL\nNon-TLS URL — credentials will be sent in plaintext. Use wss:// or mqtts://.\nUsername\nPassword\nTemperature Unit\n°F\n°C\nSave\nCopy config\nPaste config\nDisconnect\n● Connected\nPROBE READINGS\nQA000-ch1\n182.0°F\nLive · 0s ago\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON file.\nDownload backup\nRestore\nImport a backup file. Existing data is preserved by default.\nChoose backup file"
+    },
+    "outage": {
+      "brokerStatus": "○ Reconnecting…",
+      "probe": "Settings\n0 cooks · 0 recipes\nMy Defaults\n\nNo custom defaults saved yet. Change pit or pull temps in the new cook form and tap “Save as default” to store your preferences here.\n\nAppearance\nTheme\nDark\nLight\nSet Up New Device\nProvision a new RFX device's WiFi and MQTT settings over Bluetooth.\nSet Up Device via Bluetooth\nLive Device\nConnect to a ThermoWorks RFX Gateway via your MQTT broker. Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.\nBroker URL\nNon-TLS URL — credentials will be sent in plaintext. Use wss:// or mqtts://.\nUsername\nPassword\nTemperature Unit\n°F\n°C\nSave\nCopy config\nPaste config\nDisconnect\n○ Reconnecting…\nPROBE READINGS\nQA000-ch1\n182.0°F\nLive · 0s ago\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON file.\nDownload backup\nRestore\nImport a backup file. Existing data is preserved by default.\nChoose backup file"
+    },
+    "after37Seconds": {
+      "brokerStatus": "○ Reconnecting…",
+      "probe": "Settings\n0 cooks · 0 recipes\nMy Defaults\n\nNo custom defaults saved yet. Change pit or pull temps in the new cook form and tap “Save as default” to store your preferences here.\n\nAppearance\nTheme\nDark\nLight\nSet Up New Device\nProvision a new RFX device's WiFi and MQTT settings over Bluetooth.\nSet Up Device via Bluetooth\nLive Device\nConnect to a ThermoWorks RFX Gateway via your MQTT broker. Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.\nBroker URL\nNon-TLS URL — credentials will be sent in plaintext. Use wss:// or mqtts://.\nUsername\nPassword\nTemperature Unit\n°F\n°C\nSave\nCopy config\nPaste config\nDisconnect\n○ Reconnecting…\nPROBE READINGS\nQA000-ch1\n182.0°F\nStale · 34s ago\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON file.\nDownload backup\nRestore\nImport a backup file. Existing data is preserved by default.\nChoose backup file"
+    },
+    "recovered": {
+      "brokerStatus": "● Connected",
+      "probe": "Settings\n0 cooks · 0 recipes\nMy Defaults\n\nNo custom defaults saved yet. Change pit or pull temps in the new cook form and tap “Save as default” to store your preferences here.\n\nAppearance\nTheme\nDark\nLight\nSet Up New Device\nProvision a new RFX device's WiFi and MQTT settings over Bluetooth.\nSet Up Device via Bluetooth\nLive Device\nConnect to a ThermoWorks RFX Gateway via your MQTT broker. Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.\nBroker URL\nNon-TLS URL — credentials will be sent in plaintext. Use wss:// or mqtts://.\nUsername\nPassword\nTemperature Unit\n°F\n°C\nSave\nCopy config\nPaste config\nDisconnect\n● Connected\nPROBE READINGS\nQA000-ch1\n190.0°F\nLive · 0s ago\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON file.\nDownload backup\nRestore\nImport a backup file. Existing data is preserved by default.\nChoose backup file"
+    }
+  },
+  "errors": []
+}

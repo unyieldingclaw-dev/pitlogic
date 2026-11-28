@@ -1,0 +1,430 @@
+{
+  "environment": {
+    "browser": "Chrome headless",
+    "url": "http://127.0.0.1:5174/pitlogic/",
+    "date": "2026-10-24T03:25:38.272Z"
+  },
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "empty",
+      "overflowPx": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "setup",
+      "overflowPx": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "active",
+      "overflowPx": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "settings-live",
+      "overflowPx": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "history",
+      "overflowPx": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "analytics",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "analytics",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "analytics",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "analytics",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "analytics",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "analytics",
+      "overflowPx": 3
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "analytics",
+      "overflowPx": 18
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "guides",
+      "overflowPx": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "state": "recipes",
+      "overflowPx": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "recipes",
+      "overflowPx": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "state": "recipes",
+      "overflowPx": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "state": "recipes",
+      "overflowPx": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "state": "recipes",
+      "overflowPx": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "recipes",
+      "overflowPx": 0
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "state": "recipes",
+      "overflowPx": 0
+    }
+  ],
+  "workflow": {
+    "initial": {
+      "title": "PitLogic",
+      "storage": null,
+      "text": "0\nTOTAL COOKS\n0\nHOURS SMOKED\n—\nFAV CUT\nStart New Cook\nNo cooks yet\nStart your first cook to see stats here."
+    },
+    "newCookVisible": true,
+    "created": {
+      "cooks": 1,
+      "activeCooks": 1,
+      "name": "QA Synthetic Brisket",
+      "readings": 0
+    },
+    "activeSpinbuttonCount": 2,
+    "logged": {
+      "probe": 155,
+      "smoker": 225
+    },
+    "reloaded": {
+      "activeCooks": 1,
+      "probe": 155
+    },
+    "ended": {
+      "activeCooks": 0,
+      "status": "complete",
+      "endTime": true
+    },
+    "dashboardFromDetail": {
+      "detailStillVisible": true,
+      "mainText": "History\nQA Synthetic Brisket\nOct 23, 2026 · 0m\nShare Cook\nDelete\nOverview\nAnalysis\nCompare\nNotes\nCarryover note:\nBrisket rises ~10°F after pulling. For a 203°F "
+    },
+    "lightTheme": "light",
+    "darkTheme": "dark",
+    "history": "Cook History\n+ New Cook\nQA Synthetic Brisket\nOct 23, 2026 · 0m · 225°F\nPeak 155°F\nProbe 1: 155°F / 203°F",
+    "analytics": "Your Stats\n1\nTOTAL COOKS\n0h\nHOURS SMOKED\nBrisket\nFAVORITE CUT\n—\nAVG RATING\nout of 5\nCOOKS PER MONTH\nNov\nDec\nJan\nFeb\nMar\nApr\nMay\nJun\nJul\nAug\nSep\nOct\n0\n1\n2\n3\n4\nBrisket\nChuck Roast\nShort Ribs\nPrime Rib\nTri-Tip\nBack Ribs\nPlate Ribs\nBeef Cheeks\nPicanha\nSh",
+    "guides": "Beef\nPork\nPoultry\nFish\nLamb\nBrisketChuck RoastShort RibsPrime RibTri-TipBack RibsPlate RibsBeef CheeksPicanha\nBrisket\nPull: 203°F\nWrap: 165°F\nStall: 150–165°F\nCarryover: ~10°F\nPellet recommendation\nPost Oak\nHickory\nCompetition Blend\nPost Oak = Texas ",
+    "recipes": "Recipes\nImport CSV\nNew\nRubs\nBrines\nInjections\nSprays/Mops\nSauces\nNo Rubs yet\nAdd one manually or import from Plan to Eat CSV.",
+    "recipeCreated": {
+      "count": 1,
+      "name": "QA Synthetic Rub"
+    }
+  },
+  "telemetry": {
+    "activeCookLive": {
+      "storeHasProbe": true,
+      "cookReadingCount": 1,
+      "activeViewHasLiveCard": false
+    },
+    "injectedStore": {
+      "jsSize": 1,
+      "tsSize": 1,
+      "ids": [
+        "QA-gateway-ch1"
+      ]
+    },
+    "initialCard": "1\nTOTAL COOKS\n0\nHOURS SMOKED\nBrisket\nFAV CUT\nLive Readings\nCh 1\n177.3°\nStart New Cook\nRECENT COOKS\nOct 23, 2026\nBrisket\n★\n★\n★\n★\n★\n0m",
+    "staleCard": "1\nTOTAL COOKS\n0\nHOURS SMOKED\nBrisket\nFAV CUT\nLive Readings\nCh 1\n177.3°\nStart New Cook\nRECENT COOKS\nOct 23, 2026\nBrisket\n★\n★\n★\n★\n★\n0m",
+    "settings": "PitLogic\nCOOK TRACKER\nDashboard\nNew Cook\nHistory\nAnalytics\nGuides\nRecipes\nPitLogic\nCOOK TRACKER\n1\nTOTAL COOKS\n0\nHOURS SMOKED\nBrisket\nFAV CUT\nLive Readings\nCh 1\n177.3°\nStart New Cook\nRECENT COOKS\nOct 23, 2026\nBrisket\n★\n★\n★\n★\n★\n0m\nSettings\n1 cook · 0 recipes\nMy Defaults\n\nNo custom defaults saved yet. Change pit or pull temps in the new cook form and tap “Save as default” to store your preferences here.\n\nAppearance\nTheme\nDark\nLight\nSet Up New Device\nProvision a new RFX device's WiFi and MQTT settings over Bluetooth.\nSet Up Device via Bluetooth\nLive Device\nConnect to a ThermoWorks RFX Gateway via your MQTT broker. Browser compromise = MQTT credential compromise. Copied config stays on your clipboard until overwritten. Personal use only.\nBroker URL\nUsername\nPassword\nTemperature Unit\n°F\n°C\nSave\nCopy config\nPaste config\nConnect\n○ Disconnected\nLIVE PROBES\nQA-gateway-ch1\n177.3°F (stale)\nReplay CSV\nLoad a ThermoWorks temperature CSV to display it in the Live Readings card.\nChoose CSV\nBackup\nDownload all your cooks and recipes as a JSON file.\nDownload backup\nRestore\nImport a backup file. Existing data is preserved by default.\nChoose backup file",
+    "outOfOrder": {
+      "storedValueF": 160,
+      "storedCapturedAt": 1792812333091,
+      "newerCapturedAt": 1792812353091
+    },
+    "outOfOrderVisible": true,
+    "manualHistoryAfterLive": 1
+  },
+  "accessibility": {
+    "unlabeledControls": [],
+    "recipeFormUnlabeled": [
+      {
+        "tag": "INPUT",
+        "placeholder": "2"
+      },
+      {
+        "tag": "INPUT",
+        "placeholder": "tbsp"
+      },
+      {
+        "tag": "INPUT",
+        "placeholder": "Paprika"
+      }
+    ]
+  },
+  "performance": [],
+  "errors": []
+}

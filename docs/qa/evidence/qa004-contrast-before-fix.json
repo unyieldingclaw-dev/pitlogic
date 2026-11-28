@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-30T22:54:21.336Z",
+  "cases": [
+    {
+      "theme": "dark",
+      "size": "mobile",
+      "kind": "dashboard-recent",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    {
+      "theme": "dark",
+      "size": "mobile",
+      "kind": "history-active",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    {
+      "theme": "dark",
+      "size": "mobile",
+      "kind": "history-completed",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    {
+      "theme": "dark",
+      "size": "desktop",
+      "kind": "dashboard-recent",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    {
+      "theme": "dark",
+      "size": "desktop",
+      "kind": "history-active",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    {
+      "theme": "dark",
+      "size": "desktop",
+      "kind": "history-completed",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(20, 20, 16)",
+      "ratio": 1.14
+    },
+    {
+      "theme": "light",
+      "size": "mobile",
+      "kind": "dashboard-recent",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(255, 255, 255)",
+      "ratio": 21
+    },
+    {
+      "theme": "light",
+      "size": "mobile",
+      "kind": "history-active",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(255, 255, 255)",
+      "ratio": 21
+    },
+    {
+      "theme": "light",
+      "size": "mobile",
+      "kind": "history-completed",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(255, 255, 255)",
+      "ratio": 21
+    },
+    {
+      "theme": "light",
+      "size": "desktop",
+      "kind": "dashboard-recent",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(255, 255, 255)",
+      "ratio": 21
+    },
+    {
+      "theme": "light",
+      "size": "desktop",
+      "kind": "history-active",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(255, 255, 255)",
+      "ratio": 21
+    },
+    {
+      "theme": "light",
+      "size": "desktop",
+      "kind": "history-completed",
+      "foreground": "rgb(0, 0, 0)",
+      "background": "rgb(255, 255, 255)",
+      "ratio": 21
+    }
+  ],
+  "failures": [
+    "dark/mobile/dashboard-recent: 1.14:1",
+    "dark/mobile/history-active: 1.14:1",
+    "dark/mobile/history-completed: 1.14:1",
+    "dark/desktop/dashboard-recent: 1.14:1",
+    "dark/desktop/history-active: 1.14:1",
+    "dark/desktop/history-completed: 1.14:1"
+  ],
+  "errors": []
+}

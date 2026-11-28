@@ -1,0 +1,102 @@
+{
+  "date": "2026-11-01T04:05:03.166Z",
+  "cases": [
+    {
+      "shape": "verbose",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 1,
+      "samples": 172800,
+      "jsonCharacters": 20156914,
+      "serializeMs": 64.30000001192093,
+      "saveMs": 9.299999952316284,
+      "saved": false,
+      "error": "QuotaExceededError"
+    },
+    {
+      "shape": "verbose",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 5,
+      "samples": 34560,
+      "jsonCharacters": 4026994,
+      "serializeMs": 12.400000035762787,
+      "saveMs": 12.699999988079071,
+      "saved": true,
+      "error": null
+    },
+    {
+      "shape": "verbose",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 15,
+      "samples": 11520,
+      "jsonCharacters": 1334834,
+      "serializeMs": 3.100000023841858,
+      "saveMs": 3.699999988079071,
+      "saved": true,
+      "error": null
+    },
+    {
+      "shape": "verbose",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 60,
+      "samples": 2880,
+      "jsonCharacters": 328154,
+      "serializeMs": 1,
+      "saveMs": 0.8999999761581421,
+      "saved": true,
+      "error": null
+    },
+    {
+      "shape": "compact",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 1,
+      "samples": 172800,
+      "jsonCharacters": 7888114,
+      "serializeMs": 33.5,
+      "saveMs": 3.100000023841858,
+      "saved": false,
+      "error": "QuotaExceededError"
+    },
+    {
+      "shape": "compact",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 5,
+      "samples": 34560,
+      "jsonCharacters": 1573234,
+      "serializeMs": 6,
+      "saveMs": 4.200000047683716,
+      "saved": true,
+      "error": null
+    },
+    {
+      "shape": "compact",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 15,
+      "samples": 11520,
+      "jsonCharacters": 516914,
+      "serializeMs": 2,
+      "saveMs": 1.399999976158142,
+      "saved": true,
+      "error": null
+    },
+    {
+      "shape": "compact",
+      "hours": 12,
+      "probes": 4,
+      "intervalSeconds": 60,
+      "samples": 2880,
+      "jsonCharacters": 123674,
+      "serializeMs": 0.6000000238418579,
+      "saveMs": 0.3999999761581421,
+      "saved": true,
+      "error": null
+    }
+  ],
+  "limitation": "Controlled synthetic Chrome workload. Compact samples omit per-reading provenance/receipt time; slower intervals represent different capture policies, not lossless compression. Neither demonstrates actual RFX cadence or establishes an acceptable retention policy."
+}

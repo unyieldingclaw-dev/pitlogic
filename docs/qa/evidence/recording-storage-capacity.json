@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-31T22:00:56.882Z",
+  "cases": [
+    {
+      "hours": 1,
+      "probes": 4,
+      "sampleIntervalSeconds": 1,
+      "samples": 14400,
+      "jsonCharacters": 1787978,
+      "saveMs": 6.5,
+      "saved": true,
+      "error": null
+    },
+    {
+      "hours": 4,
+      "probes": 4,
+      "sampleIntervalSeconds": 1,
+      "samples": 57600,
+      "jsonCharacters": 7169994,
+      "saveMs": 3.5999999940395355,
+      "saved": false,
+      "error": "QuotaExceededError"
+    },
+    {
+      "hours": 8,
+      "probes": 4,
+      "sampleIntervalSeconds": 1,
+      "samples": 115200,
+      "jsonCharacters": 14344138,
+      "saveMs": 6.199999988079071,
+      "saved": false,
+      "error": "QuotaExceededError"
+    },
+    {
+      "hours": 12,
+      "probes": 4,
+      "sampleIntervalSeconds": 1,
+      "samples": 172800,
+      "jsonCharacters": 21497290,
+      "saveMs": 8.300000011920929,
+      "saved": false,
+      "error": "QuotaExceededError"
+    }
+  ],
+  "limitation": "Synthetic capacity fixture in isolated desktop Chrome; actual telemetry frequency and other browsers not established."
+}

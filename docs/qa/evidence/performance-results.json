@@ -1,0 +1,11 @@
+{
+  "runDate": "2026-10-21",
+  "environment": "Windows 11, local Vite dev server, headless installed Chrome, 390x844 viewport, one isolated context per fixture, synthetic one-minute probe and smoker readings",
+  "method": "Single observed run per fixture; wall time from navigation through first rendered Recharts surface. These are accelerated data-volume fixtures, not elapsed unattended sessions.",
+  "samples": [
+    { "minutesRepresented": 30, "readingsPerSeries": 31, "wallMsToChart": 428, "navigationLoadMs": 175.5, "resourceTransferBytes": 5867732, "heapBytes": 23896417, "chartPoints": 62, "storageBytes": 2943 },
+    { "minutesRepresented": 120, "readingsPerSeries": 121, "wallMsToChart": 481, "navigationLoadMs": 173.5, "resourceTransferBytes": 5867732, "heapBytes": 28484000, "chartPoints": 242, "storageBytes": 10546 },
+    { "minutesRepresented": 480, "readingsPerSeries": 481, "wallMsToChart": 620, "navigationLoadMs": 205.9, "resourceTransferBytes": 5867732, "heapBytes": 42829893, "chartPoints": 962, "storageBytes": 41506 },
+    { "minutesRepresented": 720, "readingsPerSeries": 721, "wallMsToChart": 810, "navigationLoadMs": 331.1, "resourceTransferBytes": 5867732, "heapBytes": 37524759, "chartPoints": 1442, "storageBytes": 62146 }
+  ]
+}
