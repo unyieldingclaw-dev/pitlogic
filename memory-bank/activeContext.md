@@ -17,7 +17,7 @@ lineage: initial
 
 PR #12 (`backlog/rfx-sdk-capabilities`, head `e6f2887`, including all QA-001–005 fixes, Stage A and the realistic flame background) merged to `main` as `a3b505d` on 2026-11-25 and auto-deployed to GitHub Pages (`https://unyieldingclaw-dev.github.io/pitlogic/`). Live smoke test passed with no console errors: start cook, manual 155°F/225°F reading persisted across reload, Settings, Devices/gateway setup render, end-cook confirmation stored the cook as complete. Not verified live: broker connection, BLE provisioning, real hardware, native mobile, long cooks. The release gates in `docs/qa/AUDIT_SUMMARY.md` still apply even though the code is deployed.
 
-Local repo housekeeping: local `main` had an unpushed July commit `c3daab7` (PMB tooling 1.2.0→1.2.1, 43 files: hooks, settings, scripts, standards, CLAUDE.md). It is preserved on local-only branch `chore/pmb-1.2.1`; local `main` was reset to `origin/main`. That upgrade still needs its own PR. The Compare/Temp chart fixes below are on branch `fix/chart-rendering`. `.flame-spike-tmp/` is a full repo copy from flame experiments; vitest picks up its tests (doubling the count), so delete it or exclude it.
+Local repo housekeeping: local `main` had an unpushed July commit `c3daab7` (PMB tooling 1.2.0→1.2.1, 43 files: hooks, settings, scripts, standards, CLAUDE.md). It is preserved on local-only branch `chore/pmb-1.2.1`; local `main` was reset to `origin/main`. That upgrade still needs its own PR. The Compare/Temp chart fixes below were merged via PR #13 (`809b9c4`) and verified on the live site. `.flame-spike-tmp/` is a full repo copy from flame experiments; vitest picks up its tests (doubling the count), so delete it or exclude it.
 
 ## Compare chart verification — 2026-11-25
 

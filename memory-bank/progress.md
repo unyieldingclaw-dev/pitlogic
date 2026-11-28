@@ -17,7 +17,8 @@ lineage: initial
 
 - [x] PR #12 merged to `main` as `a3b505d` (2026-11-25) and deployed to GitHub Pages; 357/357 tests and build passed before merge.
 - [x] Live-site smoke test passed (start/log/reload/end cook, Settings, Devices) with no console errors.
-- [ ] Chart rendering fixes (359/359 tests) on `fix/chart-rendering` — PR pending.
+- [x] Chart rendering fixes (359/359 tests) merged via PR #13 as `809b9c4` and verified live: hourly compare ticks, expanded chart sized with no warnings, title color fixed.
+- [ ] Service worker is stale-while-revalidate: the first visit after a deploy shows the previous build, and the next load gets the new one.
 - [ ] PMB tooling 1.2.1 upgrade preserved on local branch `chore/pmb-1.2.1` — needs its own PR.
 - [ ] Remaining release gates: real RFX hardware, iPhone Safari/Android Chrome, unattended long cook; 8 pre-existing `tsc` diagnostics.
 
