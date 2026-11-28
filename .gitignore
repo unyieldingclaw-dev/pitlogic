@@ -34,3 +34,5 @@ handoff.md
 .agents/
 src/dev/
 .pmb-delegation-depth
+# Local-only vendor reference material (not licensed for redistribution)
+docs/private/

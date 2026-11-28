@@ -71,7 +71,7 @@ normalizeProviderEvent() → globalEventBus → TelemetryStore
 [rest of pipeline]
 ```
 
-Protocol: ThermaConnect (open, documented — github.com/ThermoWorks-Integrations/ThermaConnect). No proprietary SDK bundled or redistributed.
+Protocol: ThermaConnect, documented in the ThermoWorks-Integrations/ThermaConnect repository. That repository is private and unlicensed: do not copy its documentation, code, or SDK artifacts into this repo (see `docs/THERMACONNECT.md`). No proprietary SDK is bundled or redistributed.
 
 `ThermoWorksAdapter` is the **only** file that may contain ThermoWorks-specific code. The adapter boundary is the full extent of the proprietary footprint.
 
