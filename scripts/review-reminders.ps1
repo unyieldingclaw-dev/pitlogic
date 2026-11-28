@@ -1,4 +1,4 @@
-﻿# PreToolUse hook — blocks git commit/push until the matching review slash command has run.
+﻿# PreToolUse hook — reminds (does not block) on git commit/push until the matching review slash command has run.
 # /code-review writes .claude/.code-review-ok on an Approve verdict; /change-review writes
 # .claude/.change-review-ok when no finding is Blocking. Each marker authorizes exactly one
 # commit or push attempt for a SPECIFIC diff -- see below.
@@ -83,13 +83,16 @@ function Get-PushDiffHash {
     }
 }
 
-function Deny {
+# WHY advisory, not deny: the project owner chose "remind, don't block" so small commits
+# (docs, memory bank) are not held up. No permissionDecision is set -- "allow" would skip
+# the normal permission prompt, so the call goes through the usual permission flow.
+function Remind {
     param([string]$Reason)
     @{
+        systemMessage      = $Reason
         hookSpecificOutput = @{
-            hookEventName            = "PreToolUse"
-            permissionDecision       = "deny"
-            permissionDecisionReason = $Reason
+            hookEventName     = "PreToolUse"
+            additionalContext = $Reason
         }
     } | ConvertTo-Json -Compress | Write-Output
 }
@@ -115,7 +118,7 @@ if ($cmd -match 'git\s+commit\b') {
         $preSha = git rev-parse HEAD 2>$null
         if ($preSha) { $preSha | Set-Content (Join-Path $root '.claude/.pending-commit-presha') }
     } else {
-        Deny "Run /code-review before committing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the working tree changed since then; re-run /code-review."
+        Remind "Reminder: run /code-review before committing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the working tree changed since then; re-run /code-review."
     }
 } elseif ($cmd -match 'git\s+push\b') {
     $expected = Get-PushDiffHash
@@ -124,6 +127,6 @@ if ($cmd -match 'git\s+commit\b') {
         $preSha = git rev-parse '@{u}' 2>$null
         if ($preSha) { $preSha | Set-Content (Join-Path $root '.claude/.pending-push-presha') }
     } else {
-        Deny "Run /change-review before pushing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the diff changed since then; re-run /change-review."
+        Remind "Reminder: run /change-review before pushing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the diff changed since then; re-run /change-review."
     }
 }

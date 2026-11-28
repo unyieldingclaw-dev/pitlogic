@@ -48,7 +48,8 @@ try {
     $progressFile = "memory-bank/progress.md"
     if (Test-Path $progressFile) {
         $content = Get-Content $progressFile -Raw
-        $hasEntry = ($content -split "`n") | Where-Object { $_ -match "^(#{1,6} |- )?$([regex]::Escape($today))" }
+        # WHY ".*": this repo dates headings at the end ("## Title — YYYY-MM-DD"), not the start
+        $hasEntry = ($content -split "`n") | Where-Object { $_ -match "^(#{1,6} .*|- .*)?$([regex]::Escape($today))" }
         if (-not $hasEntry) {
             $blockReasons += "progress.md has no entry dated $today — add today's progress before compacting"
         }

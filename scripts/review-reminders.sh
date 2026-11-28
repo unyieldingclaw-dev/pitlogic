@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# PreToolUse hook — blocks git commit/push until the matching review slash command has run.
+# PreToolUse hook — reminds (does not block) on git commit/push until the matching review slash command has run.
 # /code-review writes .claude/.code-review-ok on an Approve verdict; /change-review writes
 # .claude/.change-review-ok when no finding is Blocking. Each marker authorizes exactly one
 # commit or push attempt for a SPECIFIC diff -- see below.
@@ -51,8 +51,9 @@ input=$(cat 2>/dev/null)
 root=$(git rev-parse --show-toplevel 2>/dev/null)
 [ -z "$root" ] && exit 0
 
-deny() {
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+# WHY advisory, not deny: see review-reminders.ps1. No permissionDecision is set.
+remind() {
+    printf '{"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"%s"}}\n' "$1" "$1"
 }
 
 # Attempt an atomic claim: rename the marker to a private name. Fails harmlessly if the
@@ -79,7 +80,7 @@ case "$input" in
             presha=$(git rev-parse HEAD 2>/dev/null)
             [ -n "$presha" ] && printf '%s' "$presha" > "$root/.claude/.pending-commit-presha"
         else
-            deny "Run /code-review before committing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the working tree changed since then; re-run /code-review."
+            remind "Reminder: run /code-review before committing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the working tree changed since then; re-run /code-review."
         fi
         ;;
     *'git push'*)
@@ -94,7 +95,7 @@ case "$input" in
             presha=$(git rev-parse '@{u}' 2>/dev/null)
             [ -n "$presha" ] && printf '%s' "$presha" > "$root/.claude/.pending-push-presha"
         else
-            deny "Run /change-review before pushing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the diff changed since then; re-run /change-review."
+            remind "Reminder: run /change-review before pushing -- it writes a diff-bound review-ok marker this hook checks. If you already reviewed, the diff changed since then; re-run /change-review."
         fi
         ;;
 esac

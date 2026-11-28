@@ -21,7 +21,7 @@ At the start of every conversation, and again after any context compaction, sile
 
 ## Context Compaction Recovery
 
-Claude Code compacts at ~40% (via `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=40` in settings.json). The `PreCompact` hook fires first and warns if neither the memory bank nor a handoff has been captured this session. A "context was compacted" summary may appear at the top of the conversation.
+Claude Code auto-compacts at the percentage set by `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` in `.claude/settings.json` — read the value there; do not restate it here, where it would drift. The `PreCompact` hook fires first and warns if neither the memory bank nor a handoff has been captured this session. A "context was compacted" summary may appear at the top of the conversation.
 
 **If you observe a compaction summary:** Re-read ALL `memory-bank/` files immediately, summarize recovered context to the user, confirm where to resume if mid-task. **Do not continue from memory alone.**
 
@@ -128,7 +128,7 @@ Full compliance details: `src/lib/compliance/` (ADR-001 through ADR-004, provide
 
 ## Handoff Protocol
 
-When user types "Handoff" or reports context >= 40%:
+When user types "Handoff" or reports context nearing the auto-compact threshold in `.claude/settings.json`:
 
 1. **STOP** all work immediately
 2. **CREATE** `handoff.md` in project root with: accomplishments, files modified, service state, commands to resume, pending tasks, context for next agent
@@ -141,30 +141,3 @@ When starting a new conversation:
 3. Run `/pmb-status` to verify current system state
 4. If a handoff was found: merge its info into Memory Bank, delete `handoff.md`, summarize recovered context to user
 5. Confirm where to resume if mid-task; otherwise continue work
-
-## Token Budget
-
-**Model selection — default to Sonnet, escalate deliberately:**
-- Sonnet handles 90%+ of tasks. Start here every session.
-- Switch to Opus (`/model opus`) only for: complex architecture decisions, large multi-file refactors, deep cross-file debugging. Switch back after.
-- Subagents run on Haiku automatically (set in settings.json) — sufficient for file reads, test runs, and exploration.
-
-**Compact at task boundaries — auto-compact fires at 40%:**
-- Auto-compaction is set to fire at 40% context (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=40` in settings.json); the `PreCompact` hook warns first if memory bank is stale
-- Compact manually at natural boundaries before that point:
-  - After planning: `/compact Focus on decisions and file paths`
-  - After debugging: `/compact Focus on what was tried and what worked`
-  - Before switching to unrelated work: `/clear`
-- Manual `/compact` at a natural boundary beats waiting for auto-compact mid-task
-
-**Exception — always write full prose for:** destructive operations (force-push, file deletion, DROP TABLE), security warnings, and multi-step sequences where a misread causes irreversible damage. Token efficiency yields to clarity at these moments.
-
-**Be specific with file references — vague prompts scan broadly:**
-- Good: `Fix the JWT expiry check in src/auth/token.py around line 47`
-- Bad: `Fix the auth bug` — triggers a broad codebase read
-
-**Session commands:**
-- `/cost` — check quota before long sessions
-- `/usage` — token breakdown for current session
-- `/model sonnet` — reset to default after Opus work
-- `CLAUDE_CODE_EFFORT_LEVEL` env var — `low`/`medium`/`high`/`xhigh`; set per-project to control reasoning depth (default: `high` for Sonnet, `xhigh` for Opus)

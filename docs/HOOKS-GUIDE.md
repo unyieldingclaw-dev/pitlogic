@@ -121,7 +121,7 @@ Fires before every `Agent` tool call. Tracks nested agent delegation depth and e
 
 ### 7. Review Gate (`PreToolUse` — Bash tool)
 
-Fires before every Bash tool call and pattern-matches `git commit` / `git push` (including compound commands like `cd X && git commit ...`). Denies the commit or push unless a matching, diff-bound review-ok marker exists in `.claude/`, mechanically enforcing WORKFLOW.md's "review before commit/push" phases instead of relying on Claude following the prose. Implemented in `scripts/review-reminders.ps1` and `scripts/review-reminders.sh`.
+Fires before every Bash tool call and pattern-matches `git commit` / `git push` (including compound commands like `cd X && git commit ...`). In this project it is **advisory**: when no matching, diff-bound review-ok marker exists in `.claude/`, it emits a reminder (shown to the user and passed to Claude as context) but does not deny the commit or push. No `permissionDecision` is set, so the normal permission flow still applies. Implemented in `scripts/review-reminders.ps1` and `scripts/review-reminders.sh`.
 
 **Marker files (single-use per diff, gitignored):**
 
