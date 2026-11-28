@@ -56,9 +56,9 @@ function CompareTooltip({ active, payload, label }) {
   );
 }
 
-function ChartBody({ chartData, selectedCooks, curves, showAvgLine, height = 220 }) {
+function ChartBody({ chartData, selectedCooks, curves, showAvgLine, height = 220, initialDimension }) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} initialDimension={initialDimension}>
       <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id="avgBand-compare" x1="0" y1="0" x2="0" y2="1">
@@ -69,6 +69,7 @@ function ChartBody({ chartData, selectedCooks, curves, showAvgLine, height = 220
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
         <XAxis
           dataKey="t"
+          ticks={chartData.filter(point => point.t % 60 === 0).map(point => point.t)}
           tickFormatter={v => `${Math.floor(v / 60)}h`}
           stroke="var(--ash)"
           tick={{ fill: 'var(--text3)', fontSize: 10 }}
@@ -190,7 +191,8 @@ export default function CompareChart({ cooks, cut }) {
           {legend}
           <div style={{ flex: 1, minHeight: 0 }}>
             <ChartBody chartData={chartData} selectedCooks={selectedCooks}
-              curves={curves} showAvgLine={showAvgLine} height="100%" />
+              curves={curves} showAvgLine={showAvgLine} height="100%"
+              initialDimension={{ width: 1, height: 1 }} />
           </div>
         </div>
       )}
@@ -299,7 +301,7 @@ export default function CompareChart({ cooks, cut }) {
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: 13, color: 'var(--text1)',
+                  fontSize: 13, color: 'var(--text)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {shortDate(cook.startTime)}{cook.name ? ` — ${cook.name}` : ''}
